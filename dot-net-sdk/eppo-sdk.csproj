@@ -12,7 +12,10 @@
     <None Remove="logger\" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="exception\" />
     <Folder Include="logger\" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="NLog" Version="5.2.2" />
+    <PackageReference Include="RestSharp" Version="110.2.1-alpha.0.10" />
   </ItemGroup>
 </Project>
