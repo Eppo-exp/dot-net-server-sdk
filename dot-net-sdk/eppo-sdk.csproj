@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <RootNamespace>dot_net_sdk</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="exception\" />
+    <None Remove="logger\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="exception\" />
+    <Folder Include="logger\" />
+  </ItemGroup>
+</Project>
