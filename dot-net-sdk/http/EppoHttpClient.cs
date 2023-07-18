@@ -1,8 +1,8 @@
 using System.Net;
-using dot_net_eppo.dto;
+using eppo_sdk.dto;
 using RestSharp;
 
-namespace dot_net_sdk.http;
+namespace eppo_sdk.http;
 
 public class EppoHttpClient
 {

@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace dot_net_sdk.helpers;
+namespace eppo_sdk.helpers;
 
 public class AppDetails
 {

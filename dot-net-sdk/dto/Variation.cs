@@ -1,7 +1,7 @@
-namespace dot_net_eppo.dto;
+namespace eppo_sdk.dto;
 
 public class Variation
 {
-    private EppoValue value;
-    private ShardRange shardRange;
+    public EppoValue value { get; set; }
+    public ShardRange shardRange { get; set; }
 }

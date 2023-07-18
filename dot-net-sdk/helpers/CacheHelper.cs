@@ -1,19 +1,16 @@
-using dot_net_eppo.dto;
+using Microsoft.Extensions.Caching.Memory;
 
-namespace dot_net_sdk.helpers;
+namespace eppo_sdk.helpers;
 
 public class CacheHelper
 {
-    private CacheManager _CacheManager;
+    public MemoryCache Cache { get; private set; }
 
-    public CacheHelper()
+    public CacheHelper(int maxEntries)
     {
-        this._CacheManager = CacheManagerBuilder.build();
-        this._CacheManager.Init();
-    }
-
-    public Cache<string, ExperimentConfiguration> CreateExperimentConfiguration(int maxEntries)
-    {
-        throw new NotImplementedException();
+        this.Cache = new MemoryCache(new MemoryCacheOptions
+        {
+            SizeLimit = maxEntries
+        });
     }
 }

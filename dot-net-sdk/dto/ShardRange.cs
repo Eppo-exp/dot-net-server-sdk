@@ -1,9 +1,9 @@
-namespace dot_net_eppo.dto;
+namespace eppo_sdk.dto;
 
-internal class ShardRange
+public class ShardRange
 {
-    public int start;
-    public int end;
+    public int start { get; set; }
+    public int end { get; set; }
 
     public override string ToString()
     {

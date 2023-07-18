@@ -1,4 +1,4 @@
-namespace dot_net_sdk.constants;
+namespace eppo_sdk.constants;
 
 public class Constants
 {

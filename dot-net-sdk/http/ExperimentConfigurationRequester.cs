@@ -1,7 +1,7 @@
-using dot_net_eppo.dto;
-using dot_net_sdk.constants;
+using eppo_sdk.constants;
+using eppo_sdk.dto;
 
-namespace dot_net_sdk.http;
+namespace eppo_sdk.http;
 
 public class ExperimentConfigurationRequester
 {

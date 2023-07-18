@@ -1,4 +1,4 @@
-﻿namespace dot_net_sdk.exception
+﻿namespace eppo_sdk.exception
 {
     public class EppoClientIsNotInitializedException : Exception
     {

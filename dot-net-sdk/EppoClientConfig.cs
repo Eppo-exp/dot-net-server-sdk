@@ -1,7 +1,7 @@
-﻿using dot_net_sdk.logger;
+﻿using eppo_sdk.logger;
 
-namespace dot_net_sdk
+namespace eppo_sdk
 {
-	public record EppoClientConfig(string apiKey, string baseUrl, IAssignmentLogger assignmentLogger);
+	public record EppoClientConfig(string ApiKey, string BaseUrl, IAssignmentLogger AssignmentLogger);
 }
 

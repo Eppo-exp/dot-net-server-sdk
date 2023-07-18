@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace dot_net_eppo.dto;
+namespace eppo_sdk.dto;
 
 public class Condition
 {

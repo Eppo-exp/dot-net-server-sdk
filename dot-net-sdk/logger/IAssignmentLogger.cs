@@ -1,4 +1,4 @@
-﻿namespace dot_net_sdk.logger
+﻿namespace eppo_sdk.logger
 {
 	public interface IAssignmentLogger
 	{

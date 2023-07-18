@@ -1,52 +1,54 @@
-using dot_net_eppo.dto;
-using dot_net_sdk.exception;
-using dot_net_sdk.http;
+using eppo_sdk.dto;
+using eppo_sdk.exception;
+using eppo_sdk.http;
+using Microsoft.Extensions.Caching.Memory;
 
-namespace dot_net_sdk.store;
+namespace eppo_sdk.store;
 
 public class ConfigurationStore
 {
-    // TODO: Change to cache 
-    private int experimentConfigurationCache;
-    private ExperimentConfigurationRequester requester;
-    private static ConfigurationStore Instance;
+    private readonly MemoryCache _experimentConfigurationCache;
+    private readonly ExperimentConfigurationRequester _requester;
+    private static ConfigurationStore? _instance;
 
-    public ConfigurationStore(ExperimentConfigurationRequester requester, int experimentConfigurationCache)
+    public ConfigurationStore(ExperimentConfigurationRequester requester, MemoryCache experimentConfigurationCache)
     {
-        this.requester = requester;
-        this.experimentConfigurationCache = experimentConfigurationCache;
+        this._requester = requester;
+        this._experimentConfigurationCache = experimentConfigurationCache;
     }
 
-    public static ConfigurationStore Init(int experimentConfigurationCache, ExperimentConfigurationRequester requester)
+    public static ConfigurationStore GetInstance(MemoryCache experimentConfigurationCache,
+        ExperimentConfigurationRequester requester)
     {
-        if (Instance == null)
+        if (_instance == null)
         {
-            Instance = new ConfigurationStore(requester, experimentConfigurationCache);
+            _instance = new ConfigurationStore(requester, experimentConfigurationCache);
+        }
+        else
+        {
+            _instance._experimentConfigurationCache.Clear();
         }
 
-        Instance.experimentConfigurationCache.clear();
-        return Instance;
-    }
-
-    public static ConfigurationStore GetInstance()
-    {
-        return Instance;
+        return _instance;
     }
 
     public void SetExperimentConfiguration(String key, ExperimentConfiguration experimentConfiguration)
     {
-        // TODO: this.experimentConfiguration.put(key, experimentConfiguration);
+        this._experimentConfigurationCache.Set(key, experimentConfiguration);
     }
 
     public ExperimentConfiguration GetExperimentConfiguration(String key)
     {
         try
         {
-            // TODO: Read from cache
-            // return this.experimentConfigurationCache.get(key);
-            return null;
+            if (this._experimentConfigurationCache.TryGetValue(key, out ExperimentConfiguration? result))
+            {
+                return result!;
+            }
+
+            throw new ExperimentConfigurationNotFound($"Experiment configuration for key: {key} not found.");
         }
-        catch (Exception e)
+        catch (Exception)
         {
             throw new ExperimentConfigurationNotFound($"Experiment configuration for key: {key} not found.");
         }
@@ -55,18 +57,18 @@ public class ConfigurationStore
     public void FetchExperimentConfiguration()
     {
         ExperimentConfigurationResponse experimentConfigurationResponse = Get();
-        experimentConfigurationResponse.flags.ToList().ForEach(x =>
-        {
-            this.SetExperimentConfiguration(x.Key, x.Value);
-        });
+        experimentConfigurationResponse.flags.ToList()
+            .ForEach(x => { this.SetExperimentConfiguration(x.Key, x.Value); });
     }
 
     private ExperimentConfigurationResponse Get()
     {
-        ExperimentConfigurationResponse? response = this.requester.FetchExperimentConfiguration();
+        ExperimentConfigurationResponse? response = this._requester.FetchExperimentConfiguration();
         if (response != null)
         {
             return response;
         }
+
+        throw new SystemException("Unable to fetch experiment configuration");
     }
 }

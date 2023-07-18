@@ -1,17 +1,18 @@
-﻿using dot_net_eppo.dto;
-using dot_net_sdk.constants;
-using dot_net_sdk.exception;
-using dot_net_sdk.helpers;
-using dot_net_sdk.http;
-using dot_net_sdk.store;
+﻿using eppo_sdk.constants;
+using eppo_sdk.exception;
+using eppo_sdk.helpers;
+using eppo_sdk.http;
+using eppo_sdk.store;
 
-namespace dot_net_sdk;
+namespace eppo_sdk;
 
 public class EppoClient
 {
-    private static EppoClient Instance = null!;
+    private static readonly object Baton = new();
+
+    private static EppoClient? Client;
     private ConfigurationStore _configurationStore;
-    private Timer _poller;
+    private readonly Timer _poller;
     private EppoClientConfig _eppoClientConfig;
 
     private EppoClient(ConfigurationStore configurationStore, Timer poller, EppoClientConfig eppoClientConfig)
@@ -23,55 +24,51 @@ public class EppoClient
 
     public static EppoClient Init(EppoClientConfig eppoClientConfig)
     {
-        lock(Instance)
+        lock (Baton)
         {
-            InputValidator.validateNotBlank(eppoClientConfig.apiKey,
-                                            "An API key is required");
-            if (eppoClientConfig.assignmentLogger == null) {
+            InputValidator.ValidateNotBlank(eppoClientConfig.ApiKey,
+                "An API key is required");
+            if (eppoClientConfig.AssignmentLogger == null)
+            {
                 throw new InvalidDataException("An assignment logging implementation is required");
             }
 
-            AppDetails appDetails = AppDetails.GetInstance();
-            EppoHttpClient eppoHttpClient = new EppoHttpClient(
-                eppoClientConfig.apiKey,
+            var appDetails = AppDetails.GetInstance();
+            var eppoHttpClient = new EppoHttpClient(
+                eppoClientConfig.ApiKey,
                 appDetails.GetName(),
                 appDetails.GetVersion(),
-                eppoClientConfig.baseUrl,
+                eppoClientConfig.BaseUrl,
                 Constants.REQUEST_TIMEOUT_MILLIS
             );
 
-            ExperimentConfigurationRequester expConfigRequester = new ExperimentConfigurationRequester(eppoHttpClient);
-            CacheHelper cacheHelper = new CacheHelper();
-            Cache<String, ExperimentConfiguration> experimentConfigurationCache = cacheHelper
-                .CreateExperimentConfigurationCache(Constants.MAX_CACHE_ENTRIES);
-            //TODO: Cache initialization
-
-            ConfigurationStore configurationStore = ConfigurationStore.Init(
-                experimentConfigurationCache,
+            var expConfigRequester = new ExperimentConfigurationRequester(eppoHttpClient);
+            var cacheHelper = new CacheHelper(Constants.MAX_CACHE_ENTRIES);
+            var configurationStore = ConfigurationStore.GetInstance(
+                cacheHelper.Cache,
                 expConfigRequester
             );
 
-            if (Instance != null) {
-                Instance._poller.cancel();
+            if (Client != null)
+            {
+                Client._poller.Dispose();
             }
 
-            Timer poller = new(state =>
-            {
-                configurationStore.FetchExperimentConfiguration();
-            });
+            Timer poller = new(state => { configurationStore.FetchExperimentConfiguration(); });
 
-            Instance = new EppoClient(configurationStore, poller, eppoClientConfig);
+            Client = new EppoClient(configurationStore, poller, eppoClientConfig);
         }
 
-        return Instance;
+        return Client;
     }
 
     public static EppoClient GetInstance()
     {
-        if (Instance == null)
+        if (Client == null)
         {
             throw new EppoClientIsNotInitializedException("Eppo client is not initiased");
         }
-        return Instance;
+
+        return Client;
     }
 }
