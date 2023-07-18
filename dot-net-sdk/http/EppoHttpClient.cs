@@ -39,7 +39,7 @@ public class EppoHttpClient
         this._defaultParams.Add(key, value);
     }
 
-    public ExperimentConfigurationResponse? Get(String url) {
+    public ExperimentConfigurationResponse? Get(string url) {
         return this.Get(url, new Dictionary<string, string>(), new Dictionary<string, string>());
     }
 

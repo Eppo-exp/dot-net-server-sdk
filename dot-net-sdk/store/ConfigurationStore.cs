@@ -5,7 +5,7 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace eppo_sdk.store;
 
-public class ConfigurationStore
+public class ConfigurationStore: IConfigurationStore
 {
     private readonly MemoryCache _experimentConfigurationCache;
     private readonly ExperimentConfigurationRequester _requester;
@@ -32,12 +32,12 @@ public class ConfigurationStore
         return _instance;
     }
 
-    public void SetExperimentConfiguration(String key, ExperimentConfiguration experimentConfiguration)
+    public void SetExperimentConfiguration(string key, ExperimentConfiguration experimentConfiguration)
     {
         this._experimentConfigurationCache.Set(key, experimentConfiguration);
     }
 
-    public ExperimentConfiguration GetExperimentConfiguration(String key)
+    public ExperimentConfiguration GetExperimentConfiguration(string key)
     {
         try
         {

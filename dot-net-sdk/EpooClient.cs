@@ -3,6 +3,7 @@ using eppo_sdk.exception;
 using eppo_sdk.helpers;
 using eppo_sdk.http;
 using eppo_sdk.store;
+using eppo_sdk.tasks;
 
 namespace eppo_sdk;
 
@@ -12,14 +13,14 @@ public class EppoClient
 
     private static EppoClient? Client;
     private ConfigurationStore _configurationStore;
-    private readonly Timer _poller;
+    private FetchExperimentsTask _fetchExperimentsTask;
     private EppoClientConfig _eppoClientConfig;
 
-    private EppoClient(ConfigurationStore configurationStore, Timer poller, EppoClientConfig eppoClientConfig)
+    private EppoClient(ConfigurationStore configurationStore, EppoClientConfig eppoClientConfig, FetchExperimentsTask fetchExperimentsTask)
     {
         this._configurationStore = configurationStore;
-        this._poller = poller;
         this._eppoClientConfig = eppoClientConfig;
+        _fetchExperimentsTask = fetchExperimentsTask;
     }
 
     public static EppoClient Init(EppoClientConfig eppoClientConfig)
@@ -51,12 +52,11 @@ public class EppoClient
 
             if (Client != null)
             {
-                Client._poller.Dispose();
+                Client._fetchExperimentsTask.Dispose();
             }
 
-            Timer poller = new(state => { configurationStore.FetchExperimentConfiguration(); });
-
-            Client = new EppoClient(configurationStore, poller, eppoClientConfig);
+            var fetchExperimentsTask = new FetchExperimentsTask(configurationStore, Constants.TIME_INTERVAL_IN_MILLIS, Constants.JITTER_INTERVAL_IN_MILLIS);
+            Client = new EppoClient(configurationStore, eppoClientConfig, fetchExperimentsTask);
         }
 
         return Client;
@@ -66,7 +66,7 @@ public class EppoClient
     {
         if (Client == null)
         {
-            throw new EppoClientIsNotInitializedException("Eppo client is not initiased");
+            throw new EppoClientIsNotInitializedException("Eppo client is not initialized");
         }
 
         return Client;
