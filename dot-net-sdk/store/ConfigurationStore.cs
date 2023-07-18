@@ -5,7 +5,7 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace eppo_sdk.store;
 
-public class ConfigurationStore: IConfigurationStore
+public class ConfigurationStore : IConfigurationStore
 {
     private readonly MemoryCache _experimentConfigurationCache;
     private readonly ExperimentConfigurationRequester _requester;
@@ -37,21 +37,21 @@ public class ConfigurationStore: IConfigurationStore
         this._experimentConfigurationCache.Set(key, experimentConfiguration);
     }
 
-    public ExperimentConfiguration GetExperimentConfiguration(string key)
+    public ExperimentConfiguration? GetExperimentConfiguration(string key)
     {
         try
         {
             if (this._experimentConfigurationCache.TryGetValue(key, out ExperimentConfiguration? result))
             {
-                return result!;
+                return result;
             }
-
-            throw new ExperimentConfigurationNotFound($"Experiment configuration for key: {key} not found.");
         }
         catch (Exception)
         {
             throw new ExperimentConfigurationNotFound($"Experiment configuration for key: {key} not found.");
         }
+
+        return null;
     }
 
     public void FetchExperimentConfiguration()

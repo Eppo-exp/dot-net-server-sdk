@@ -8,4 +8,9 @@ public record ExperimentConfiguration
     public Dictionary<string, EppoValue> overrides { get; set; }
     public Dictionary<string, Allocation> allocations { get; set; }
     public List<Rule> rules { get; set; }
+    
+    public Allocation? GetAllocation(string allocationKey) {
+        allocations.TryGetValue(allocationKey, out var value);
+        return value;
+    }
 }

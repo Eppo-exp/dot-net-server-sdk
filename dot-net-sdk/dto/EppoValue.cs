@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace eppo_sdk.dto;
 
 public class EppoValue
@@ -27,5 +29,20 @@ public class EppoValue
     public EppoValue(EppoValueType type)
     {
         this.type = type;
+    }
+
+    public long LongValue()
+    {
+        return long.Parse(value, NumberStyles.Integer);
+    }
+
+    public string StringValue()
+    {
+        return value;
+    }
+
+    public List<string> ArrayValue()
+    {
+        return array;
     }
 }
