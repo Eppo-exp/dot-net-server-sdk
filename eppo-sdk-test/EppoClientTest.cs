@@ -14,7 +14,7 @@ public class EppoClientTest
 {
     private WireMockServer? _mockServer;
 
-    [SetUp]
+    [OneTimeSetUp]
     public void Setup()
     {
         SetupMockServer();
@@ -35,7 +35,7 @@ public class EppoClientTest
             .RespondWith(Response.Create().WithStatusCode(HttpStatusCode.OK).WithBody(response).WithHeader("Content-Type", "application/json"));
     }
 
-    [TearDown]
+    [OneTimeTearDown]
     public void TearDown()
     {
         _mockServer?.Stop();
@@ -61,15 +61,8 @@ public class EppoClientTest
         var client = EppoClient.GetInstance();
         if (assignmentTestCase.subjectsWithAttributes != null)
         {
-            return assignmentTestCase.subjectsWithAttributes.ConvertAll(subject =>
-            {
-                Console.WriteLine($">>>> {subject.subjectKey}");
-                var assignment = client.GetAssignment(subject.subjectKey, assignmentTestCase.experiment,
-                    subject.subjectAttributes);
-                Console.WriteLine(assignment);
-                Console.WriteLine(">>>>");
-                return assignment;
-            });
+            return assignmentTestCase.subjectsWithAttributes.ConvertAll(subject => client.GetAssignment(subject.subjectKey, assignmentTestCase.experiment,
+                subject.subjectAttributes));
         }
 
         return assignmentTestCase.subjects.ConvertAll(subject =>

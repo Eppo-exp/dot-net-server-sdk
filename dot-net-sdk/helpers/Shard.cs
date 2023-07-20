@@ -17,8 +17,8 @@ public class Shard
 
     public static int GetShard(string input, int maxShardValue)
     {
-        string hashText = GetHex(input);
-        return (int)long.Parse(hashText.Substring(0, 8), NumberStyles.HexNumber) % maxShardValue;
+        var hashText = GetHex(input);
+        return (int) (long.Parse(hashText[..8], NumberStyles.HexNumber) % maxShardValue);
     }
 
     public static bool IsInRange(int shard, ShardRange range)

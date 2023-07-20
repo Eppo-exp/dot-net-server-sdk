@@ -15,7 +15,7 @@ public class ValidateJsonConvertion
             'attribute': 'device'
         }";
         var condition = JsonConvert.DeserializeObject<Condition>(json);
-        Assert.Multiple(() =>
+        Multiple(() =>
         {
             That(condition.operatorType, Is.EqualTo(OperatorType.ONE_OF));
             That(condition.attribute, Is.EqualTo("device"));
