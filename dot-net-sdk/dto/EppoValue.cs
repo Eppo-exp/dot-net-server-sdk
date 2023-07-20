@@ -1,7 +1,9 @@
 using System.Globalization;
+using Newtonsoft.Json;
 
 namespace eppo_sdk.dto;
 
+[JsonConverter(typeof(EppoValueDeserializer))]
 public class EppoValue
 {
     public string value { get; set; }
@@ -44,5 +46,10 @@ public class EppoValue
     public List<string> ArrayValue()
     {
         return array;
+    }
+
+    public bool isNull()
+    {
+        return EppoValueType.NULL.Equals(type);
     }
 }

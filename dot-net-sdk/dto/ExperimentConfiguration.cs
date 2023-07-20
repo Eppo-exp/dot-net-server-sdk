@@ -1,6 +1,6 @@
 namespace eppo_sdk.dto;
 
-public record ExperimentConfiguration
+public class ExperimentConfiguration
 {
     public string name { get; set; }
     public bool enabled { get; set; }

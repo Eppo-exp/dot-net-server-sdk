@@ -1,6 +1,7 @@
 using System.Net;
 using eppo_sdk.dto;
 using RestSharp;
+using RestSharp.Serializers.NewtonsoftJson;
 
 namespace eppo_sdk.http;
 
@@ -34,12 +35,13 @@ public class EppoHttpClient
     }
 
     // If any additional query params are needed.
-    public void addDefaultParam(string key, string value)
+    public void AddDefaultParam(string key, string value)
     {
         this._defaultParams.Add(key, value);
     }
 
-    public ExperimentConfigurationResponse? Get(string url) {
+    public ExperimentConfigurationResponse? Get(string url)
+    {
         return this.Get(url, new Dictionary<string, string>(), new Dictionary<string, string>());
     }
 
@@ -57,12 +59,13 @@ public class EppoHttpClient
         };
         parameters.ToList().ForEach(x => request.AddParameter(new QueryParameter(x.Key, x.Value)));
         request.AddHeaders(headers);
-        var client = new RestClient(_baseUrl + url);
+        var client = new RestClient(_baseUrl + url, configureSerialization: s => s.UseNewtonsoftJson());
         var restResponse = client.Execute<ExperimentConfigurationResponse>(request);
         if (restResponse.StatusCode == HttpStatusCode.Unauthorized)
         {
             throw new UnauthorizedAccessException("Invalid Eppo API Key");
         }
+
         return restResponse.Data;
     }
 }

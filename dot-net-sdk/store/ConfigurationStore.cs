@@ -13,8 +13,8 @@ public class ConfigurationStore : IConfigurationStore
 
     public ConfigurationStore(ExperimentConfigurationRequester requester, MemoryCache experimentConfigurationCache)
     {
-        this._requester = requester;
-        this._experimentConfigurationCache = experimentConfigurationCache;
+        _requester = requester;
+        _experimentConfigurationCache = experimentConfigurationCache;
     }
 
     public static ConfigurationStore GetInstance(MemoryCache experimentConfigurationCache,
@@ -34,14 +34,14 @@ public class ConfigurationStore : IConfigurationStore
 
     public void SetExperimentConfiguration(string key, ExperimentConfiguration experimentConfiguration)
     {
-        this._experimentConfigurationCache.Set(key, experimentConfiguration);
+        _experimentConfigurationCache.Set(key, experimentConfiguration, new MemoryCacheEntryOptions().SetSize(1));
     }
 
     public ExperimentConfiguration? GetExperimentConfiguration(string key)
     {
         try
         {
-            if (this._experimentConfigurationCache.TryGetValue(key, out ExperimentConfiguration? result))
+            if (_experimentConfigurationCache.TryGetValue(key, out ExperimentConfiguration? result))
             {
                 return result;
             }

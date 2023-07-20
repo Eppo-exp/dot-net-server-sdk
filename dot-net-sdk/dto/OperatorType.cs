@@ -1,5 +1,9 @@
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+
 namespace eppo_sdk.dto;
 
+[JsonConverter(typeof(StringEnumConverter))]
 public enum OperatorType
 {
     MATCHES,

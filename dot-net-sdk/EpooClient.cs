@@ -14,18 +14,18 @@ public class EppoClient
 {
     private static readonly object Baton = new();
 
-    private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+    private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
-    private static EppoClient? Client = null;
-    private ConfigurationStore _configurationStore;
-    private FetchExperimentsTask _fetchExperimentsTask;
-    private EppoClientConfig _eppoClientConfig;
+    private static EppoClient? _client = null;
+    private readonly ConfigurationStore _configurationStore;
+    private readonly FetchExperimentsTask _fetchExperimentsTask;
+    private readonly EppoClientConfig _eppoClientConfig;
 
     private EppoClient(ConfigurationStore configurationStore, EppoClientConfig eppoClientConfig,
         FetchExperimentsTask fetchExperimentsTask)
     {
-        this._configurationStore = configurationStore;
-        this._eppoClientConfig = eppoClientConfig;
+        _configurationStore = configurationStore;
+        _eppoClientConfig = eppoClientConfig;
         _fetchExperimentsTask = fetchExperimentsTask;
     }
 
@@ -36,19 +36,19 @@ public class EppoClient
         var configuration = this._configurationStore.GetExperimentConfiguration(flagKey);
         if (configuration == null)
         {
-            logger.Warn($"[Eppo SDK] No configuration found for key: {flagKey}");
+            Logger.Warn($"[Eppo SDK] No configuration found for key: {flagKey}");
             return null;
         }
 
         var subjectVariationOverride = this.GetSubjectVariationOverride(subjectKey, configuration);
-        if (subjectVariationOverride.value != null)
+        if (!subjectVariationOverride.isNull())
         {
-            return subjectVariationOverride.value;
+            return subjectVariationOverride.StringValue();
         }
 
         if (!configuration.enabled)
         {
-            logger.Info(
+            Logger.Info(
                 $"[Eppo SDK] No assigned variation because the experiment or feature flag {flagKey} is disabled");
             return null;
         }
@@ -56,22 +56,22 @@ public class EppoClient
         var rule = RuleValidator.FindMatchingRule(subjectAttributes, configuration.rules);
         if (rule == null)
         {
-            logger.Info("[Eppo SDK] No assigned variation. The subject attributes did not match any targeting rules");
+            Logger.Info("[Eppo SDK] No assigned variation. The subject attributes did not match any targeting rules");
             return null;
         }
 
         var allocation = configuration.GetAllocation(rule.allocationKey);
-        if (!this.IsInExperimentSample(subjectKey, flagKey, configuration.subjectShards, allocation!.percentExposure))
+        if (!IsInExperimentSample(subjectKey, flagKey, configuration.subjectShards, allocation!.percentExposure))
         {
-            logger.Info("[Eppo SDK] No assigned variation. The subject is not part of the sample population");
+            Logger.Info("[Eppo SDK] No assigned variation. The subject is not part of the sample population");
             return null;
         }
 
         var assignedVariation =
-            this.GetAssignedVariation(subjectKey, flagKey, configuration.subjectShards, allocation.variations);
+            GetAssignedVariation(subjectKey, flagKey, configuration.subjectShards, allocation.variations);
         try
         {
-            this._eppoClientConfig.AssignmentLogger
+            _eppoClientConfig.AssignmentLogger
                 .LogAssignment(new AssignmentLogData(
                     flagKey,
                     assignedVariation.value.StringValue(),
@@ -84,7 +84,7 @@ public class EppoClient
             // Ignore Exception
         }
 
-        return assignedVariation.value.StringValue();
+        return assignedVariation?.value.StringValue();
     }
 
     public string? GetAssignment(string subjectKey, string experimentKey)
@@ -139,26 +139,27 @@ public class EppoClient
                 expConfigRequester
             );
 
-            if (EppoClient.Client != null)
+            if (_client != null)
             {
-                Client._fetchExperimentsTask.Dispose();
+                _client._fetchExperimentsTask.Dispose();
             }
 
             var fetchExperimentsTask = new FetchExperimentsTask(configurationStore, Constants.TIME_INTERVAL_IN_MILLIS,
                 Constants.JITTER_INTERVAL_IN_MILLIS);
-            Client = new EppoClient(configurationStore, eppoClientConfig, fetchExperimentsTask);
+            fetchExperimentsTask.Run();
+            _client = new EppoClient(configurationStore, eppoClientConfig, fetchExperimentsTask);
         }
 
-        return Client;
+        return _client;
     }
 
     public static EppoClient GetInstance()
     {
-        if (Client == null)
+        if (_client == null)
         {
             throw new EppoClientIsNotInitializedException("Eppo client is not initialized");
         }
 
-        return Client;
+        return _client;
     }
 }

@@ -1,5 +1,3 @@
-using System.Runtime.InteropServices.JavaScript;
-
 namespace eppo_sdk.dto;
 
 public class AssignmentLogData

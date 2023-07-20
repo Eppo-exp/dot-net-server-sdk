@@ -11,7 +11,7 @@ public class AppDetails
 
     public static AppDetails GetInstance()
     {
-        if (_instance != null) return AppDetails._instance;
+        if (_instance != null) return _instance;
 
         _instance = new AppDetails();
         if (_instance._name == null || _instance._version == null)

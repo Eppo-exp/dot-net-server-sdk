@@ -8,12 +8,12 @@ public class RuleValidator
 {
     public static Rule? FindMatchingRule(SubjectAttributes subjectAttributes, List<Rule> rules)
     {
-        return rules.Find(rule => RuleValidator.MatchesRule(subjectAttributes, rule));
+        return rules.Find(rule => MatchesRule(subjectAttributes, rule));
     }
 
     private static bool MatchesRule(SubjectAttributes subjectAttributes, Rule rule)
     {
-        List<bool> conditionEvaluations = RuleValidator.EvaluateRuleCondition(subjectAttributes, rule.conditions);
+        List<bool> conditionEvaluations = EvaluateRuleCondition(subjectAttributes, rule.conditions);
         return !conditionEvaluations.Contains(false);
     }
 
@@ -64,11 +64,6 @@ public class RuleValidator
 
 internal class Compare
 {
-    public static bool CompareNumber(long a, long b, Func<long, long, bool> func)
-    {
-        return func(a, b);
-    }
-
     public static bool IsOneOf(string a, List<string> arrayValues)
     {
         return arrayValues.ConvertAll(v => v.ToLower()).IndexOf(a.ToLower()) >= 0;

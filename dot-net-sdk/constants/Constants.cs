@@ -15,6 +15,4 @@ public class Constants
     public const int MAX_CACHE_ENTRIES = 1000;
 
     public const string RAC_ENDPOINT = "/randomized_assignment/v3/config";
-
-    public const string EXPERIMENT_CONFIGURATION_CACHE_KEY = "experiment-configuration";
 }

@@ -18,7 +18,7 @@ public class FetchExperimentsTask : IDisposable
         timer = new Timer(state => Run(), null, timeIntervalInMillis, Timeout.Infinite);
     }
 
-    private void Run()
+    internal void Run()
     {
         var rnd = new Random();
         var nextTick = TimeIntervalInMillis -

@@ -1,11 +1,12 @@
 using eppo_sdk.constants;
 using eppo_sdk.dto;
+using NLog;
 
 namespace eppo_sdk.http;
 
 public class ExperimentConfigurationRequester
 {
-    private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+    private static Logger logger = LogManager.GetCurrentClassLogger();
     private readonly EppoHttpClient eppoHttpClient;
 
     public ExperimentConfigurationRequester(EppoHttpClient eppoHttpClient) {
