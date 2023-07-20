@@ -24,7 +24,7 @@ jobs:
         run: dotnet build -c Release
 
       - name: Pull test data
-        run: make test-data          
+        run: make test-data
 
       - name: Test
         run: dotnet test -c Release --no-build
@@ -33,4 +33,4 @@ jobs:
         run: dotnet pack -c Release --no-build --output .
 
       - name: Push to NuGet
-        run: dotnet nuget push "*.nupkg" --api-key ${{secrets.nuget_api_key}} --source https://api.nuget.org/v3/index.json
+        run: dotnet nuget push "*.nupkg" --api-key ${{secrets.NUGET_API_KEY}} --source https://api.nuget.org/v3/index.json
