@@ -5,6 +5,10 @@
     <RootNamespace>eppo_sdk</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <AssemblyName>EppoSDK</AssemblyName>
+    <PackageProjectUrl>https://github.com/Eppo-exp/dot-net-server-sdk</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Eppo-exp/dot-net-server-sdk</RepositoryUrl>
+    <PackageId>Eppo.Sdk</PackageId>
   </PropertyGroup>
 
   <ItemGroup>
