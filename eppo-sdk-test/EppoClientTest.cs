@@ -53,6 +53,7 @@ public class EppoClientTest
     public void ShouldValidateAssignments(AssignmentTestCase assignmentTestCase)
     {
         var assignments = GetAssignments(assignmentTestCase);
+
         Assert.That(assignments, Is.EqualTo(assignmentTestCase.expectedAssignments));
     }
 
