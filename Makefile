@@ -16,3 +16,6 @@ test-data:
 	gsutil cp gs://sdk-test-data/rac-experiments-v2.json $(testDataDir)
 	gsutil cp -r gs://sdk-test-data/assignment-v2 $(testDataDir)
 
+.PHONY: test
+test: 
+	dotnet test --verbosity normal

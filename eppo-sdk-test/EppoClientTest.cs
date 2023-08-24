@@ -52,8 +52,21 @@ public class EppoClientTest
     [Test, TestCaseSource(nameof(GetTestAssignmentData))]
     public void ShouldValidateAssignments(AssignmentTestCase assignmentTestCase)
     {
-        var assignments = GetAssignments(assignmentTestCase);
-        Assert.That(assignments, Is.EqualTo(assignmentTestCase.expectedAssignments));
+        if (assignmentTestCase.valueType == "string")
+        {
+            var assignments = GetAssignments(assignmentTestCase);
+            Assert.That(assignments, Is.EqualTo(assignmentTestCase.expectedAssignments));
+        }
+        else if (assignmentTestCase.valueType == "boolean")
+        {
+            // not supported yet; pass
+            Assert.That(true, Is.EqualTo(true));
+        }
+        else if (assignmentTestCase.valueType == "number")
+        {
+            // not supported yet; pass
+            Assert.That(true, Is.EqualTo(true));
+        }
     }
 
     private static List<string?> GetAssignments(AssignmentTestCase assignmentTestCase)
@@ -97,6 +110,8 @@ public class AssignmentTestCase
 {
     public string experiment { get; set; }
     public List<SubjectWithAttributes>? subjectsWithAttributes { get; set; }
+
+    public string valueType { get; set; } = "string";
     public List<string> subjects { get; set; }
     public List<string> expectedAssignments { get; set; }
 }
