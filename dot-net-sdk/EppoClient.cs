@@ -29,7 +29,37 @@ public class EppoClient
         _fetchExperimentsTask = fetchExperimentsTask;
     }
 
-    public string? GetAssignment(string subjectKey, string flagKey, SubjectAttributes subjectAttributes)
+    public bool? GetBoolAssignment(string subjectKey, string flagKey, SubjectAttributes subjectAttributes)
+    {
+        return GetAssignment(subjectKey, flagKey, subjectAttributes)?.BoolValue();
+    }
+
+    public bool? GetBoolAssignment(string subjectKey, string flagKey)
+    {
+        return GetAssignment(subjectKey, flagKey, new SubjectAttributes())?.BoolValue();
+    }
+
+    public double? GetNumericAssignment(string subjectKey, string flagKey, SubjectAttributes subjectAttributes)
+    {
+        return GetAssignment(subjectKey, flagKey, subjectAttributes)?.DoubleValue();
+    }
+
+    public double? GetNumericAssignment(string subjectKey, string flagKey)
+    {
+        return GetAssignment(subjectKey, flagKey, new SubjectAttributes())?.DoubleValue();
+    }
+
+    public string? GetStringAssignment(string subjectKey, string flagKey, SubjectAttributes subjectAttributes)
+    {
+        return GetAssignment(subjectKey, flagKey, subjectAttributes)?.StringValue();
+    }
+
+    public string? GetStringAssignment(string subjectKey, string flagKey)
+    {
+        return GetAssignment(subjectKey, flagKey, new SubjectAttributes())?.StringValue();
+    }
+
+    private EppoValue? GetAssignment(string subjectKey, string flagKey, SubjectAttributes subjectAttributes)
     {
         InputValidator.ValidateNotBlank(subjectKey, "Invalid argument: subjectKey cannot be blank");
         InputValidator.ValidateNotBlank(flagKey, "Invalid argument: flagKey cannot be blank");
@@ -43,7 +73,7 @@ public class EppoClient
         var subjectVariationOverride = this.GetSubjectVariationOverride(subjectKey, configuration);
         if (!subjectVariationOverride.isNull())
         {
-            return subjectVariationOverride.StringValue();
+            return subjectVariationOverride;
         }
 
         if (!configuration.enabled)
@@ -74,7 +104,7 @@ public class EppoClient
             _eppoClientConfig.AssignmentLogger
                 .LogAssignment(new AssignmentLogData(
                     flagKey,
-                    assignedVariation.value.StringValue(),
+                    assignedVariation.typedValue.StringValue(),
                     subjectKey,
                     subjectAttributes
                 ));
@@ -84,12 +114,7 @@ public class EppoClient
             // Ignore Exception
         }
 
-        return assignedVariation?.value.StringValue();
-    }
-
-    public string? GetAssignment(string subjectKey, string experimentKey)
-    {
-        return this.GetAssignment(subjectKey, experimentKey, new SubjectAttributes());
+        return assignedVariation?.typedValue;
     }
 
     private bool IsInExperimentSample(string subjectKey, string experimentKey, int subjectShards,
@@ -109,7 +134,7 @@ public class EppoClient
     public EppoValue GetSubjectVariationOverride(string subjectKey, ExperimentConfiguration experimentConfiguration)
     {
         var hexedSubjectKey = Shard.GetHex(subjectKey);
-        return experimentConfiguration.overrides.GetValueOrDefault(hexedSubjectKey, new EppoValue());
+        return experimentConfiguration.typedOverrides.GetValueOrDefault(hexedSubjectKey, new EppoValue());
     }
 
     public static EppoClient Init(EppoClientConfig eppoClientConfig)

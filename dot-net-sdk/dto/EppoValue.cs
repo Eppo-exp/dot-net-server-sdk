@@ -33,9 +33,14 @@ public class EppoValue
         this.type = type;
     }
 
-    public long LongValue()
+    public bool BoolValue()
     {
-        return long.Parse(value, NumberStyles.Integer);
+        return bool.Parse(value);
+    }
+
+    public double DoubleValue()
+    {
+        return double.Parse(value, NumberStyles.Number);
     }
 
     public string StringValue()
