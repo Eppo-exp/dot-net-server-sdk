@@ -9,6 +9,7 @@
     <PackageProjectUrl>https://github.com/Eppo-exp/dot-net-server-sdk</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Eppo-exp/dot-net-server-sdk</RepositoryUrl>
     <PackageId>Eppo.Sdk</PackageId>
+    <Version>1.0.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
