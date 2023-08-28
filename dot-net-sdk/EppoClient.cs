@@ -29,35 +29,23 @@ public class EppoClient
         _fetchExperimentsTask = fetchExperimentsTask;
     }
 
-    public bool? GetBoolAssignment(string subjectKey, string flagKey, SubjectAttributes subjectAttributes)
+    public bool? GetBoolAssignment(string subjectKey, string flagKey, SubjectAttributes? subjectAttributes = null)
     {
-        return GetAssignment(subjectKey, flagKey, subjectAttributes)?.BoolValue();
+        return GetAssignment(subjectKey, flagKey, subjectAttributes ?? new SubjectAttributes())?.BoolValue();
     }
 
-    public bool? GetBoolAssignment(string subjectKey, string flagKey)
+    public double? GetNumericAssignment(string subjectKey, string flagKey, SubjectAttributes? subjectAttributes = null)
     {
-        return GetAssignment(subjectKey, flagKey, new SubjectAttributes())?.BoolValue();
+        return GetAssignment(subjectKey, flagKey, subjectAttributes ?? new SubjectAttributes())?.DoubleValue();
     }
 
-    public double? GetNumericAssignment(string subjectKey, string flagKey, SubjectAttributes subjectAttributes)
+
+    public string? GetStringAssignment(string subjectKey, string flagKey, SubjectAttributes? subjectAttributes = null)
     {
-        return GetAssignment(subjectKey, flagKey, subjectAttributes)?.DoubleValue();
+        return GetAssignment(subjectKey, flagKey, subjectAttributes ?? new SubjectAttributes())?.StringValue();
     }
 
-    public double? GetNumericAssignment(string subjectKey, string flagKey)
-    {
-        return GetAssignment(subjectKey, flagKey, new SubjectAttributes())?.DoubleValue();
-    }
 
-    public string? GetStringAssignment(string subjectKey, string flagKey, SubjectAttributes subjectAttributes)
-    {
-        return GetAssignment(subjectKey, flagKey, subjectAttributes)?.StringValue();
-    }
-
-    public string? GetStringAssignment(string subjectKey, string flagKey)
-    {
-        return GetAssignment(subjectKey, flagKey, new SubjectAttributes())?.StringValue();
-    }
 
     private EppoValue? GetAssignment(string subjectKey, string flagKey, SubjectAttributes subjectAttributes)
     {
