@@ -31,10 +31,10 @@ public class RuleValidator
             var value = outVal!;
             Dictionary<OperatorType, Func<EppoValue, EppoValue, bool>> validationFunctions = new()
             {
-                { GTE, (a, b) => a.LongValue() >= b.LongValue() },
-                { GT, (a, b) => a.LongValue() > b.LongValue() },
-                { LTE, (a, b) => a.LongValue() <= b.LongValue() },
-                { LT, (a, b) => a.LongValue() < b.LongValue() },
+                { GTE, (a, b) => a.DoubleValue() >= b.DoubleValue() },
+                { GT, (a, b) => a.DoubleValue() > b.DoubleValue() },
+                { LTE, (a, b) => a.DoubleValue() <= b.DoubleValue() },
+                { LT, (a, b) => a.DoubleValue() < b.DoubleValue() },
                 {
                     MATCHES, (a, b) =>
                         Regex.Match(a.StringValue(), b.StringValue(), RegexOptions.IgnoreCase).Success
