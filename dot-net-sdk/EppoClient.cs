@@ -46,11 +46,11 @@ public class EppoClient
     }
 
 
-
     private EppoValue? GetAssignment(string subjectKey, string flagKey, SubjectAttributes subjectAttributes)
     {
         InputValidator.ValidateNotBlank(subjectKey, "Invalid argument: subjectKey cannot be blank");
         InputValidator.ValidateNotBlank(flagKey, "Invalid argument: flagKey cannot be blank");
+
         var configuration = this._configurationStore.GetExperimentConfiguration(flagKey);
         if (configuration == null)
         {
@@ -92,12 +92,13 @@ public class EppoClient
             _eppoClientConfig.AssignmentLogger
                 .LogAssignment(new AssignmentLogData(
                     flagKey,
+                    rule.allocationKey,
                     assignedVariation.typedValue.StringValue(),
                     subjectKey,
                     subjectAttributes
                 ));
         }
-        catch (Exception e)
+        catch (Exception)
         {
             // Ignore Exception
         }
@@ -105,17 +106,17 @@ public class EppoClient
         return assignedVariation?.typedValue;
     }
 
-    private bool IsInExperimentSample(string subjectKey, string experimentKey, int subjectShards,
+    private bool IsInExperimentSample(string subjectKey, string flagKey, int subjectShards,
         float percentageExposure)
     {
-        var shard = Shard.GetShard($"exposure-{subjectKey}-{experimentKey}", subjectShards);
+        var shard = Shard.GetShard($"exposure-{subjectKey}-{flagKey}", subjectShards);
         return shard <= percentageExposure * subjectShards;
     }
 
-    private Variation GetAssignedVariation(string subjectKey, string experimentKey, int subjectShards,
+    private Variation GetAssignedVariation(string subjectKey, string flagKey, int subjectShards,
         List<Variation> variations)
     {
-        var shard = Shard.GetShard($"assignment-{subjectKey}-{experimentKey}", subjectShards);
+        var shard = Shard.GetShard($"assignment-{subjectKey}-{flagKey}", subjectShards);
         return variations.Find(config => Shard.IsInRange(shard, config.shardRange))!;
     }
 
