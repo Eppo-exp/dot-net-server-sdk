@@ -3,7 +3,7 @@ namespace eppo_sdk.dto;
 public class AssignmentLogData
 {
     public string experiment;
-    public string feature_flag;
+    public string featureFlag;
     public string allocation;
     public string variation;
     public DateTime timestamp;
@@ -11,14 +11,14 @@ public class AssignmentLogData
     public SubjectAttributes subjectAttributes;
 
     public AssignmentLogData(
-        string feature_flag,
+        string featureFlag,
         string allocation,
         string variation,
         string subject,
         SubjectAttributes subjectAttributes)
     {
-        this.experiment = feature_flag + "-" + allocation;
-        this.feature_flag = feature_flag;
+        this.experiment = featureFlag + "-" + allocation;
+        this.featureFlag = featureFlag;
         this.allocation = allocation;
         this.variation = variation;
         this.timestamp = new DateTime();
