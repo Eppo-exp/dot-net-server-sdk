@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using eppo_sdk.dto;
 using static eppo_sdk.dto.OperatorType;
+using NuGet.Versioning;
 
 namespace eppo_sdk.validators;
 
@@ -25,40 +26,73 @@ public class RuleValidator
 
     private static bool EvaluateCondition(SubjectAttributes subjectAttributes, Condition condition)
     {
-        if (subjectAttributes.ContainsKey(condition.attribute))
+        try
         {
-            subjectAttributes.TryGetValue(condition.attribute, out EppoValue outVal);
-            var value = outVal!;
-            Dictionary<OperatorType, Func<EppoValue, EppoValue, bool>> validationFunctions = new()
+            if (subjectAttributes.ContainsKey(condition.attribute) &&
+                subjectAttributes.TryGetValue(condition.attribute, out EppoValue outVal))
             {
-                { GTE, (a, b) => a.DoubleValue() >= b.DoubleValue() },
-                { GT, (a, b) => a.DoubleValue() > b.DoubleValue() },
-                { LTE, (a, b) => a.DoubleValue() <= b.DoubleValue() },
-                { LT, (a, b) => a.DoubleValue() < b.DoubleValue() },
+                var value = outVal!; // Assuming non-null for simplicity, handle nulls as necessary
+
+                if (condition.operatorType == GTE)
                 {
-                    MATCHES, (a, b) =>
-                        Regex.Match(a.StringValue(), b.StringValue(), RegexOptions.IgnoreCase).Success
-                },
-                {
-                    ONE_OF, (a, b) => Compare.IsOneOf(value.StringValue(), condition.value.ArrayValue())
-                },
-                {
-                    NOT_ONE_OF, (a, b) => !Compare.IsOneOf(value.StringValue(), condition.value.ArrayValue())
+                    if (NuGet.Versioning.NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
+                        NuGet.Versioning.NuGetVersion.TryParse(condition.value.StringValue(), out var conditionSemver))
+                    {
+                        return valueSemver >= conditionSemver;
+                    }
+
+                    return value.DoubleValue() >= condition.value.DoubleValue();
                 }
-            };
+                else if (condition.operatorType == GT)
+                {
+                    if (NuGet.Versioning.NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
+                        NuGet.Versioning.NuGetVersion.TryParse(condition.value.StringValue(), out var conditionSemver))
+                    {
+                        return valueSemver > conditionSemver;
+                    }
 
-            try
-            {
-                validationFunctions.TryGetValue(condition.operatorType, out Func<EppoValue, EppoValue, bool> funcType);
-                return funcType!(value, condition.value);
+                    return value.DoubleValue() > condition.value.DoubleValue();
+                }
+                else if (condition.operatorType == LTE)
+                {
+                    if (NuGet.Versioning.NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
+                        NuGet.Versioning.NuGetVersion.TryParse(condition.value.StringValue(), out var conditionSemver))
+                    {
+                        return valueSemver <= conditionSemver;
+                    }
+
+                    return value.DoubleValue() <= condition.value.DoubleValue();
+                }
+                else if (condition.operatorType == LT)
+                {
+                    if (NuGet.Versioning.NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
+                        NuGet.Versioning.NuGetVersion.TryParse(condition.value.StringValue(), out var conditionSemver))
+                    {
+                        return valueSemver < conditionSemver;
+                    }
+
+                    return value.DoubleValue() < condition.value.DoubleValue();
+                }
+                else if (condition.operatorType == MATCHES)
+                {
+                    return Regex.Match(value.StringValue(), condition.value.StringValue(), RegexOptions.IgnoreCase).Success;
+                }
+                else if (condition.operatorType == ONE_OF)
+                {
+                    return Compare.IsOneOf(value.StringValue(), condition.value.ArrayValue());
+                }
+                else if (condition.operatorType == NOT_ONE_OF)
+                {
+                    return !Compare.IsOneOf(value.StringValue(), condition.value.ArrayValue());
+                }
             }
-            catch (Exception)
-            {
-                return false;
-            }
+
+            return false; // Return false if attribute is not found or other errors occur
         }
-
-        return false;
+        catch (Exception e)
+        {
+            return false;
+        }
     }
 }
 
