@@ -18,9 +18,9 @@ test-data:
 
 .PHONY: build
 build: 
-	dotnet build --no-restore
+	dotnet build
 
 
 .PHONY: test
-test: 
-	dotnet test --no-build --verbosity normal
+test:
+	dotnet test --verbosity normal

@@ -47,10 +47,14 @@ public class RuleValidatorTest
         var rules = new List<Rule>();
         var rule = CreateRule(new List<Condition>());
         AddNumericConditionToRule(rule);
+        AddSemVerConditionToRule(rule);
         rules.Add(rule);
 
-        var subjectAttributes = new SubjectAttributes();
-        subjectAttributes.Add("price", new EppoValue("15", EppoValueType.NUMBER));
+        var subjectAttributes = new SubjectAttributes
+        {
+            { "price", new EppoValue("15", EppoValueType.NUMBER) },
+            { "appVersion", new EppoValue("1.15.0", EppoValueType.STRING) }
+        };
 
         Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
     }
@@ -80,9 +84,10 @@ public class RuleValidatorTest
 
         Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
     }
-    
+
     [Test]
-    public void ShouldNotMatchAnyRuleWithRegexConditionIsUnmatched() {
+    public void ShouldNotMatchAnyRuleWithRegexConditionIsUnmatched()
+    {
         var rules = new List<Rule>();
         var rule = CreateRule(new List<Condition>());
         AddRegexConditionToRule(rule);
@@ -94,7 +99,8 @@ public class RuleValidatorTest
     }
 
     [Test]
-    public void ShouldMatchAnyRuleWithOneOfRule() {
+    public void ShouldMatchAnyRuleWithOneOfRule()
+    {
         var rules = new List<Rule>();
         var rule = CreateRule(new List<Condition>());
         AddOneOfCondition(rule);
@@ -106,7 +112,8 @@ public class RuleValidatorTest
     }
 
     [Test]
-    public void ShouldNotMatchAnyRuleWithOneOfRule() {
+    public void ShouldNotMatchAnyRuleWithOneOfRule()
+    {
         var rules = new List<Rule>();
         var rule = CreateRule(new List<Condition>());
         AddOneOfCondition(rule);
@@ -118,7 +125,8 @@ public class RuleValidatorTest
     }
 
     [Test]
-    public void ShouldMatchAnyRuleWithNotOneOfRule() {
+    public void ShouldMatchAnyRuleWithNotOneOfRule()
+    {
         var rules = new List<Rule>();
         var rule = CreateRule(new List<Condition>());
         AddNotOneOfCondition(rule);
@@ -128,9 +136,10 @@ public class RuleValidatorTest
 
         Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
     }
-    
+
     [Test]
-    public void ShouldNotMatchAnyRuleWithNotOneOfRuleNotPassed() {
+    public void ShouldNotMatchAnyRuleWithNotOneOfRuleNotPassed()
+    {
         var rules = new List<Rule>();
         var rule = CreateRule(new List<Condition>());
         AddNotOneOfCondition(rule);
@@ -198,6 +207,23 @@ public class RuleValidatorTest
         {
             value = new EppoValue("20", EppoValueType.NUMBER),
             attribute = "price",
+            operatorType = OperatorType.LTE
+        });
+    }
+
+    private static void AddSemVerConditionToRule(Rule rule)
+    {
+        rule.conditions.Add(new Condition
+        {
+            value = new EppoValue("1.2.3", EppoValueType.STRING),
+            attribute = "appVersion",
+            operatorType = OperatorType.GTE
+        });
+
+        rule.conditions.Add(new Condition
+        {
+            value = new EppoValue("2.2.0", EppoValueType.STRING),
+            attribute = "appVersion",
             operatorType = OperatorType.LTE
         });
     }
