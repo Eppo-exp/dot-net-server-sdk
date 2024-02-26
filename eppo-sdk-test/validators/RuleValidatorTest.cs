@@ -50,9 +50,11 @@ public class RuleValidatorTest
         AddSemVerConditionToRule(rule);
         rules.Add(rule);
 
-        var subjectAttributes = new SubjectAttributes();
-        subjectAttributes.Add("price", new EppoValue("15", EppoValueType.NUMBER));
-        subjectAttributes.Add("appVersion", new EppoValue("1.15.0", EppoValueType.STRING));
+        var subjectAttributes = new SubjectAttributes
+        {
+            { "price", new EppoValue("15", EppoValueType.NUMBER) },
+            { "appVersion", new EppoValue("1.15.0", EppoValueType.STRING) }
+        };
 
         Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
     }
@@ -213,7 +215,7 @@ public class RuleValidatorTest
     {
         rule.conditions.Add(new Condition
         {
-            value = new EppoValue("1.0.0", EppoValueType.STRING),
+            value = new EppoValue("1.2.3", EppoValueType.STRING),
             attribute = "appVersion",
             operatorType = OperatorType.GTE
         });

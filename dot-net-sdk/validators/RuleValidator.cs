@@ -35,43 +35,63 @@ public class RuleValidator
 
                 if (condition.operatorType == GTE)
                 {
-                    if (NuGet.Versioning.NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
-                        NuGet.Versioning.NuGetVersion.TryParse(condition.value.StringValue(), out var conditionSemver))
+                    if (value.isNumeric() && condition.value.isNumeric())
+                    {
+                        return value.DoubleValue() >= condition.value.DoubleValue();
+                    }
+
+                    if (NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
+                        NuGetVersion.TryParse(condition.value.StringValue(), out var conditionSemver))
                     {
                         return valueSemver >= conditionSemver;
                     }
 
-                    return value.DoubleValue() >= condition.value.DoubleValue();
+                    return false;
                 }
                 else if (condition.operatorType == GT)
                 {
-                    if (NuGet.Versioning.NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
-                        NuGet.Versioning.NuGetVersion.TryParse(condition.value.StringValue(), out var conditionSemver))
+                    if (value.isNumeric() && condition.value.isNumeric())
+                    {
+                        return value.DoubleValue() > condition.value.DoubleValue();
+                    }
+
+                    if (NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
+                        NuGetVersion.TryParse(condition.value.StringValue(), out var conditionSemver))
                     {
                         return valueSemver > conditionSemver;
                     }
 
-                    return value.DoubleValue() > condition.value.DoubleValue();
+                    return false;
                 }
                 else if (condition.operatorType == LTE)
                 {
-                    if (NuGet.Versioning.NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
-                        NuGet.Versioning.NuGetVersion.TryParse(condition.value.StringValue(), out var conditionSemver))
+                    if (value.isNumeric() && condition.value.isNumeric())
+                    {
+                        return value.DoubleValue() <= condition.value.DoubleValue();
+                    }
+
+                    if (NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
+                        NuGetVersion.TryParse(condition.value.StringValue(), out var conditionSemver))
                     {
                         return valueSemver <= conditionSemver;
                     }
 
-                    return value.DoubleValue() <= condition.value.DoubleValue();
+                    return false;
                 }
                 else if (condition.operatorType == LT)
                 {
-                    if (NuGet.Versioning.NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
-                        NuGet.Versioning.NuGetVersion.TryParse(condition.value.StringValue(), out var conditionSemver))
+                    if (value.isNumeric() && condition.value.isNumeric())
+                    {
+                        return value.DoubleValue() < condition.value.DoubleValue();
+                    }
+
+                    if (NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
+                        NuGetVersion.TryParse(condition.value.StringValue(), out var conditionSemver))
                     {
                         return valueSemver < conditionSemver;
                     }
 
-                    return value.DoubleValue() < condition.value.DoubleValue();
+                    return false;
                 }
                 else if (condition.operatorType == MATCHES)
                 {
@@ -89,7 +109,7 @@ public class RuleValidator
 
             return false; // Return false if attribute is not found or other errors occur
         }
-        catch (Exception e)
+        catch (Exception)
         {
             return false;
         }
