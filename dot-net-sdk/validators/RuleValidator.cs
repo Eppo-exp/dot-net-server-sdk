@@ -31,7 +31,7 @@ public class RuleValidator
         try
         {
             // Operators other than `IS_NULL` need to assume non-null
-            if (condition.operatorType == OperatorType.IS_NULL) {
+            if (condition.operatorType == IS_NULL) {
                 bool isNull = !subjectAttributes.TryGetValue(condition.attribute, out EppoValue outVal) || outVal.isNull();
                 return condition.value.BoolValue() == isNull;
             }
