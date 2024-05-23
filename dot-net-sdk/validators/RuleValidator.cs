@@ -2,6 +2,8 @@ using System.Text.RegularExpressions;
 using eppo_sdk.dto;
 using static eppo_sdk.dto.OperatorType;
 using NuGet.Versioning;
+using NLog.LayoutRenderers;
+using System.Reflection.Metadata;
 
 namespace eppo_sdk.validators;
 
@@ -28,8 +30,12 @@ public class RuleValidator
     {
         try
         {
-            if (subjectAttributes.ContainsKey(condition.attribute) &&
-                subjectAttributes.TryGetValue(condition.attribute, out EppoValue outVal))
+            // Operators other than `IS_NULL` need to assume non-null
+            if (condition.operatorType == OperatorType.IS_NULL) {
+                bool isNull = !subjectAttributes.TryGetValue(condition.attribute, out EppoValue outVal) || outVal.isNull();
+                return condition.value.BoolValue() == isNull;
+            }
+            else if (subjectAttributes.TryGetValue(condition.attribute, out EppoValue outVal))
             {
                 var value = outVal!; // Assuming non-null for simplicity, handle nulls as necessary
 

@@ -1,5 +1,6 @@
 using eppo_sdk.dto;
 using eppo_sdk.validators;
+using Microsoft.AspNetCore.Builder;
 
 namespace eppo_sdk_test.validators;
 
@@ -148,6 +149,81 @@ public class RuleValidatorTest
         var subjectAttributes = new SubjectAttributes { { "oneOf", new EppoValue("value1", EppoValueType.STRING) } };
 
         Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.Null);
+    }
+
+    [Test]
+    public void ShouldMatchRuleIsNullTrue()
+    {
+        var rules = new List<Rule>();
+        var rule = CreateRule(new List<Condition>());
+        AddIsNullCondition(rule, true);
+        rules.Add(rule);
+
+        var subjectAttributes = new SubjectAttributes { { "isnull", new EppoValue() } };
+
+        Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
+    }
+
+
+    [Test]
+    public void ShouldMatchRuleIsNullNoAttribute()
+    {
+        var rules = new List<Rule>();
+        var rule = CreateRule(new List<Condition>());
+        AddIsNullCondition(rule, true);
+        rules.Add(rule);
+
+        var subjectAttributes = new SubjectAttributes {  };
+
+        Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
+    }
+
+    [Test]
+    public void ShouldMatchRuleIsNullFalse()
+    {
+        var rules = new List<Rule>();
+        var rule = CreateRule(new List<Condition>());
+        AddIsNullCondition(rule, false);
+        rules.Add(rule);
+
+        var subjectAttributes = new SubjectAttributes { { "isnull", new EppoValue("not null", EppoValueType.STRING) } };
+
+        Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
+    }
+
+    [Test]
+    public void ShouldNotMatchRuleIsNullTrue()
+    {
+        var rules = new List<Rule>();
+        var rule = CreateRule(new List<Condition>());
+        AddIsNullCondition(rule, true);
+        rules.Add(rule);
+
+        var subjectAttributes = new SubjectAttributes { { "isnull", new EppoValue("not null", EppoValueType.STRING) } };
+
+        Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.Null);
+    }
+
+    [Test]
+    public void ShouldNotMatchRuleIsNullFalse()
+    {
+        var rules = new List<Rule>();
+        var rule = CreateRule(new List<Condition>());
+        AddIsNullCondition(rule, false);
+        rules.Add(rule);
+
+        var subjectAttributes = new SubjectAttributes { { "isnull", new EppoValue() } };
+
+        Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.Null);
+    }
+    private static void AddIsNullCondition(Rule rule, Boolean value)
+    {
+        rule.conditions.Add(new Condition
+        {
+            value = new EppoValue(value ? "true" : "false", EppoValueType.BOOLEAN),
+            attribute = "isnull",
+            operatorType = OperatorType.IS_NULL
+        });
     }
 
     private static void AddOneOfCondition(Rule rule)
