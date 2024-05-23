@@ -2,8 +2,6 @@ using System.Text.RegularExpressions;
 using eppo_sdk.dto;
 using static eppo_sdk.dto.OperatorType;
 using NuGet.Versioning;
-using NLog.LayoutRenderers;
-using System.Reflection.Metadata;
 
 namespace eppo_sdk.validators;
 
