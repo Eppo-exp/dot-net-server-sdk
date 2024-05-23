@@ -1,6 +1,5 @@
 using eppo_sdk.dto;
 using eppo_sdk.validators;
-using Microsoft.AspNetCore.Builder;
 
 namespace eppo_sdk_test.validators;
 
