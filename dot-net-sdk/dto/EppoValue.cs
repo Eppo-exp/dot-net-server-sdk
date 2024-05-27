@@ -16,7 +16,7 @@ public class EppoValue
     {
     }
 
-    public static EppoValue Bool(string value) {
+    public static EppoValue Bool(string? value) {
         return new EppoValue(value, EppoValueType.BOOLEAN);
     }
     public static EppoValue Bool(bool value) {
@@ -25,7 +25,7 @@ public class EppoValue
     public static EppoValue Number(string value) {
         return new EppoValue(value, EppoValueType.NUMBER);
     }
-    public static EppoValue String(string value) {
+    public static EppoValue String(string? value) {
         return new EppoValue(value, EppoValueType.STRING);
     }
     public static EppoValue Integer(string value) {
@@ -34,7 +34,7 @@ public class EppoValue
     public static EppoValue Null() {
         return new EppoValue();
     }
-    public EppoValue(string value, EppoValueType type)
+    public EppoValue(string? value, EppoValueType type)
     {
         this.value = value;
         this.type = type;
