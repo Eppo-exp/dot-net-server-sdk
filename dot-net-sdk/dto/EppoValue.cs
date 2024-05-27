@@ -61,6 +61,11 @@ public class EppoValue
         return double.Parse(value, NumberStyles.Number);
     }
 
+    public double IntegerValue()
+    {
+        return int.Parse(value, NumberStyles.Number);
+    }
+
     public bool isNumeric()
     {
         return double.TryParse(value, out _);
