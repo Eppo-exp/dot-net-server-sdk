@@ -109,20 +109,20 @@ public class EppoClient
     private bool IsInExperimentSample(string subjectKey, string flagKey, int subjectShards,
         float percentageExposure)
     {
-        var shard = Shard.GetShard($"exposure-{subjectKey}-{flagKey}", subjectShards);
+        var shard = Sharder.GetShard($"exposure-{subjectKey}-{flagKey}", subjectShards);
         return shard <= percentageExposure * subjectShards;
     }
 
     private Variation GetAssignedVariation(string subjectKey, string flagKey, int subjectShards,
         List<Variation> variations)
     {
-        var shard = Shard.GetShard($"assignment-{subjectKey}-{flagKey}", subjectShards);
-        return variations.Find(config => Shard.IsInRange(shard, config.shardRange))!;
+        var shard = Sharder.GetShard($"assignment-{subjectKey}-{flagKey}", subjectShards);
+        return variations.Find(config => Sharder.IsInRange(shard, config.shardRange))!;
     }
 
     public EppoValue GetSubjectVariationOverride(string subjectKey, ExperimentConfiguration experimentConfiguration)
     {
-        var hexedSubjectKey = Shard.GetHex(subjectKey);
+        var hexedSubjectKey = Sharder.GetHex(subjectKey);
         return experimentConfiguration.typedOverrides.GetValueOrDefault(hexedSubjectKey, new EppoValue());
     }
 
