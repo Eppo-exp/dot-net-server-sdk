@@ -15,20 +15,15 @@ public class ExperimentConfigurationRequester
 
     public ExperimentConfigurationResponse? FetchExperimentConfiguration()
     {
-        ExperimentConfigurationResponse? config = null;
         try
         {
             return this.eppoHttpClient.Get(Constants.RAC_ENDPOINT);
-        }
-        catch (UnauthorizedAccessException e)
-        {
-            throw e;
         }
         catch (Exception e)
         {
             logger.Warn($"Unable to Fetch Experiment Configuration: {e.Message}");
         }
 
-        return config;
+        return null;
     }
 }
