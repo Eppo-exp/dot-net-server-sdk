@@ -6,16 +6,34 @@ namespace eppo_sdk.dto;
 [JsonConverter(typeof(EppoValueDeserializer))]
 public class EppoValue
 {
-    public string value { get; set; }
+    public string? value { get; set; }
 
     public EppoValueType type { get; set; } = EppoValueType.NULL;
 
-    public List<string> array { get; set; }
+    public List<string>? array { get; set; }
 
     public EppoValue()
     {
     }
 
+    public static EppoValue Bool(string value) {
+        return new EppoValue(value, EppoValueType.BOOLEAN);
+    }
+    public static EppoValue Bool(bool value) {
+        return new EppoValue(value.ToString(), EppoValueType.BOOLEAN);
+    }
+    public static EppoValue Number(string value) {
+        return new EppoValue(value, EppoValueType.NUMBER);
+    }
+    public static EppoValue String(string value) {
+        return new EppoValue(value, EppoValueType.STRING);
+    }
+    public static EppoValue Integer(string value) {
+        return new EppoValue(value, EppoValueType.INTEGER);
+    }
+    public static EppoValue Null() {
+        return new EppoValue();
+    }
     public EppoValue(string value, EppoValueType type)
     {
         this.value = value;
