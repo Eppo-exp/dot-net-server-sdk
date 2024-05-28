@@ -18,7 +18,7 @@ public class ExperimentConfigurationRequester
         ExperimentConfigurationResponse? config = null;
         try
         {
-            return this.eppoHttpClient.Get(Constants.RAC_ENDPOINT);
+            return this.eppoHttpClient.Get(Constants.UFC_ENDPOINT);
         }
         catch (UnauthorizedAccessException e)
         {
