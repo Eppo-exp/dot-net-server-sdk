@@ -5,14 +5,14 @@ namespace eppo_sdk.dto;
 
 public class Condition
 {
-    public string attribute { get; set; }
-    public EppoValue value { get; set; }
 
-    [JsonProperty(PropertyName = "operator", NamingStrategyType = typeof(DefaultNamingStrategy))]
-    public OperatorType operatorType { get; set; }
+    public string Attribute { get; set; }
+
+    public OperatorType Operator { get; set; }
+    public EppoValue Value { get; set; }
 
     public override string ToString()
     {
-        return $"operator: {operatorType} | Attribute: {attribute} | value: {value}";
+        return $"Operator: {Operator} | Attribute: {Attribute} | Value: {Value}";
     }
 }
