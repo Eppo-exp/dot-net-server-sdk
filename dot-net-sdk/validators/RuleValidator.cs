@@ -30,7 +30,7 @@ public class RuleValidator
         {
             // Operators other than `IS_NULL` need to assume non-null
             if (condition.operatorType == IS_NULL) {
-                bool isNull = !subjectAttributes.TryGetValue(condition.attribute, out EppoValue outVal) || outVal.isNull() || outVal.value == null;
+                bool isNull = !subjectAttributes.TryGetValue(condition.attribute, out EppoValue outVal) || outVal.IsNull() || outVal.value == null;
                 return condition.value.BoolValue() == isNull;
             }
             else if (subjectAttributes.TryGetValue(condition.attribute, out EppoValue outVal))
@@ -39,7 +39,7 @@ public class RuleValidator
 
                 if (condition.operatorType == GTE)
                 {
-                    if (value.isNumeric() && condition.value.isNumeric())
+                    if (value.IsNumeric() && condition.value.IsNumeric())
                     {
                         return value.DoubleValue() >= condition.value.DoubleValue();
                     }
@@ -54,7 +54,7 @@ public class RuleValidator
                 }
                 else if (condition.operatorType == GT)
                 {
-                    if (value.isNumeric() && condition.value.isNumeric())
+                    if (value.IsNumeric() && condition.value.IsNumeric())
                     {
                         return value.DoubleValue() > condition.value.DoubleValue();
                     }
@@ -69,7 +69,7 @@ public class RuleValidator
                 }
                 else if (condition.operatorType == LTE)
                 {
-                    if (value.isNumeric() && condition.value.isNumeric())
+                    if (value.IsNumeric() && condition.value.IsNumeric())
                     {
                         return value.DoubleValue() <= condition.value.DoubleValue();
                     }
@@ -84,7 +84,7 @@ public class RuleValidator
                 }
                 else if (condition.operatorType == LT)
                 {
-                    if (value.isNumeric() && condition.value.isNumeric())
+                    if (value.IsNumeric() && condition.value.IsNumeric())
                     {
                         return value.DoubleValue() < condition.value.DoubleValue();
                     }

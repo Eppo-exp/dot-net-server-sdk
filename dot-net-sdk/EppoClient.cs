@@ -65,7 +65,7 @@ public class EppoClient
         }
 
         var subjectVariationOverride = this.GetSubjectVariationOverride(subjectKey, configuration);
-        if (!subjectVariationOverride.isNull())
+        if (!subjectVariationOverride.IsNull())
         {
             return subjectVariationOverride;
         }
