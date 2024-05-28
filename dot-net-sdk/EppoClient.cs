@@ -40,7 +40,7 @@ public class EppoClient
     }
 
 
-    public double? GetIntegerAssignment(string subjectKey, string flagKey, SubjectAttributes? subjectAttributes = null)
+    public int? GetIntegerAssignment(string subjectKey, string flagKey, SubjectAttributes? subjectAttributes = null)
     {
         return GetAssignment(subjectKey, flagKey, subjectAttributes ?? new SubjectAttributes())?.IntegerValue();
     }

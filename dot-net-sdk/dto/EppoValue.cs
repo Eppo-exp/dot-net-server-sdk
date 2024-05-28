@@ -42,7 +42,7 @@ public class EppoValue
 
     public double DoubleValue() => double.Parse(value, NumberStyles.Number);
 
-    public double IntegerValue() => int.Parse(value, NumberStyles.Number);
+    public int IntegerValue() => int.Parse(value, NumberStyles.Number);
 
     public bool IsNumeric() => double.TryParse(value, out _);
 
@@ -51,4 +51,10 @@ public class EppoValue
     public List<string> ArrayValue() => array;
 
     public bool IsNull() => EppoValueType.NULL.Equals(type);
+
+    public static bool IsNullValue(EppoValue? value) =>
+     value == null /* null pointer */ ||
+         value.IsNull() /* parsed as a null JSON token type */ ||
+         value.value == null; /* Value type is set but value is null */
+
 }
