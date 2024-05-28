@@ -35,6 +35,8 @@ public class EppoValue
 
     public static EppoValue Bool(bool value) => new(value ? "true" : "false", EppoValueType.BOOLEAN);
 
+    public static EppoValue String(string value) => new(value, EppoValueType.STRING);
+    
     public bool BoolValue()
     {
         return bool.Parse(value);
