@@ -150,43 +150,144 @@ public class RuleValidatorTest
         Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.Null);
     }
 
+
+
+     private const string SubjectKey = "subjectKey";
+    private const int TotalShards = 10;
+
+    // Assuming you have these classes defined elsewhere (adapt them to your implementation)
+    private List<Shard> nonMatchingShards;
+    private List<Shard> matchingSplits;
+    private Rule rockAndRollLegendRule;
+    private Variation musicVariation;
+    private Subject subject;
+    private Variation matchVariation;
+
+    [SetUp]
+    public void Setup()
+    {
+        // Initialize your test data here (nonMatchingShards, matchingSplits, etc.)
+    }
+
+    [Test]
+    public void NoMatchingShards_ReturnsFalse()
+    {
+        Assert.False(RuleEvaluator.MatchesAllShards(nonMatchingShards.ToArray(), SubjectKey, TotalShards));
+    }
+
+    [Test]
+    public void SomeMatchingShards_ReturnsFalse()
+    {
+        var allShards = matchingSplits.Concat(nonMatchingShards).ToList();
+        Assert.False(RuleEvaluator.MatchesAllShards(allShards.ToArray(), SubjectKey, TotalShards));
+    }
+
+    [Test]
+    public void MatchesShards_ReturnsTrue()
+    {
+        Assert.True(RuleEvaluator.MatchesAllShards(matchingSplits.ToArray(), SubjectKey, TotalShards));
+    }
+
+    [Test]
+    public void FlagEvaluation_ReturnsMatchingVariation()
+    {
+        var allocations = new List<Allocation>() {
+            new Allocation(
+                "rock",
+                new List<Rule>() { rockAndRollLegendRule },
+                musicSplits,
+                false)
+        };
+        var variations = new Dictionary<string, Variation>() {
+            { "music", musicVariation }
+        };
+
+        var bigFlag = new Flag(
+            "HallOfFame",
+            true,
+            allocations,
+            VariationType.String,
+            variations,
+            TotalShards);
+
+        var result = RuleEvaluator.EvaluateFlag(bigFlag, SubjectKey, subject);
+
+        Assert.NotNull(result);
+        Assert.AreEqual(musicVariation.Key, result.Variation.Key);
+        Assert.AreEqual(musicVariation.Value, result.Variation.Value);
+    }
+
+    [Test]
+    public void DisabledFlag_ReturnsNull()
+    {
+        var flag = new Flag("disabled", false, new List<Allocation>(), VariationType.Boolean, new Dictionary<string, Variation>(), TotalShards);
+        Assert.Null(RuleEvaluator.EvaluateFlag(flag, SubjectKey, new Dictionary<string, object>()));
+    }
+
+    [Test]
+    public void FlagWithInactiveAllocations_ReturnsNull()
+    {
+        var now = DateTime.UtcNow.ToUnixTimeSeconds();
+        var overAlloc = new Allocation("over", new List<Rule>(), matchingSplits, false, endAt: now - 10000);
+        var futureAlloc = new Allocation("hasntStarted", new List<Rule>(), matchingSplits, false, startAt: now + 60000);
+
+        var flag = new Flag(
+            "inactive_allocs",
+            true,
+            new List<Allocation>() { overAlloc, futureAlloc },
+            VariationType.Boolean,
+            new Dictionary<string, Variation>() { { matchVariation.Key, matchVariation } },
+            TotalShards);
+
+        Assert.Null(RuleEvaluator.EvaluateFlag(flag, SubjectKey, subject));
+    }
+
+    [Test]
+    public void FlagWithoutAllocations_ReturnsNull()
+    {
+        var flag = new Flag("no_allocs", true, new List<Allocation>(), VariationType.Boolean, new Dictionary<string, Variation>(), TotalShards);
+        Assert.Null(RuleEvaluator.EvaluateFlag(flag, SubjectKey, subject));
+    }
+
+    [Test]
+    public void MatchesVariationWithoutRules_ReturnsMatchingVariation()
+    {
+        var allocation1 = new Allocation("alloc1", new List<Rule>(), matchingSplits, false);
+        var basicVariation = new Variation("foo", "bar");
+        var flag = new Flag(
+            "matches",
+            true,
+            new List<Allocation>() { allocation1 },
+            VariationType.String,
+            new Dictionary<string, Variation>() { { "match", basicVariation } },
+            TotalShards);
+
+        var result = RuleEvaluator.EvaluateFlag(flag, SubjectKey, subject);
+
+        Assert.NotNull(result);
+        Assert.That(result.variation.value is.EqualTo("bar"));
+
     private static void AddOneOfCondition(Rule rule)
     {
-        rule.conditions.Add(new Condition
-        {
-            value = new EppoValue(new List<string>
+        rule.conditions.Add(new Condition("oneOf", OperatorType.ONE_OF, new EppoValue(new List<string>
             {
                 "value1",
                 "value2"
-            }),
-            attribute = "oneOf",
-            operatorType = OperatorType.ONE_OF
-        });
+            })));
     }
 
     private static void AddNotOneOfCondition(Rule rule)
     {
-        rule.conditions.Add(new Condition
-        {
-            value = new EppoValue(new List<string>
+        rule.conditions.Add(new Condition("oneOf", OperatorType.NOT_ONE_OF, new EppoValue(new List<string>
             {
                 "value1",
                 "value2"
-            }),
-            attribute = "oneOf",
-            operatorType = OperatorType.NOT_ONE_OF
-        });
+            })));
     }
 
     private static void AddRegexConditionToRule(Rule rule)
     {
-        var condition = new Condition
-        {
-            value = new EppoValue("[a-z]+", EppoValueType.STRING),
-            attribute = "match",
-            operatorType = OperatorType.MATCHES
-        };
-        rule.conditions.Add(condition);
+         rule.conditions.Add(new Condition("match", OperatorType.MATCHES, EppoValue.String("[a-z]+")));
     }
 
     private static void AddPriceToSubjectAttribute(SubjectAttributes subjectAttributes)
@@ -196,36 +297,14 @@ public class RuleValidatorTest
 
     private static void AddNumericConditionToRule(Rule rule)
     {
-        rule.conditions.Add(new Condition
-        {
-            value = new EppoValue("10", EppoValueType.NUMBER),
-            attribute = "price",
-            operatorType = OperatorType.GTE
-        });
-
-        rule.conditions.Add(new Condition
-        {
-            value = new EppoValue("20", EppoValueType.NUMBER),
-            attribute = "price",
-            operatorType = OperatorType.LTE
-        });
+        rule.conditions.Add(new Condition("price", OperatorType.GTE, new EppoValue("10", EppoValueType.NUMBER)));
+        rule.conditions.Add(new Condition("price", OperatorType.LTE, new EppoValue("20", EppoValueType.NUMBER)));
     }
 
     private static void AddSemVerConditionToRule(Rule rule)
     {
-        rule.conditions.Add(new Condition
-        {
-            value = new EppoValue("1.2.3", EppoValueType.STRING),
-            attribute = "appVersion",
-            operatorType = OperatorType.GTE
-        });
-
-        rule.conditions.Add(new Condition
-        {
-            value = new EppoValue("2.2.0", EppoValueType.STRING),
-            attribute = "appVersion",
-            operatorType = OperatorType.LTE
-        });
+        rule.conditions.Add(new Condition("appVersion", OperatorType.GTE, new EppoValue("1.2.3", EppoValueType.NUMBER)));
+        rule.conditions.Add(new Condition("appVersion", OperatorType.LTE, new EppoValue("2.2.0", EppoValueType.NUMBER)));
     }
 
     private static void AddNameToSubjectAttribute(SubjectAttributes subjectAttributes)
@@ -235,9 +314,6 @@ public class RuleValidatorTest
 
     private static Rule CreateRule(List<Condition> conditions)
     {
-        return new Rule
-        {
-            conditions = conditions
-        };
+        return new Rule(conditions);
     }
 }

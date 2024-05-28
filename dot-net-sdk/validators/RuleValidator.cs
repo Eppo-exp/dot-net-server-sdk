@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using eppo_sdk.dto;
 using static eppo_sdk.dto.OperatorType;
 using NuGet.Versioning;
+using eppo_sdk.helpers;
 
 namespace eppo_sdk.validators;
 
@@ -9,41 +10,51 @@ namespace eppo_sdk.validators;
 
 public static class RuleValidator
 {
-    // public static FlagEvaluation? EvaluateFlag(Flag flag, string subjectKey, Dictionary<string, object> subjectAttributes)
-    // {
-    //     if (!flag.Enabled) return null;
+    public static FlagEvaluation? EvaluateFlag(Flag flag, string subjectKey, SubjectAttributes subjectAttributes)
+    {
+        if (!flag.enabled) return null;
 
-    //     var now = DateTime.UtcNow.ToUnixTimeSeconds();
-    //     foreach (var allocation in flag.Allocations)
-    //     {
-    //         if (allocation.StartAt.HasValue && allocation.StartAt.Value > now)
-    //         {
-    //             continue;
-    //         }
-    //         if (allocation.EndAt.HasValue && allocation.EndAt.Value < now)
-    //         {
-    //             continue;
-    //         }
+        var now = DateTimeOffset.Now.ToUnixTimeSeconds();
+        foreach (var allocation in flag.allocations)
+        {
+            if (allocation.startAt.HasValue && allocation.startAt.Value > now || allocation.endAt.HasValue && allocation.endAt.Value < now)
+            {
+                continue;
+            }
 
-    //         var subject = new Dictionary<string, object>() { { "id", subjectKey } };
-    //         subject.Concat(subjectAttributes);
-    //         if (MatchesAnyRule(allocation.Rules, subject))
-    //         {
-    //             foreach (var split in allocation.Splits)
-    //             {
-    //                 if (MatchesAllShards(split.Shards, subjectKey, flag.TotalShards))
-    //                 {
-    //                     return new FlagEvaluation(flag.Variations[split.VariationKey], allocation.DoLog, allocation.Key);
-    //                 }
-    //             }
-    //         }
-    //     }
+            subjectAttributes.Add("id", EppoValue.String(subjectKey));
 
-    //     return null;
-    // }
+            if (MatchesAnyRule(allocation.rules, subjectAttributes))
+            {
+                foreach (var split in allocation.splits)
+                {
+                    if (MatchesAllShards(split.shards, subjectKey, flag.totalShards))
+                    {
+                        return new FlagEvaluation(flag.variations[split.variationKey], allocation.doLog, allocation.key);
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
 
 
-    public static bool FindMatchingRule(SubjectAttributes subjectAttributes, List<Rule> rules) => rules.FirstOrDefault(rule => MatchesRule(subjectAttributes, rule)) != default;
+
+    // Find the first shard that does not match. If it's null. then all shards match.     
+    public static bool MatchesAllShards(IEnumerable<Shard> shards, string subjectKey, int totalShards) => shards.First(shard => !MatchesShard(shard, subjectKey, totalShards)) == null;
+
+    private static bool MatchesShard(Shard shard, string subjectKey, int totalShards)
+    {
+        var hashKey = shard.salt + "-" + subjectKey;
+        var subjectBucket = Sharder.GetShard(hashKey, totalShards);
+
+        return shard.ranges.Any(range => Sharder.IsInRange(subjectBucket, range));
+    }
+
+    private static bool MatchesAnyRule(IEnumerable<Rule> rules, SubjectAttributes subject) => rules.Any() && FindMatchingRule(subject, rules) != null;
+
+    public static Rule? FindMatchingRule(SubjectAttributes subjectAttributes, IEnumerable<Rule> rules) => rules.FirstOrDefault(rule => MatchesRule(subjectAttributes, rule));
 
     private static bool MatchesRule(SubjectAttributes subjectAttributes, Rule rule) => rule.conditions.All(condition => EvaluateCondition(subjectAttributes, condition));
     private static bool EvaluateCondition(SubjectAttributes subjectAttributes, Condition condition)
