@@ -61,13 +61,19 @@ public static class RuleValidator
     {
         try
         {
-            if (subjectAttributes.TryGetValue(condition.Attribute, out var value))
+            // Operators other than `IS_NULL` need to assume non-null
+            if (condition.Operator == IS_NULL) {
+                bool isNull = !subjectAttributes.TryGetValue(condition.Attribute, out EppoValue? outVal) || EppoValue.IsNullValue(outVal);
+                return condition.Value.BoolValue() == isNull;
+            }
+            else if (subjectAttributes.TryGetValue(condition.Attribute, out EppoValue? outVal))
             {
+                EppoValue value = outVal!;
                 switch (condition.Operator)
                 {
                     case GTE:
                         {
-                            if (value.isNumeric() && condition.Value.isNumeric())
+                            if (value.IsNumeric() && condition.Value.IsNumeric())
                             {
                                 return value.DoubleValue() >= condition.Value.DoubleValue();
                             }
@@ -82,7 +88,7 @@ public static class RuleValidator
                         }
                     case GT:
                         {
-                            if (value.isNumeric() && condition.Value.isNumeric())
+                            if (value.IsNumeric() && condition.Value.IsNumeric())
                             {
                                 return value.DoubleValue() > condition.Value.DoubleValue();
                             }
@@ -97,7 +103,7 @@ public static class RuleValidator
                         }
                     case LTE:
                         {
-                            if (value.isNumeric() && condition.Value.isNumeric())
+                            if (value.IsNumeric() && condition.Value.IsNumeric())
                             {
                                 return value.DoubleValue() <= condition.Value.DoubleValue();
                             }
@@ -112,7 +118,7 @@ public static class RuleValidator
                         }
                     case LT:
                         {
-                            if (value.isNumeric() && condition.Value.isNumeric())
+                            if (value.IsNumeric() && condition.Value.IsNumeric())
                             {
                                 return value.DoubleValue() < condition.Value.DoubleValue();
                             }

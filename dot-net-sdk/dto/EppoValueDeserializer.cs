@@ -18,14 +18,15 @@ public class EppoValueDeserializer : JsonConverter<EppoValue>
         switch (reader.TokenType)
         {
             case JsonToken.String:
-                return new EppoValue(value.ToString(), EppoValueType.STRING);
+                return EppoValue.String(value.ToString());
             case JsonToken.Integer:
+                return EppoValue.Integer(value.ToString());
             case JsonToken.Float:
-                return new EppoValue(value.ToString(), EppoValueType.NUMBER);
+                return EppoValue.Number(value.ToString());
             case JsonToken.Boolean:
-                return new EppoValue(value.ToString(), EppoValueType.BOOLEAN);
+                return EppoValue.Bool(value.ToString());
             case JsonToken.Null:
-                return new EppoValue(EppoValueType.NULL);
+                return EppoValue.Null();
             case JsonToken.StartArray:
                 var val = new List<string>();
                 reader.Read();
@@ -36,7 +37,7 @@ public class EppoValueDeserializer : JsonConverter<EppoValue>
                 }
                 return new EppoValue(val);
             default:
-                throw new UnsupportedEppoValueException("Unsupported Eppo Values");
+                throw new UnsupportedEppoValueException("Unsupported Eppo Value Type: " + reader.TokenType.ToString());
         }
     }
 }

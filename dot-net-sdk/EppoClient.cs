@@ -40,6 +40,12 @@ public class EppoClient
     }
 
 
+    public int? GetIntegerAssignment(string subjectKey, string flagKey, SubjectAttributes? subjectAttributes = null)
+    {
+        return GetAssignment(subjectKey, flagKey, subjectAttributes ?? new SubjectAttributes())?.IntegerValue();
+    }
+
+
     public string? GetStringAssignment(string subjectKey, string flagKey, SubjectAttributes? subjectAttributes = null)
     {
         return GetAssignment(subjectKey, flagKey, subjectAttributes ?? new SubjectAttributes())?.StringValue();
@@ -59,7 +65,7 @@ public class EppoClient
         }
 
         var subjectVariationOverride = this.GetSubjectVariationOverride(subjectKey, configuration);
-        if (!subjectVariationOverride.isNull())
+        if (!subjectVariationOverride.IsNull())
         {
             return subjectVariationOverride;
         }
