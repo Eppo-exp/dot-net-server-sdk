@@ -6,6 +6,7 @@ using eppo_sdk.http;
 using eppo_sdk.store;
 using eppo_sdk.tasks;
 using eppo_sdk.validators;
+using Newtonsoft.Json.Linq;
 using NLog;
 
 namespace eppo_sdk;
@@ -43,6 +44,12 @@ public class EppoClient
     public int? GetIntegerAssignment(string subjectKey, string flagKey, SubjectAttributes? subjectAttributes = null)
     {
         return GetAssignment(subjectKey, flagKey, subjectAttributes ?? new SubjectAttributes())?.IntegerValue();
+    }
+
+
+    public JObject? GetJsonAssignment(string subjectKey, string flagKey, SubjectAttributes? subjectAttributes = null)
+    {
+        return GetAssignment(subjectKey, flagKey, subjectAttributes ?? new SubjectAttributes())?.JsonValue();
     }
 
 

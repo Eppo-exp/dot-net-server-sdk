@@ -1,5 +1,7 @@
+using System.Text.Json.Nodes;
 using eppo_sdk.dto;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using static NUnit.Framework.Assert;
 
 namespace eppo_sdk_test;
@@ -55,4 +57,27 @@ public class ValidateJsonConvertion
         Assert.That(rules[1].conditions[0].operatorType, Is.EqualTo(OperatorType.NOT_ONE_OF));
         Assert.That(rules[1].conditions[0].attribute, Is.EqualTo("country"));
     }
+
+    [Test]
+    public void ShouldParseJsonValueType() {
+           const string json = @"{
+            'background': 'black',
+            'color': 'yellow',
+            'logo': '_assets/newlogo.png'
+        }";
+        var value = new EppoValue(json, EppoValueType.JSON);
+        var expected = new JObject {
+          ["background"]= "black",
+          ["color"] = "yellow",
+          ["logo"] = "_assets/newlogo.png"
+        };
+        Multiple(() =>
+        {
+            That(value.Value, Is.EqualTo(json));
+            That(value.Type, Is.EqualTo(EppoValueType.JSON));
+            That(value.JsonValue(), Is.EqualTo(expected));
+            
+        });
+    }
+
 }

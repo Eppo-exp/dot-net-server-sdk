@@ -6,6 +6,7 @@ public enum EppoValueType
     INTEGER,
     STRING,
     BOOLEAN,
+    JSON,
     NULL,
     ARRAY_OF_STRING
 }
