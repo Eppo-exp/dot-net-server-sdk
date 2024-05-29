@@ -1,6 +1,8 @@
 using System.Dynamic;
 using System.Globalization;
 using System.Text.Json.Nodes;
+using Common.Logging;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -76,7 +78,8 @@ public class EppoValue
             }
             catch (JsonReaderException)
             {
-
+                var log = LogManager.GetLogger<EppoValue>();
+                log.Error($"Unable to deserialize <{_json}> into a JSON obect.");
             }
         }
         return _json;
