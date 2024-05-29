@@ -75,9 +75,9 @@ public class EppoValue
             {
                 _json = JObject.Parse(Value);
             }
-            catch (JsonReaderException)
+            catch (JsonReaderException e)
             {
-                EppoValue.Logger.Error($"Unable to deserialize <{_json}> into a JSON obect.");
+                Logger.Error($"Unable to deserialize <{_json}> into a JSON obect {e.Message}.");
             }
         }
         return _json;

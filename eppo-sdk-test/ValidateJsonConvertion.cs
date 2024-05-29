@@ -88,7 +88,7 @@ public class ValidateJsonConvertion
               'start': 0,
               'end': 10000
             },
-            'typedValue': ""'background': 'black','color': 'yellow','logo': '_assets/newlogo.png'}""
+            'typedValue': ""{'background': 'black','color': 'yellow','logo': '_assets/newlogo.png'}""
         }";
     var variation = JsonConvert.DeserializeObject<Variation>(json);
     var value = variation.typedValue;
@@ -102,7 +102,7 @@ public class ValidateJsonConvertion
     {
       That(variation, Is.Not.Null);
       That(value, Is.Not.Null);
-      // That(value.Value, Is.EqualTo(json));
+      // When parsing a payload, the JSON object is actually encoded as a string.
       That(value.Type, Is.EqualTo(EppoValueType.STRING));
       That(value.JsonValue(), Is.EqualTo(expected));
     });
