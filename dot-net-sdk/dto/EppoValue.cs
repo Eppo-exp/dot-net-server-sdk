@@ -1,10 +1,7 @@
-using System.Dynamic;
 using System.Globalization;
-using System.Text.Json.Nodes;
-using Common.Logging;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using NLog;
 
 namespace eppo_sdk.dto;
 
@@ -19,7 +16,6 @@ public class EppoValue
 
     private JObject? _json;
 
-
     public static EppoValue Bool(string? value) => new(value, EppoValueType.BOOLEAN);
     public static EppoValue Bool(bool value) => new(value.ToString(), EppoValueType.BOOLEAN);
     public static EppoValue Number(string value) => new(value, EppoValueType.NUMBER);
@@ -27,6 +23,9 @@ public class EppoValue
     public static EppoValue Integer(string value) => new(value, EppoValueType.INTEGER);
     public static EppoValue JsonObject(string value) => new(value, EppoValueType.JSON);
     public static EppoValue Null() => new();
+
+
+    private static readonly Logger Logger = LogManager.GetLogger("EppoValue");
 
     public EppoValue()
     {
@@ -78,8 +77,7 @@ public class EppoValue
             }
             catch (JsonReaderException)
             {
-                var log = LogManager.GetLogger<EppoValue>();
-                log.Error($"Unable to deserialize <{_json}> into a JSON obect.");
+                EppoValue.Logger.Error($"Unable to deserialize <{_json}> into a JSON obect.");
             }
         }
         return _json;
