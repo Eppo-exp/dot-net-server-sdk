@@ -265,7 +265,8 @@ public class RuleValidatorTest
         var result = RuleEvaluator.EvaluateFlag(flag, SubjectKey, subject);
 
         Assert.NotNull(result);
-        Assert.That(result.variation.value is.EqualTo("bar"));
+        Assert.That(result.variation.value, Is.EqualTo("bar"));
+    }
 
     private static void AddOneOfCondition(Rule rule)
     {
