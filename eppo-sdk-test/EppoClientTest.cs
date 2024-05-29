@@ -65,6 +65,11 @@ public class EppoClientTest
                 Assert.That(GetNumericAssignments(assignmentTestCase), Is.EqualTo(numericExpectations));
 
                 break;
+            case "integer":
+                var intExpectations = assignmentTestCase.expectedAssignments.ConvertAll(x => x.IntegerValue());
+                Assert.That(GetIntegerAssignments(assignmentTestCase), Is.EqualTo(intExpectations));
+
+                break;
             case "string":
                 var stringExpectations = assignmentTestCase.expectedAssignments.ConvertAll(x => x.StringValue());
                 Assert.That(GetStringAssignments(assignmentTestCase), Is.EqualTo(stringExpectations));
@@ -97,6 +102,19 @@ public class EppoClientTest
 
         return assignmentTestCase.subjects.ConvertAll(subject =>
             client.GetNumericAssignment(subject, assignmentTestCase.experiment));
+    }
+
+    private static List<int?> GetIntegerAssignments(AssignmentTestCase assignmentTestCase)
+    {
+        var client = EppoClient.GetInstance();
+        if (assignmentTestCase.subjectsWithAttributes != null)
+        {
+            return assignmentTestCase.subjectsWithAttributes.ConvertAll(subject => client.GetIntegerAssignment(subject.subjectKey, assignmentTestCase.experiment,
+                subject.subjectAttributes));
+        }
+
+        return assignmentTestCase.subjects.ConvertAll(subject =>
+            client.GetIntegerAssignment(subject, assignmentTestCase.experiment));
     }
 
     private static List<string?> GetStringAssignments(AssignmentTestCase assignmentTestCase)

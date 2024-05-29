@@ -12,5 +12,6 @@ public enum OperatorType
     LTE,
     LT,
     ONE_OF,
-    NOT_ONE_OF
+    NOT_ONE_OF,
+    IS_NULL
 }
