@@ -56,22 +56,22 @@ public class EppoClientTest
         switch (assignmentTestCase.valueType)
         {
             case "boolean":
-                var boolExpectations = assignmentTestCase.expectedAssignments.ConvertAll(x => x.BoolValue());
+                var boolExpectations = assignmentTestCase.expectedAssignments.ConvertAll(x => x);
                 Assert.That(GetBoolAssignments(assignmentTestCase), Is.EqualTo(boolExpectations));
 
                 break;
             case "number":
-                var numericExpectations = assignmentTestCase.expectedAssignments.ConvertAll(x => x.DoubleValue());
+                var numericExpectations = assignmentTestCase.expectedAssignments.ConvertAll(x => x);
                 Assert.That(GetNumericAssignments(assignmentTestCase), Is.EqualTo(numericExpectations));
 
                 break;
             case "integer":
-                var intExpectations = assignmentTestCase.expectedAssignments.ConvertAll(x => x.IntegerValue());
+                var intExpectations = assignmentTestCase.expectedAssignments.ConvertAll(x => x);
                 Assert.That(GetIntegerAssignments(assignmentTestCase), Is.EqualTo(intExpectations));
 
                 break;
             case "string":
-                var stringExpectations = assignmentTestCase.expectedAssignments.ConvertAll(x => x.StringValue());
+                var stringExpectations = assignmentTestCase.expectedAssignments.ConvertAll(x => x);
                 Assert.That(GetStringAssignments(assignmentTestCase), Is.EqualTo(stringExpectations));
 
                 break;
@@ -160,5 +160,5 @@ public class AssignmentTestCase
     public string valueType { get; set; } = "string";
     public List<SubjectWithAttributes>? subjectsWithAttributes { get; set; }
     public List<string> subjects { get; set; }
-    public List<HasEppoValue> expectedAssignments { get; set; }
+    public List<object?> expectedAssignments { get; set; }
 }

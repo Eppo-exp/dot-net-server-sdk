@@ -12,6 +12,6 @@ public class Condition : HasEppoValue
 
     public override string ToString()
     {
-        return $"operator: {operatorType} | Attribute: {attribute} | value: {value}";
+        return $"operator: {operatorType} | Attribute: {attribute} | value: {Value}";
     }
 }

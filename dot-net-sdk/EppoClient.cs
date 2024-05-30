@@ -135,7 +135,7 @@ public class EppoClient
     public HasEppoValue GetSubjectVariationOverride(string subjectKey, ExperimentConfiguration experimentConfiguration)
     {
         var hexedSubjectKey = Shard.GetHex(subjectKey);
-        return experimentConfiguration.typedOverrides.GetValueOrDefault(hexedSubjectKey, new HasEppoValue());
+        return new HasEppoValue(experimentConfiguration.typedOverrides.GetValueOrDefault(hexedSubjectKey, new Object()));
     }
 
     public static EppoClient Init(EppoClientConfig eppoClientConfig)

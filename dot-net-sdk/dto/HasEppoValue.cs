@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Numerics;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -11,7 +12,7 @@ public class HasEppoValue
     private bool _typed;
 
     private Object? _value;
-    public Object? value
+    public Object? Value
     {
         get { return _value; }
         set
@@ -34,10 +35,10 @@ public class HasEppoValue
         }
     }
     private EppoValueType _type;
-    public EppoValueType type { get { return _type; } }
+    public EppoValueType Type { get { return _type; } }
 
     public bool? BoolValue() => _value != null ? (bool)_value : null;
-    public double? DoubleValue() => _value != null ? (double)_value : null;
+    public double? DoubleValue() => Convert.ToDouble(_value);
     public long? IntegerValue() => _value != null ? (long)_value : null;
     public string? StringValue() => _value != null ? (string)_value : null;
     public List<string>? ArrayValue()
@@ -46,11 +47,15 @@ public class HasEppoValue
         {
             return null;
         }
+        
+        if (_value is JArray) {
 
         return new List<string>(((JArray)_value).ToObject<string[]>());
+        }
+        return (List<string>)_value;
 
     }
-    public JObject? JsonValue() => _value == null ? null : (JObject) _value;
+    public JObject? JsonValue() => _value == null ? null : (JObject)_value;
 
 
 
@@ -62,21 +67,21 @@ public class HasEppoValue
         {
             return EppoValueType.ARRAY_OF_STRING;
         }
-        else if (value is bool)
+        else if (value is bool || value is Boolean)
         {
             return EppoValueType.BOOLEAN;
         }
-        else if (value is float || value is double)
+        else if (value is float || value is double || value is Double || value is float)
         {
             return EppoValueType.NUMBER;
 
         }
-        else if (value is int || value is long)
+        else if (value is int || value is long || value is BigInteger)
         {
             return EppoValueType.INTEGER;
 
         }
-        else if (value is string)
+        else if (value is string || value is String)
         {
             return EppoValueType.STRING;
         }
@@ -105,21 +110,27 @@ public class HasEppoValue
 
     public HasEppoValue(object? value, EppoValueType type)
     {
-        this.value = value;
+        this.Value = value;
+    }
+
+    [JsonConstructor]
+    public HasEppoValue(object? value)
+    {
+        this.Value = value;
     }
 
     public HasEppoValue(List<string> array)
     {
-        this.value = array;
+        this.Value = array;
     }
 
     public bool IsNumeric() => _type == EppoValueType.NUMBER || _type == EppoValueType.INTEGER;
 
-    public bool IsNull() => EppoValueType.NULL.Equals(type);
+    public bool IsNull() => EppoValueType.NULL.Equals(Type);
 
     public static bool IsNullValue(HasEppoValue? value) =>
      value == null /* null pointer */ ||
          value.IsNull() /* parsed as a null JSON token type */ ||
-         value.value == null; /* Value type is set but value is null */
+         value.Value == null; /* Value type is set but value is null */
 
 }

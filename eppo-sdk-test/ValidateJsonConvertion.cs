@@ -32,7 +32,7 @@ public class ValidateJsonConvertion
         HasEppoValue? eValue = JsonConvert.DeserializeObject<HasEppoValue>(json);
         Multiple(() =>
         {
-            That(eValue.type, Is.EqualTo(EppoValueType.ARRAY_OF_STRING));
+            That(eValue.Type, Is.EqualTo(EppoValueType.ARRAY_OF_STRING));
             That(eValue.ArrayValue(), Is.EquivalentTo(new[] {"iOS", "Android"}));
         });
     }
@@ -46,7 +46,7 @@ public class ValidateJsonConvertion
         HasEppoValue? eValue = JsonConvert.DeserializeObject<HasEppoValue>(json);
         Multiple(() =>
         {
-            That(eValue.type, Is.EqualTo(EppoValueType.STRING));
+            That(eValue.Type, Is.EqualTo(EppoValueType.STRING));
             That(eValue.StringValue(), Is.EqualTo("us"));
         });
     }
@@ -60,7 +60,7 @@ public class ValidateJsonConvertion
         HasEppoValue? eValue = JsonConvert.DeserializeObject<HasEppoValue>(json);
         Multiple(() =>
         {
-            That(eValue.type, Is.EqualTo(EppoValueType.BOOLEAN));
+            That(eValue.Type, Is.EqualTo(EppoValueType.BOOLEAN));
             That(eValue.BoolValue(), Is.False);
         });
     }
@@ -73,7 +73,7 @@ public class ValidateJsonConvertion
         HasEppoValue? eValue = JsonConvert.DeserializeObject<HasEppoValue>(json);
         Multiple(() =>
         {
-            That(eValue.type, Is.EqualTo(EppoValueType.INTEGER));
+            That(eValue.Type, Is.EqualTo(EppoValueType.INTEGER));
             That(eValue.IntegerValue(), Is.EqualTo(5));
         });
     }
@@ -87,8 +87,8 @@ public class ValidateJsonConvertion
         HasEppoValue? eValue = JsonConvert.DeserializeObject<HasEppoValue>(json);
         Multiple(() =>
         {
-            That(eValue.type, Is.EqualTo(EppoValueType.NULL));
-            That(eValue.value, Is.EqualTo(null));
+            That(eValue.Type, Is.EqualTo(EppoValueType.NULL));
+            That(eValue.Value, Is.EqualTo(null));
         });
     }
 
@@ -105,7 +105,7 @@ public class ValidateJsonConvertion
         HasEppoValue? eValue = JsonConvert.DeserializeObject<HasEppoValue>(json);
         Multiple(() =>
         {
-            That(eValue.type, Is.EqualTo(EppoValueType.JSON));
+            That(eValue.Type, Is.EqualTo(EppoValueType.JSON));
             // That(eValue.Value, Is.EqualTo(null));s
         });
     }

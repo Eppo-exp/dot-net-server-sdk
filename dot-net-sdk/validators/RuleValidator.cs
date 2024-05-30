@@ -30,12 +30,12 @@ public class RuleValidator
         {
             // Operators other than `IS_NULL` need to assume non-null
             if (condition.operatorType == IS_NULL) {
-                bool isNull = !subjectAttributes.TryGetValue(condition.attribute, out HasEppoValue? outVal) || HasEppoValue.IsNullValue(outVal);
+                bool isNull = !subjectAttributes.TryGetValue(condition.attribute, out Object? outVal) || HasEppoValue.IsNullValue(new HasEppoValue(outVal));
                 return condition.BoolValue() == isNull;
             }
-            else if (subjectAttributes.TryGetValue(condition.attribute, out HasEppoValue? outVal))
+            else if (subjectAttributes.TryGetValue(condition.attribute, out Object? outVal))
             {
-                var value = outVal!; // Assuming non-null for simplicity, handle nulls as necessary
+                var value = new HasEppoValue(outVal!); // Assuming non-null for simplicity, handle nulls as necessary
 
                 if (condition.operatorType == GTE)
                 {
