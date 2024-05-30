@@ -38,12 +38,8 @@ public class HasEppoValue
 
     public bool? BoolValue() => _value != null ? (bool)_value : null;
     public double? DoubleValue() => _value != null ? (double)_value : null;
-
-
     public long? IntegerValue() => _value != null ? (long)_value : null;
     public string? StringValue() => _value != null ? (string)_value : null;
-
-
     public List<string>? ArrayValue()
     {
         if (_value == null)
@@ -54,6 +50,8 @@ public class HasEppoValue
         return new List<string>(((JArray)_value).ToObject<string[]>());
 
     }
+    public JObject? JsonValue() => _value == null ? null : (JObject) _value;
+
 
 
     private static EppoValueType InferTypeFromValue(Object? value)

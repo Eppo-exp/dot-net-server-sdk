@@ -104,7 +104,7 @@ public class EppoClientTest
             client.GetNumericAssignment(subject, assignmentTestCase.experiment));
     }
 
-    private static List<int?> GetIntegerAssignments(AssignmentTestCase assignmentTestCase)
+    private static List<long?> GetIntegerAssignments(AssignmentTestCase assignmentTestCase)
     {
         var client = EppoClient.GetInstance();
         if (assignmentTestCase.subjectsWithAttributes != null)
@@ -160,5 +160,5 @@ public class AssignmentTestCase
     public string valueType { get; set; } = "string";
     public List<SubjectWithAttributes>? subjectsWithAttributes { get; set; }
     public List<string> subjects { get; set; }
-    public List<EppoValue> expectedAssignments { get; set; }
+    public List<HasEppoValue> expectedAssignments { get; set; }
 }
