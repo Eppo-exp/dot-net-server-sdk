@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Numerics;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using NLog;
 
 namespace eppo_sdk.dto;
 
@@ -9,6 +10,8 @@ namespace eppo_sdk.dto;
 public class HasEppoValue
 {
 
+    private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+    
     private bool _typed;
 
     private Object? _value;
@@ -47,13 +50,13 @@ public class HasEppoValue
         {
             return null;
         }
-        
-        if (_value is JArray) {
 
-        return new List<string>(((JArray)_value).ToObject<string[]>());
+        if (_value is JArray array)
+        {
+
+            return new List<string>(array.ToObject<string[]>());
         }
         return (List<string>)_value;
-
     }
     public JObject? JsonValue() => _value == null ? null : (JObject)_value;
 
@@ -63,7 +66,7 @@ public class HasEppoValue
     {
         if (value == null) return EppoValueType.NULL;
 
-        if (value is Array || value.GetType().IsArray || value is JArray)
+        if (value is Array || value.GetType().IsArray || value is JArray || value is List<string> || value is IEnumerable<string>)
         {
             return EppoValueType.ARRAY_OF_STRING;
         }
@@ -91,8 +94,9 @@ public class HasEppoValue
         }
         else
         {
-            var type = value!.GetType();
-            Console.WriteLine($"Value {value} is of type {type}");
+            Type type = value!.GetType();
+            Logger.Error($"Unexpected value of type {type}");
+            Console.WriteLine($"Unexpected value of type {type}");
             return EppoValueType.NULL;
         }
     }
