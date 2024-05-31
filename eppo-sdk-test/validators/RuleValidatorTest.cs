@@ -279,7 +279,7 @@ public class RuleValidatorTest
 
     private static void AddPriceToSubjectAttribute(SubjectAttributes subjectAttributes)
     {
-        subjectAttributes.Add("price", HasEppoValue.String("30"));
+        subjectAttributes.Add("price", "30");
     }
 
     private static void AddNumericConditionToRule(Rule rule)
@@ -318,7 +318,7 @@ public class RuleValidatorTest
 
     private static void AddNameToSubjectAttribute(SubjectAttributes subjectAttributes)
     {
-        subjectAttributes.Add("name", HasEppoValue.String("test"));
+        subjectAttributes.Add("name", "test");
     }
 
     private static Rule CreateRule(List<Condition> conditions)
