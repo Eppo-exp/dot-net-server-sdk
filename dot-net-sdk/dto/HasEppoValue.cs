@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Numerics;
+using eppo_sdk.exception;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NLog;
@@ -11,7 +12,7 @@ public class HasEppoValue
 {
 
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-    
+
     private bool _typed;
 
     private Object? _value;
@@ -40,27 +41,29 @@ public class HasEppoValue
     private EppoValueType _type;
     public EppoValueType Type { get { return _type; } }
 
-    public bool? BoolValue() => _value != null ? (bool)_value : null;
-    public double? DoubleValue() => Convert.ToDouble(_value);
-    public long? IntegerValue() => _value != null ? (long)_value : null;
-    public string? StringValue() => _value != null ? (string)_value : null;
-    public List<string>? ArrayValue()
+    private T _nonNullValue<T>(Func<object, T> func)
     {
         if (_value == null)
         {
-            return null;
+            throw new UnsupportedEppoValueException($"Value of type {Type} is null or invalid");
         }
-
-        if (_value is JArray array)
-        {
-
-            return new List<string>(array.ToObject<string[]>());
-        }
-        return (List<string>)_value;
+        return func(_value);
     }
-    public JObject? JsonValue() => _value == null ? null : (JObject)_value;
+    public bool BoolValue() => _nonNullValue<bool>((o) => (bool)o);
+    public double DoubleValue() => _nonNullValue(Convert.ToDouble);
+    public long IntegerValue() => _nonNullValue<long>((o) => (long)o);
 
+    public string StringValue() => _nonNullValue<string>((o) => (string)o);
+    public List<string> ArrayValue() => _nonNullValue<List<string>>((object o) =>
+        {
+            if (o is JArray array)
+            {
+                return new List<string>(array.ToObject<string[]>());
+            }
+            return (List<string>)_value;
+        });
 
+    public JObject JsonValue() => _nonNullValue<JObject>((o) => (JObject)o);
 
     private static EppoValueType InferTypeFromValue(Object? value)
     {
