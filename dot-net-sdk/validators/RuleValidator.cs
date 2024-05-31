@@ -3,12 +3,13 @@ using eppo_sdk.dto;
 using static eppo_sdk.dto.OperatorType;
 using NuGet.Versioning;
 using eppo_sdk.helpers;
+using eppo_sdk.exception;
 
 namespace eppo_sdk.validators;
 
 
 
-public static class RuleValidator
+public static partial class RuleValidator
 {
     public static FlagEvaluation? EvaluateFlag(Flag flag, string subjectKey, SubjectAttributes subjectAttributes)
     {
@@ -22,15 +23,20 @@ public static class RuleValidator
                 continue;
             }
 
-            subjectAttributes.Add("id", EppoValue.String(subjectKey));
+            subjectAttributes.Add("id", subjectKey);
 
-            if (MatchesAnyRule(allocation.rules, subjectAttributes))
+            if (allocation.rules.Count == 0 || MatchesAnyRule(allocation.rules, subjectAttributes))
             {
                 foreach (var split in allocation.splits)
                 {
                     if (MatchesAllShards(split.shards, subjectKey, flag.totalShards))
                     {
-                        return new FlagEvaluation(flag.variations[split.variationKey], allocation.doLog, allocation.key);
+                        if (flag.variations.TryGetValue(split.variationKey, out Variation variation) && variation != null)
+                        {
+                            return new FlagEvaluation(variation, allocation.doLog, allocation.key);
+                        }
+                        throw new ExperimentConfigurationNotFound($"Variation {split.variationKey} could not be found");
+
                     }
                 }
             }
@@ -42,7 +48,7 @@ public static class RuleValidator
 
 
     // Find the first shard that does not match. If it's null. then all shards match.     
-    public static bool MatchesAllShards(IEnumerable<Shard> shards, string subjectKey, int totalShards) => shards.First(shard => !MatchesShard(shard, subjectKey, totalShards)) == null;
+    public static bool MatchesAllShards(IEnumerable<Shard> shards, string subjectKey, int totalShards) => shards.FirstOrDefault(shard => !MatchesShard(shard, subjectKey, totalShards)) == null;
 
     private static bool MatchesShard(Shard shard, string subjectKey, int totalShards)
     {
@@ -57,6 +63,7 @@ public static class RuleValidator
     public static Rule? FindMatchingRule(SubjectAttributes subjectAttributes, IEnumerable<Rule> rules) => rules.FirstOrDefault(rule => MatchesRule(subjectAttributes, rule));
 
     private static bool MatchesRule(SubjectAttributes subjectAttributes, Rule rule) => rule.conditions.All(condition => EvaluateCondition(subjectAttributes, condition));
+
     private static bool EvaluateCondition(SubjectAttributes subjectAttributes, Condition condition)
     {
         try
@@ -71,7 +78,7 @@ public static class RuleValidator
             {
                 var value = new HasEppoValue(outVal!); // Assuming non-null for simplicity, handle nulls as necessary
 
-                 switch (condition.Operator)
+                switch (condition.Operator)
                 {
                     case GTE:
                         {

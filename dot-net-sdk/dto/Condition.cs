@@ -9,6 +9,13 @@ public class Condition : HasEppoValue
 
     public OperatorType Operator { get; set; }
 
+    public Condition(string attribute, OperatorType op, object? value)
+    {
+        Attribute = attribute;
+        Operator = op;
+        Value = value;
+    }
+
     public override string ToString()
     {
         return $"operator: {Operator} | Attribute: {Attribute} | value: {Value}";

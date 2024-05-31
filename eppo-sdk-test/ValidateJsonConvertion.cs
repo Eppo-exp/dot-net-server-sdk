@@ -130,7 +130,7 @@ public class ValidateJsonConvertion
         'value': false
       }
     }";
-    Variation expectedVariation = new Variation("on", EppoValue.Bool(true));
+    Variation expectedVariation = new Variation("on", true);
 
     var variations = JsonConvert.DeserializeObject<Dictionary<string, Variation>>(json);
     Multiple(() =>
@@ -141,7 +141,7 @@ public class ValidateJsonConvertion
       Variation? on = null;
       That(variations?.TryGetValue("on", out on), Is.True);
       That(on, Is.Not.Null);
-      That(on?.Value.BoolValue(), Is.True);
+      That(on?.BoolValue(), Is.True);
 
     });
   }
