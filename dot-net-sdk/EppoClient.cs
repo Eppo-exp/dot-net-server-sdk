@@ -115,7 +115,7 @@ public class EppoClient
             // Ignore Exception
         }
 
-        return (HasEppoValue)assignedVariation;
+        return assignedVariation;
     }
 
     private bool IsInExperimentSample(string subjectKey, string flagKey, int subjectShards,
@@ -135,7 +135,7 @@ public class EppoClient
     public HasEppoValue GetSubjectVariationOverride(string subjectKey, ExperimentConfiguration experimentConfiguration)
     {
         var hexedSubjectKey = Shard.GetHex(subjectKey);
-        return new HasEppoValue(experimentConfiguration.typedOverrides.GetValueOrDefault(hexedSubjectKey, new Object()));
+        return new HasEppoValue(experimentConfiguration.typedOverrides.GetValueOrDefault(hexedSubjectKey, null));
     }
 
     public static EppoClient Init(EppoClientConfig eppoClientConfig)
