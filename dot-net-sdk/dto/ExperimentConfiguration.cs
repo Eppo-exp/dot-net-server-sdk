@@ -5,7 +5,7 @@ public class ExperimentConfiguration
     public string name { get; set; }
     public bool enabled { get; set; }
     public int subjectShards { get; set; }
-    public Dictionary<string, EppoValue> typedOverrides { get; set; }
+    public Dictionary<string, Object> typedOverrides { get; set; }
     public Dictionary<string, Allocation> allocations { get; set; }
     public List<Rule> rules { get; set; }
 

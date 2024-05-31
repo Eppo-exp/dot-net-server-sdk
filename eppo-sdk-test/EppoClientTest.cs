@@ -56,22 +56,22 @@ public class EppoClientTest
         switch (assignmentTestCase.valueType)
         {
             case "boolean":
-                var boolExpectations = assignmentTestCase.expectedAssignments.ConvertAll(x => x.BoolValue());
+                var boolExpectations = assignmentTestCase.expectedAssignments.ConvertAll(x => (bool?)x);
                 Assert.That(GetBoolAssignments(assignmentTestCase), Is.EqualTo(boolExpectations));
 
                 break;
             case "number":
-                var numericExpectations = assignmentTestCase.expectedAssignments.ConvertAll(x => x.DoubleValue());
+                var numericExpectations = assignmentTestCase.expectedAssignments.ConvertAll(x => (double?)x);
                 Assert.That(GetNumericAssignments(assignmentTestCase), Is.EqualTo(numericExpectations));
 
                 break;
             case "integer":
-                var intExpectations = assignmentTestCase.expectedAssignments.ConvertAll(x => x.IntegerValue());
+                var intExpectations = assignmentTestCase.expectedAssignments.ConvertAll(x => (long?)x);
                 Assert.That(GetIntegerAssignments(assignmentTestCase), Is.EqualTo(intExpectations));
 
                 break;
             case "string":
-                var stringExpectations = assignmentTestCase.expectedAssignments.ConvertAll(x => x.StringValue());
+                var stringExpectations = assignmentTestCase.expectedAssignments.ConvertAll(x => (string?)x);
                 Assert.That(GetStringAssignments(assignmentTestCase), Is.EqualTo(stringExpectations));
 
                 break;
@@ -104,7 +104,7 @@ public class EppoClientTest
             client.GetNumericAssignment(subject, assignmentTestCase.experiment));
     }
 
-    private static List<int?> GetIntegerAssignments(AssignmentTestCase assignmentTestCase)
+    private static List<long?> GetIntegerAssignments(AssignmentTestCase assignmentTestCase)
     {
         var client = EppoClient.GetInstance();
         if (assignmentTestCase.subjectsWithAttributes != null)
@@ -160,5 +160,5 @@ public class AssignmentTestCase
     public string valueType { get; set; } = "string";
     public List<SubjectWithAttributes>? subjectsWithAttributes { get; set; }
     public List<string> subjects { get; set; }
-    public List<EppoValue> expectedAssignments { get; set; }
+    public List<object?> expectedAssignments { get; set; }
 }

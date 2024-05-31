@@ -1,7 +1,6 @@
 namespace eppo_sdk.dto;
 
-public class Variation
+public class Variation : HasEppoValue
 {
-    public EppoValue typedValue { get; set; }
     public ShardRange shardRange { get; set; }
 }

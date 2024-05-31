@@ -30,22 +30,22 @@ public class RuleValidator
         {
             // Operators other than `IS_NULL` need to assume non-null
             if (condition.operatorType == IS_NULL) {
-                bool isNull = !subjectAttributes.TryGetValue(condition.attribute, out EppoValue? outVal) || EppoValue.IsNullValue(outVal);
-                return condition.value.BoolValue() == isNull;
+                bool isNull = !subjectAttributes.TryGetValue(condition.attribute, out Object? outVal) || HasEppoValue.IsNullValue(new HasEppoValue(outVal));
+                return condition.BoolValue() == isNull;
             }
-            else if (subjectAttributes.TryGetValue(condition.attribute, out EppoValue? outVal))
+            else if (subjectAttributes.TryGetValue(condition.attribute, out Object? outVal))
             {
-                var value = outVal!; // Assuming non-null for simplicity, handle nulls as necessary
+                var value = new HasEppoValue(outVal!); // Assuming non-null for simplicity, handle nulls as necessary
 
                 if (condition.operatorType == GTE)
                 {
-                    if (value.IsNumeric() && condition.value.IsNumeric())
+                    if (value.IsNumeric() && condition.IsNumeric())
                     {
-                        return value.DoubleValue() >= condition.value.DoubleValue();
+                        return value.DoubleValue() >= condition.DoubleValue();
                     }
 
                     if (NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
-                        NuGetVersion.TryParse(condition.value.StringValue(), out var conditionSemver))
+                        NuGetVersion.TryParse(condition.StringValue(), out var conditionSemver))
                     {
                         return valueSemver >= conditionSemver;
                     }
@@ -54,13 +54,13 @@ public class RuleValidator
                 }
                 else if (condition.operatorType == GT)
                 {
-                    if (value.IsNumeric() && condition.value.IsNumeric())
+                    if (value.IsNumeric() && condition.IsNumeric())
                     {
-                        return value.DoubleValue() > condition.value.DoubleValue();
+                        return value.DoubleValue() > condition.DoubleValue();
                     }
 
                     if (NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
-                        NuGetVersion.TryParse(condition.value.StringValue(), out var conditionSemver))
+                        NuGetVersion.TryParse(condition.StringValue(), out var conditionSemver))
                     {
                         return valueSemver > conditionSemver;
                     }
@@ -69,13 +69,13 @@ public class RuleValidator
                 }
                 else if (condition.operatorType == LTE)
                 {
-                    if (value.IsNumeric() && condition.value.IsNumeric())
+                    if (value.IsNumeric() && condition.IsNumeric())
                     {
-                        return value.DoubleValue() <= condition.value.DoubleValue();
+                        return value.DoubleValue() <= condition.DoubleValue();
                     }
 
                     if (NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
-                        NuGetVersion.TryParse(condition.value.StringValue(), out var conditionSemver))
+                        NuGetVersion.TryParse(condition.StringValue(), out var conditionSemver))
                     {
                         return valueSemver <= conditionSemver;
                     }
@@ -84,13 +84,13 @@ public class RuleValidator
                 }
                 else if (condition.operatorType == LT)
                 {
-                    if (value.IsNumeric() && condition.value.IsNumeric())
+                    if (value.IsNumeric() && condition.IsNumeric())
                     {
-                        return value.DoubleValue() < condition.value.DoubleValue();
+                        return value.DoubleValue() < condition.DoubleValue();
                     }
 
                     if (NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
-                        NuGetVersion.TryParse(condition.value.StringValue(), out var conditionSemver))
+                        NuGetVersion.TryParse(condition.StringValue(), out var conditionSemver))
                     {
                         return valueSemver < conditionSemver;
                     }
@@ -99,15 +99,15 @@ public class RuleValidator
                 }
                 else if (condition.operatorType == MATCHES)
                 {
-                    return Regex.Match(value.StringValue(), condition.value.StringValue(), RegexOptions.IgnoreCase).Success;
+                    return Regex.Match(value.StringValue(), condition.StringValue(), RegexOptions.IgnoreCase).Success;
                 }
                 else if (condition.operatorType == ONE_OF)
                 {
-                    return Compare.IsOneOf(value.StringValue(), condition.value.ArrayValue());
+                    return Compare.IsOneOf(value.StringValue(), condition.ArrayValue());
                 }
                 else if (condition.operatorType == NOT_ONE_OF)
                 {
-                    return !Compare.IsOneOf(value.StringValue(), condition.value.ArrayValue());
+                    return !Compare.IsOneOf(value.StringValue(), condition.ArrayValue());
                 }
             }
 
