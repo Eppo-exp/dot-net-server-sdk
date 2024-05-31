@@ -1,6 +1,4 @@
-using System.Linq.Dynamic.Core.CustomTypeProviders;
 using eppo_sdk.dto;
-using Namotion.Reflection;
 using Newtonsoft.Json;
 using static NUnit.Framework.Assert;
 
@@ -22,7 +20,7 @@ public class ValidateJsonConvertion
       That(condition, Is.Not.Null);
       That(condition?.Operator, Is.EqualTo(OperatorType.ONE_OF));
       That(condition?.Attribute, Is.EqualTo("device"));
-      That(condition?.Value.ArrayValue().Count, Is.EqualTo(2));
+      That(condition?.ArrayValue().Count, Is.EqualTo(2));
     });
   }
   [Test]
@@ -108,7 +106,7 @@ public class ValidateJsonConvertion
     var rules = JsonConvert.DeserializeObject<List<Rule>>(json);
     Assert.That(rules?.Count, Is.EqualTo(3));
     Assert.That(rules[0].conditions[0].Operator, Is.EqualTo(OperatorType.ONE_OF));
-    Assert.That(rules[0].conditions[0].Value.ArrayValue(), Is.EqualTo(new List<string>
+    Assert.That(rules[0].conditions[0].ArrayValue(), Is.EqualTo(new List<string>
         {
             "iOS",
             "Android"

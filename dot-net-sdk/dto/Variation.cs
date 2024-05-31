@@ -1,3 +1,7 @@
 namespace eppo_sdk.dto;
 
-public record Variation(string Key, EppoValue Value);
+public class Variation : HasEppoValue
+{
+    public string Key {get; set;}
+    public ShardRange shardRange { get; set; }
+}

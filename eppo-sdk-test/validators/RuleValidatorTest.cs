@@ -52,8 +52,8 @@ public class RuleValidatorTest
 
         var subjectAttributes = new SubjectAttributes
         {
-            { "price",  EppoValue.Number("15") },
-            { "appVersion",  EppoValue.String("1.15.0") }
+            { "price",  15 },
+            { "appVersion", "1.15.0" }
         };
 
         Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
@@ -67,7 +67,7 @@ public class RuleValidatorTest
         AddNumericConditionToRule(rule);
         rules.Add(rule);
 
-        var subjectAttributes = new SubjectAttributes { { "price", EppoValue.String("abcd") } };
+        var subjectAttributes = new SubjectAttributes { { "price", "abcd" } };
 
         Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.Null);
     }
@@ -80,7 +80,7 @@ public class RuleValidatorTest
         AddRegexConditionToRule(rule);
         rules.Add(rule);
 
-        var subjectAttributes = new SubjectAttributes { { "match",  EppoValue.String("abcd")} };
+        var subjectAttributes = new SubjectAttributes { { "match",  "abcd"} };
 
         Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
     }
@@ -93,7 +93,7 @@ public class RuleValidatorTest
         AddRegexConditionToRule(rule);
         rules.Add(rule);
 
-        var subjectAttributes = new SubjectAttributes { { "match",  EppoValue.String("123") } };
+        var subjectAttributes = new SubjectAttributes { { "match",  "123" } };
 
         Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.Null);
     }
@@ -106,7 +106,7 @@ public class RuleValidatorTest
         AddOneOfCondition(rule);
         rules.Add(rule);
 
-        var subjectAttributes = new SubjectAttributes { { "oneOf", EppoValue.String("value2") } };
+        var subjectAttributes = new SubjectAttributes { { "oneOf", "value2" } };
 
         Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
     }
@@ -119,7 +119,7 @@ public class RuleValidatorTest
         AddOneOfCondition(rule);
         rules.Add(rule);
 
-        var subjectAttributes = new SubjectAttributes { { "oneOf",  EppoValue.String("value3")} };
+        var subjectAttributes = new SubjectAttributes { { "oneOf",  "value3"} };
 
         Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.Null);
     }
@@ -132,7 +132,7 @@ public class RuleValidatorTest
         AddNotOneOfCondition(rule);
         rules.Add(rule);
 
-        var subjectAttributes = new SubjectAttributes { { "oneOf", EppoValue.String("value3") } };
+        var subjectAttributes = new SubjectAttributes { { "oneOf", "value3" } };
 
         Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
     }
@@ -145,7 +145,7 @@ public class RuleValidatorTest
         AddNotOneOfCondition(rule);
         rules.Add(rule);
 
-        var subjectAttributes = new SubjectAttributes { { "oneOf",  EppoValue.String("value1") } };
+        var subjectAttributes = new SubjectAttributes { { "oneOf",  "value1" } };
 
         Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.Null);
     }
@@ -158,7 +158,7 @@ public class RuleValidatorTest
         AddIsNullCondition(rule, true);
         rules.Add(rule);
 
-        var subjectAttributes = new SubjectAttributes { { "isnull", new EppoValue() } };
+        var subjectAttributes = new SubjectAttributes { { "isnull", null } };
 
         Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
     }
@@ -171,7 +171,7 @@ public class RuleValidatorTest
         AddIsNullCondition(rule, true);
         rules.Add(rule);
 
-        var subjectAttributes = new SubjectAttributes { { "isnull", EppoValue.String(null) } };
+        var subjectAttributes = new SubjectAttributes { { "isnull", null } };
 
         Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
     }
@@ -198,7 +198,7 @@ public class RuleValidatorTest
         AddIsNullCondition(rule, false);
         rules.Add(rule);
 
-        var subjectAttributes = new SubjectAttributes { { "isnull", EppoValue.String("not null") } };
+        var subjectAttributes = new SubjectAttributes { { "isnull", "not null" } };
 
         Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
     }
@@ -211,7 +211,7 @@ public class RuleValidatorTest
         AddIsNullCondition(rule, true);
         rules.Add(rule);
 
-        var subjectAttributes = new SubjectAttributes { { "isnull", EppoValue.String("not null") } };
+        var subjectAttributes = new SubjectAttributes { { "isnull", "not null" } };
 
         Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.Null);
     }
@@ -224,7 +224,7 @@ public class RuleValidatorTest
         AddIsNullCondition(rule, false);
         rules.Add(rule);
 
-        var subjectAttributes = new SubjectAttributes { { "isnull", new EppoValue() } };
+        var subjectAttributes = new SubjectAttributes { { "isnull", null } };
 
         Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.Null);
     }
@@ -232,35 +232,11 @@ public class RuleValidatorTest
     {
         rule.conditions.Add(new Condition
         {
-            value = EppoValue.Bool(value),
-            attribute = "isnull",
-            operatorType = OperatorType.IS_NULL
+            Value = value,
+            Attribute = "isnull",
+            Operator = OperatorType.IS_NULL
         });
     }
-
-    [Test]
-    public void ShouldNotMatchRuleIsNullFalse()
-    {
-        var rules = new List<Rule>();
-        var rule = CreateRule(new List<Condition>());
-        AddIsNullCondition(rule, false);
-        rules.Add(rule);
-
-        var subjectAttributes = new SubjectAttributes { { "isnull", new EppoValue() } };
-
-        Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.Null);
-    }
-    private static void AddIsNullCondition(Rule rule, Boolean value)
-    {
-        rule.conditions.Add(new Condition
-        {
-            value = EppoValue.Bool(value),
-            attribute = "isnull",
-            operatorType = OperatorType.IS_NULL
-        });
-    }
-
-
 
      private const string SubjectKey = "subjectKey";
     private const int TotalShards = 10;
@@ -282,20 +258,20 @@ public class RuleValidatorTest
     [Test]
     public void NoMatchingShards_ReturnsFalse()
     {
-        Assert.False(RuleEvaluator.MatchesAllShards(nonMatchingShards.ToArray(), SubjectKey, TotalShards));
+        Assert.False(RuleValidator.MatchesAllShards(nonMatchingShards.ToArray(), SubjectKey, TotalShards));
     }
 
     [Test]
     public void SomeMatchingShards_ReturnsFalse()
     {
         var allShards = matchingSplits.Concat(nonMatchingShards).ToList();
-        Assert.False(RuleEvaluator.MatchesAllShards(allShards.ToArray(), SubjectKey, TotalShards));
+        Assert.False(RuleValidator.MatchesAllShards(allShards.ToArray(), SubjectKey, TotalShards));
     }
 
     [Test]
     public void MatchesShards_ReturnsTrue()
     {
-        Assert.True(RuleEvaluator.MatchesAllShards(matchingSplits.ToArray(), SubjectKey, TotalShards));
+        Assert.True(RuleValidator.MatchesAllShards(matchingSplits.ToArray(), SubjectKey, TotalShards));
     }
 
     [Test]
@@ -320,7 +296,7 @@ public class RuleValidatorTest
             variations,
             TotalShards);
 
-        var result = RuleEvaluator.EvaluateFlag(bigFlag, SubjectKey, subject);
+        var result = RuleValidator.EvaluateFlag(bigFlag, SubjectKey, subject);
 
         Assert.NotNull(result);
         Assert.AreEqual(musicVariation.Key, result.Variation.Key);
@@ -331,7 +307,7 @@ public class RuleValidatorTest
     public void DisabledFlag_ReturnsNull()
     {
         var flag = new Flag("disabled", false, new List<Allocation>(), VariationType.Boolean, new Dictionary<string, Variation>(), TotalShards);
-        Assert.Null(RuleEvaluator.EvaluateFlag(flag, SubjectKey, new Dictionary<string, object>()));
+        Assert.Null(RuleValidator.EvaluateFlag(flag, SubjectKey, new Dictionary<string, object>()));
     }
 
     [Test]
@@ -349,14 +325,14 @@ public class RuleValidatorTest
             new Dictionary<string, Variation>() { { matchVariation.Key, matchVariation } },
             TotalShards);
 
-        Assert.Null(RuleEvaluator.EvaluateFlag(flag, SubjectKey, subject));
+        Assert.Null(RuleValidator.EvaluateFlag(flag, SubjectKey, subject));
     }
 
     [Test]
     public void FlagWithoutAllocations_ReturnsNull()
     {
         var flag = new Flag("no_allocs", true, new List<Allocation>(), VariationType.Boolean, new Dictionary<string, Variation>(), TotalShards);
-        Assert.Null(RuleEvaluator.EvaluateFlag(flag, SubjectKey, subject));
+        Assert.Null(RuleValidator.EvaluateFlag(flag, SubjectKey, subject));
     }
 
     [Test]
@@ -372,55 +348,96 @@ public class RuleValidatorTest
             new Dictionary<string, Variation>() { { "match", basicVariation } },
             TotalShards);
 
-        var result = RuleEvaluator.EvaluateFlag(flag, SubjectKey, subject);
+        var result = RuleValidator.EvaluateFlag(flag, SubjectKey, subject);
 
         Assert.NotNull(result);
         Assert.That(result.variation.value, Is.EqualTo("bar"));
     }
 
+
+
+
     private static void AddOneOfCondition(Rule rule)
     {
-        rule.conditions.Add(new Condition("oneOf", OperatorType.ONE_OF, new EppoValue(new List<string>
+        rule.conditions.Add(new Condition
+        {
+            Value =new List<string>
             {
                 "value1",
                 "value2"
-            })));
+            },
+            Attribute = "oneOf",
+            Operator = OperatorType.ONE_OF
+        });
     }
 
     private static void AddNotOneOfCondition(Rule rule)
     {
-        rule.conditions.Add(new Condition("oneOf", OperatorType.NOT_ONE_OF, new EppoValue(new List<string>
+        rule.conditions.Add(new Condition
+        {
+            Value = new List<string>
             {
                 "value1",
                 "value2"
-            })));
+            },
+            Attribute = "oneOf",
+            Operator = OperatorType.NOT_ONE_OF
+        });
     }
 
     private static void AddRegexConditionToRule(Rule rule)
     {
-         rule.conditions.Add(new Condition("match", OperatorType.MATCHES, EppoValue.String("[a-z]+")));
+        var condition = new Condition
+        {
+            Value = "[a-z]+",
+            Attribute = "match",
+            Operator = OperatorType.MATCHES
+        };
+        rule.conditions.Add(condition);
     }
 
     private static void AddPriceToSubjectAttribute(SubjectAttributes subjectAttributes)
     {
-        subjectAttributes.Add("price", EppoValue.String("30"));
+        subjectAttributes.Add("price", "30");
     }
 
     private static void AddNumericConditionToRule(Rule rule)
     {
-        rule.conditions.Add(new Condition("price", OperatorType.GTE, new EppoValue("10", EppoValueType.NUMBER)));
-        rule.conditions.Add(new Condition("price", OperatorType.LTE, new EppoValue("20", EppoValueType.NUMBER)));
+        rule.conditions.Add(new Condition
+        {
+            Value = 10,
+            Attribute = "price",
+            Operator = OperatorType.GTE
+        });
+
+        rule.conditions.Add(new Condition
+        {
+            Value = 20,
+            Attribute = "price",
+            Operator = OperatorType.LTE
+        });
     }
 
     private static void AddSemVerConditionToRule(Rule rule)
     {
-        rule.conditions.Add(new Condition("appVersion", OperatorType.GTE, new EppoValue("1.2.3", EppoValueType.NUMBER)));
-        rule.conditions.Add(new Condition("appVersion", OperatorType.LTE, new EppoValue("2.2.0", EppoValueType.NUMBER)));
+        rule.conditions.Add(new Condition
+        {
+            Value = "1.2.3",
+            Attribute = "appVersion",
+            Operator = OperatorType.GTE
+        });
+
+        rule.conditions.Add(new Condition
+        {
+            Value = "2.2.0", 
+            Attribute = "appVersion",
+            Operator = OperatorType.LTE
+        });
     }
 
     private static void AddNameToSubjectAttribute(SubjectAttributes subjectAttributes)
     {
-        subjectAttributes.Add("name", EppoValue.String("test"));
+        subjectAttributes.Add("name", "test");
     }
 
     private static Rule CreateRule(List<Condition> conditions)

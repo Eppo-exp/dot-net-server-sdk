@@ -3,7 +3,14 @@ using Newtonsoft.Json.Serialization;
 
 namespace eppo_sdk.dto;
 
-public record Condition(string Attribute, OperatorType Operator, EppoValue Value)
+public class Condition : HasEppoValue
 {
-    public override string ToString() => $"Operator: {Operator} | Attribute: {Attribute} | Value: {Value}";
+    public string Attribute { get; set; }
+
+    public OperatorType Operator { get; set; }
+
+    public override string ToString()
+    {
+        return $"operator: {Operator} | Attribute: {Attribute} | value: {Value}";
+    }
 }

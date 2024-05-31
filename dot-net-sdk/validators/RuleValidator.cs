@@ -62,24 +62,26 @@ public static class RuleValidator
         try
         {
             // Operators other than `IS_NULL` need to assume non-null
-            if (condition.Operator == IS_NULL) {
-                bool isNull = !subjectAttributes.TryGetValue(condition.Attribute, out EppoValue? outVal) || EppoValue.IsNullValue(outVal);
-                return condition.Value.BoolValue() == isNull;
-            }
-            else if (subjectAttributes.TryGetValue(condition.Attribute, out EppoValue? outVal))
+            if (condition.Operator == IS_NULL)
             {
-                EppoValue value = outVal!;
-                switch (condition.Operator)
+                bool isNull = !subjectAttributes.TryGetValue(condition.Attribute, out Object? outVal) || HasEppoValue.IsNullValue(new HasEppoValue(outVal));
+                return condition.BoolValue() == isNull;
+            }
+            else if (subjectAttributes.TryGetValue(condition.Attribute, out Object? outVal))
+            {
+                var value = new HasEppoValue(outVal!); // Assuming non-null for simplicity, handle nulls as necessary
+
+                 switch (condition.Operator)
                 {
                     case GTE:
                         {
-                            if (value.IsNumeric() && condition.Value.IsNumeric())
+                            if (value.IsNumeric() && condition.IsNumeric())
                             {
-                                return value.DoubleValue() >= condition.Value.DoubleValue();
+                                return value.DoubleValue() >= condition.DoubleValue();
                             }
 
                             if (NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
-                                NuGetVersion.TryParse(condition.Value.StringValue(), out var conditionSemver))
+                                NuGetVersion.TryParse(condition.StringValue(), out var conditionSemver))
                             {
                                 return valueSemver >= conditionSemver;
                             }
@@ -88,13 +90,13 @@ public static class RuleValidator
                         }
                     case GT:
                         {
-                            if (value.IsNumeric() && condition.Value.IsNumeric())
+                            if (value.IsNumeric() && condition.IsNumeric())
                             {
-                                return value.DoubleValue() > condition.Value.DoubleValue();
+                                return value.DoubleValue() > condition.DoubleValue();
                             }
 
                             if (NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
-                                NuGetVersion.TryParse(condition.Value.StringValue(), out var conditionSemver))
+                                NuGetVersion.TryParse(condition.StringValue(), out var conditionSemver))
                             {
                                 return valueSemver > conditionSemver;
                             }
@@ -103,13 +105,13 @@ public static class RuleValidator
                         }
                     case LTE:
                         {
-                            if (value.IsNumeric() && condition.Value.IsNumeric())
+                            if (value.IsNumeric() && condition.IsNumeric())
                             {
-                                return value.DoubleValue() <= condition.Value.DoubleValue();
+                                return value.DoubleValue() <= condition.DoubleValue();
                             }
 
                             if (NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
-                                NuGetVersion.TryParse(condition.Value.StringValue(), out var conditionSemver))
+                                NuGetVersion.TryParse(condition.StringValue(), out var conditionSemver))
                             {
                                 return valueSemver <= conditionSemver;
                             }
@@ -118,13 +120,13 @@ public static class RuleValidator
                         }
                     case LT:
                         {
-                            if (value.IsNumeric() && condition.Value.IsNumeric())
+                            if (value.IsNumeric() && condition.IsNumeric())
                             {
-                                return value.DoubleValue() < condition.Value.DoubleValue();
+                                return value.DoubleValue() < condition.DoubleValue();
                             }
 
                             if (NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
-                                NuGetVersion.TryParse(condition.Value.StringValue(), out var conditionSemver))
+                                NuGetVersion.TryParse(condition.StringValue(), out var conditionSemver))
                             {
                                 return valueSemver < conditionSemver;
                             }
@@ -133,15 +135,15 @@ public static class RuleValidator
                         }
                     case MATCHES:
                         {
-                            return Regex.Match(value.StringValue(), condition.Value.StringValue(), RegexOptions.IgnoreCase).Success;
+                            return Regex.Match(value.StringValue(), condition.StringValue(), RegexOptions.IgnoreCase).Success;
                         }
                     case ONE_OF:
                         {
-                            return Compare.IsOneOf(value.StringValue(), condition.Value.ArrayValue());
+                            return Compare.IsOneOf(value.StringValue(), condition.ArrayValue());
                         }
                     case NOT_ONE_OF:
                         {
-                            return !Compare.IsOneOf(value.StringValue(), condition.Value.ArrayValue());
+                            return !Compare.IsOneOf(value.StringValue(), condition.ArrayValue());
                         }
                 }
             }
