@@ -99,20 +99,23 @@ public class EppoClient
 
         var assignedVariation =
             GetAssignedVariation(subjectKey, flagKey, configuration.subjectShards, allocation.variations);
-        try
+        if (assignedVariation != null && !assignedVariation.IsNull())
         {
-            _eppoClientConfig.AssignmentLogger
-                .LogAssignment(new AssignmentLogData(
-                    flagKey,
-                    rule.allocationKey,
-                    assignedVariation.StringValue(),
-                    subjectKey,
-                    subjectAttributes
-                ));
-        }
-        catch (Exception)
-        {
-            // Ignore Exception
+            try
+            {
+                _eppoClientConfig.AssignmentLogger
+                    .LogAssignment(new AssignmentLogData(
+                        flagKey,
+                        rule.allocationKey,
+                        assignedVariation.StringValue() ?? "null",
+                        subjectKey,
+                        subjectAttributes
+                    ));
+            }
+            catch (Exception)
+            {
+                // Ignore Exception
+            }
         }
 
         return assignedVariation;
