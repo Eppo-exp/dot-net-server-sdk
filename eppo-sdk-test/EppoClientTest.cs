@@ -56,22 +56,22 @@ public class EppoClientTest
         switch (assignmentTestCase.valueType)
         {
             case "boolean":
-                var boolExpectations = assignmentTestCase.expectedAssignments.ConvertAll(x => x);
+                var boolExpectations = assignmentTestCase.expectedAssignments.ConvertAll(x => (bool?)x);
                 Assert.That(GetBoolAssignments(assignmentTestCase), Is.EqualTo(boolExpectations));
 
                 break;
             case "number":
-                var numericExpectations = assignmentTestCase.expectedAssignments.ConvertAll(x => x);
+                var numericExpectations = assignmentTestCase.expectedAssignments.ConvertAll(x => (double?)x);
                 Assert.That(GetNumericAssignments(assignmentTestCase), Is.EqualTo(numericExpectations));
 
                 break;
             case "integer":
-                var intExpectations = assignmentTestCase.expectedAssignments.ConvertAll(x => x);
+                var intExpectations = assignmentTestCase.expectedAssignments.ConvertAll(x => (long?)x);
                 Assert.That(GetIntegerAssignments(assignmentTestCase), Is.EqualTo(intExpectations));
 
                 break;
             case "string":
-                var stringExpectations = assignmentTestCase.expectedAssignments.ConvertAll(x => x);
+                var stringExpectations = assignmentTestCase.expectedAssignments.ConvertAll(x => (string?)x);
                 Assert.That(GetStringAssignments(assignmentTestCase), Is.EqualTo(stringExpectations));
 
                 break;
