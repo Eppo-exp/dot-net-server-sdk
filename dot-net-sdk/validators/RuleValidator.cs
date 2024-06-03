@@ -82,7 +82,6 @@ public static partial class RuleValidator
             else if (subjectAttributes.TryGetValue(condition.Attribute, out Object? outVal))
             {
                 var value = new HasEppoValue(outVal!); // Assuming non-null for simplicity, handle nulls as necessary
-                var value = new HasEppoValue(outVal!); // Assuming non-null for simplicity, handle nulls as necessary
 
                 switch (condition.Operator)
                 {
