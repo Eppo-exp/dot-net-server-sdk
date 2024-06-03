@@ -20,7 +20,7 @@ public static partial class RuleValidator
     {
         if (!flag.enabled) return null;
 
-        var now = DateTimeOffset.Now;
+        var now = DateTimeOffset.Now.ToUniversalTime();
         foreach (var allocation in flag.allocations)
         {
             if (allocation.startAt.HasValue && allocation.startAt.Value > now || allocation.endAt.HasValue && allocation.endAt.Value < now)
