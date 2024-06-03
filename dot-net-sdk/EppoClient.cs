@@ -109,8 +109,7 @@ public class EppoClient
         return assignment;
     }
 
-    public static EppoClient Init(EppoClientConfig eppoClientConfig, bool startPolling = true)
-    
+    public static EppoClient Init(EppoClientConfig eppoClientConfig)
     {
         lock (Baton)
         {
@@ -144,7 +143,7 @@ public class EppoClient
 
             var fetchExperimentsTask = new FetchExperimentsTask(configurationStore, Constants.TIME_INTERVAL_IN_MILLIS,
                 Constants.JITTER_INTERVAL_IN_MILLIS);
-            if (startPolling) fetchExperimentsTask.Run();
+            fetchExperimentsTask.Run();
             _client = new EppoClient(configurationStore, eppoClientConfig, fetchExperimentsTask);
         }
 
