@@ -37,7 +37,7 @@ public class EppoClient
         if (HasEppoValue.IsNullValue(result)) return eppoDefaultValue;
         var assignment = result!;
         if (assignment.Type != expectedValueType) {
-            Logger.Warn($"Expected type {expectedValueType} does not match parsed type {assignment.Type}");
+            Logger.Warn($"[Eppo SDK] Expected type {expectedValueType} does not match parsed type {assignment.Type}");
             return eppoDefaultValue;
         }
         return assignment;
@@ -92,6 +92,7 @@ public class EppoClient
         var result = RuleValidator.EvaluateFlag(configuration, subjectKey, subjectAttributes);
         if (result == null)
         {
+            Logger.Info("[Eppo SDK] No assigned variation. The subject attributes did not match any targeting rules");
             return null;
         }
 
@@ -99,6 +100,7 @@ public class EppoClient
 
         if (HasEppoValue.IsNullValue(assignment))
         {
+            Logger.Warn("[Eppo SDK] Assigned varition is null");
             return null;
         }
 

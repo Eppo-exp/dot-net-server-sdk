@@ -53,7 +53,6 @@ public class EppoHttpClient
     {
         _defaultParams.ToList().ForEach(x => parameters.Add(x.Key, x.Value));
 
-var fullURL = _baseUrl + url;
         var request = new RestRequest
         {
             Timeout = _requestTimeOutMillis
