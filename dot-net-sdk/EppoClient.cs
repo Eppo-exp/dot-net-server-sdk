@@ -1,4 +1,5 @@
-﻿using eppo_sdk.constants;
+﻿using System.Linq.Expressions;
+using eppo_sdk.constants;
 using eppo_sdk.dto;
 using eppo_sdk.exception;
 using eppo_sdk.helpers;
@@ -30,31 +31,42 @@ public class EppoClient
         _fetchExperimentsTask = fetchExperimentsTask;
     }
 
+    private HasEppoValue _typeCheckedAssignment(string flagKey, string subjectKey, Subject subjectAttributes, EppoValueType expectedValueType, object defaultValue) {
+        var result = GetAssignment(flagKey, subjectKey, subjectAttributes);
+        var eppoDefaultValue = new HasEppoValue(defaultValue);
+        if (HasEppoValue.IsNullValue(result)) return eppoDefaultValue;
+        var assignment = result!;
+        if (assignment.Type != expectedValueType) {
+            Logger.Warn($"Expected type {expectedValueType} does not match parsed type {assignment.Type}");
+            return eppoDefaultValue;
+        }
+        return assignment;
+    }
     public JObject GetJsonAssignment(string flagKey, string subjectKey, Subject subjectAttributes, JObject defaultValue)
     {
-        return GetAssignment(flagKey, subjectKey, subjectAttributes ?? new Subject())?.JsonValue() ?? defaultValue;
+        return _typeCheckedAssignment(flagKey, subjectKey, subjectAttributes, EppoValueType.JSON, defaultValue).JsonValue();
     }
 
     public bool GetBoolAssignment(string flagKey, string subjectKey, Subject subjectAttributes, bool defaultValue)
     {
-        return GetAssignment(flagKey, subjectKey, subjectAttributes ?? new Subject())?.BoolValue() ?? defaultValue;
+        return _typeCheckedAssignment(flagKey, subjectKey, subjectAttributes, EppoValueType.BOOLEAN, defaultValue).BoolValue();
     }
 
     public double GetNumericAssignment(string flagKey, string subjectKey, Subject subjectAttributes, double defaultValue)
     {
-        return GetAssignment(flagKey, subjectKey, subjectAttributes ?? new Subject())?.DoubleValue() ?? defaultValue;
+        return _typeCheckedAssignment(flagKey, subjectKey, subjectAttributes, EppoValueType.NUMERIC, defaultValue).DoubleValue();
     }
 
 
     public long GetIntegerAssignment(string flagKey, string subjectKey, Subject subjectAttributes, long defaultValue)
     {
-        return GetAssignment(flagKey, subjectKey, subjectAttributes ?? new Subject())?.IntegerValue() ?? defaultValue;
+        return _typeCheckedAssignment(flagKey, subjectKey, subjectAttributes, EppoValueType.INTEGER, defaultValue).IntegerValue();
     }
 
 
     public string GetStringAssignment(string flagKey, string subjectKey, Subject subjectAttributes, string defaultValue)
     {
-        return GetAssignment(flagKey, subjectKey, subjectAttributes ?? new Subject())?.StringValue() ?? defaultValue;
+        return _typeCheckedAssignment(flagKey, subjectKey, subjectAttributes, EppoValueType.STRING, defaultValue).StringValue();
     }
 
 
