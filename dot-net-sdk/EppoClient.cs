@@ -30,31 +30,31 @@ public class EppoClient
         _fetchExperimentsTask = fetchExperimentsTask;
     }
 
-    public JObject? GetJsonAssignment(string flagKey, string subjectKey, Subject? subjectAttributes = null)
+    public JObject GetJsonAssignment(string flagKey, string subjectKey, Subject subjectAttributes, JObject defaultValue)
     {
-        return GetAssignment(flagKey, subjectKey, subjectAttributes ?? new Subject())?.JsonValue();
+        return GetAssignment(flagKey, subjectKey, subjectAttributes ?? new Subject())?.JsonValue() ?? defaultValue;
     }
 
-    public bool? GetBoolAssignment(string flagKey, string subjectKey, Subject? subjectAttributes = null)
+    public bool GetBoolAssignment(string flagKey, string subjectKey, Subject subjectAttributes, bool defaultValue)
     {
-        return GetAssignment(flagKey, subjectKey, subjectAttributes ?? new Subject())?.BoolValue();
+        return GetAssignment(flagKey, subjectKey, subjectAttributes ?? new Subject())?.BoolValue() ?? defaultValue;
     }
 
-    public double? GetNumericAssignment(string flagKey, string subjectKey, Subject? subjectAttributes = null)
+    public double GetNumericAssignment(string flagKey, string subjectKey, Subject subjectAttributes, double defaultValue)
     {
-        return GetAssignment(flagKey, subjectKey, subjectAttributes ?? new Subject())?.DoubleValue();
-    }
-
-
-    public long? GetIntegerAssignment(string flagKey, string subjectKey, Subject? subjectAttributes = null)
-    {
-        return GetAssignment(flagKey, subjectKey, subjectAttributes ?? new Subject())?.IntegerValue();
+        return GetAssignment(flagKey, subjectKey, subjectAttributes ?? new Subject())?.DoubleValue() ?? defaultValue;
     }
 
 
-    public string? GetStringAssignment(string flagKey, string subjectKey, Subject? subjectAttributes = null)
+    public long GetIntegerAssignment(string flagKey, string subjectKey, Subject subjectAttributes, long defaultValue)
     {
-        return GetAssignment(flagKey, subjectKey, subjectAttributes ?? new Subject())?.StringValue();
+        return GetAssignment(flagKey, subjectKey, subjectAttributes ?? new Subject())?.IntegerValue() ?? defaultValue;
+    }
+
+
+    public string GetStringAssignment(string flagKey, string subjectKey, Subject subjectAttributes, string defaultValue)
+    {
+        return GetAssignment(flagKey, subjectKey, subjectAttributes ?? new Subject())?.StringValue() ?? defaultValue;
     }
 
 

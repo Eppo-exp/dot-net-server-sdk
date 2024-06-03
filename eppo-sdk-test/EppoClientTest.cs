@@ -22,7 +22,7 @@ public class EppoClientTest
         {
             BaseUrl = _mockServer?.Urls[0]!
         };
-        EppoClient.Init(config, startPolling: true);
+        EppoClient.Init(config);
     }
 
     private void SetupMockServer()
@@ -60,17 +60,17 @@ public class EppoClientTest
             case (EppoValueType.BOOLEAN):
                 var boolExpectations = assignmentTestCase.Subjects.ConvertAll(x => (bool?)x.Assignment);
                 var assignments = assignmentTestCase.Subjects.ConvertAll(subject =>
-                    client.GetBoolAssignment(assignmentTestCase.Flag, subject.SubjectKey, subject.SubjectAttributes));
+                    client.GetBoolAssignment(assignmentTestCase.Flag, subject.SubjectKey, subject.SubjectAttributes, (bool)assignmentTestCase.DefaultValue));
 
-                Assert.That(assignments, Is.EqualTo(boolExpectations));
+                Assert.That(assignments, Is.EqualTo(boolExpectations), $"Unexpected values for test file: {assignmentTestCase.TestCaseFile}");
 
                 break;
             case (EppoValueType.INTEGER):
                 var longExpectations = assignmentTestCase.Subjects.ConvertAll(x => (long?)x.Assignment);
                 var longAssignments = assignmentTestCase.Subjects.ConvertAll(subject =>
-                    client.GetIntegerAssignment(assignmentTestCase.Flag, subject.SubjectKey, subject.SubjectAttributes));
+                    client.GetIntegerAssignment(assignmentTestCase.Flag, subject.SubjectKey, subject.SubjectAttributes, (long)assignmentTestCase.DefaultValue));
 
-                Assert.That(longAssignments, Is.EqualTo(longExpectations));
+                Assert.That(longAssignments, Is.EqualTo(longExpectations), $"Unexpected values for test file: {assignmentTestCase.TestCaseFile}");
 
                 break;
 
@@ -149,12 +149,17 @@ public class EppoClientTest
     //         client.GetStringAssignment(subject, assignmentTestCase.experiment));
     // }
 
-    private static List<AssignmentTestCase?> GetTestAssignmentData()
+    private static List<AssignmentTestCase> GetTestAssignmentData()
     {
         var dir = new DirectoryInfo(Environment.CurrentDirectory).Parent?.Parent?.Parent?.FullName;
-        return Directory.EnumerateFiles($"{dir}/files/ufc/tests", "*.json")
-            .Select(File.ReadAllText)
-            .Select(JsonConvert.DeserializeObject<AssignmentTestCase>).ToList();
+        var files = Directory.EnumerateFiles($"{dir}/files/ufc/tests", "*.json");
+        var testCases = new List<AssignmentTestCase>(){};
+        foreach (var file in files) {
+            var atc = JsonConvert.DeserializeObject<AssignmentTestCase>(File.ReadAllText(file))!;
+            atc.TestCaseFile = file;
+            testCases.Add(atc);
+        }
+        return testCases;
     }
 }
 
@@ -172,6 +177,7 @@ public class AssignmentTestCase
     public required string Flag { get; set; }
     public EppoValueType VariationType { get; set; } = EppoValueType.STRING;
     public required object DefaultValue;
+    public string? TestCaseFile;
 
     public required List<SubjectTestRecord> Subjects { get; set; }
 

@@ -28,9 +28,7 @@ public static partial class RuleValidator
                 continue;
             }
 
-            if (!subjectAttributes.TryAdd("id", subjectKey)) {
-                Logger.Warn($"`id` {subjectKey} already added to subject attributes");
-            }
+            subjectAttributes["id"] = subjectKey;
 
             if (allocation.rules.Count == 0 || MatchesAnyRule(allocation.rules, subjectAttributes))
             {
