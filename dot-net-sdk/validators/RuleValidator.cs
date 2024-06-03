@@ -30,7 +30,7 @@ public static partial class RuleValidator
 
             subjectAttributes["id"] = subjectKey;
 
-            if (allocation.rules.Count == 0 || MatchesAnyRule(allocation.rules, subjectAttributes))
+            if (allocation?.rules == null || allocation.rules.Count == 0 || MatchesAnyRule(allocation.rules, subjectAttributes))
             {
                 foreach (var split in allocation.splits)
                 {
