@@ -3,6 +3,7 @@ using eppo_sdk;
 using eppo_sdk.dto;
 using eppo_sdk.logger;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using WireMock.Matchers;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
@@ -63,7 +64,6 @@ public class EppoClientTest
                     client.GetBoolAssignment(assignmentTestCase.Flag, subject.SubjectKey, subject.SubjectAttributes, (bool)assignmentTestCase.DefaultValue));
 
                 Assert.That(assignments, Is.EqualTo(boolExpectations), $"Unexpected values for test file: {assignmentTestCase.TestCaseFile}");
-
                 break;
             case (EppoValueType.INTEGER):
                 var longExpectations = assignmentTestCase.Subjects.ConvertAll(x => (long?)x.Assignment);
@@ -71,85 +71,33 @@ public class EppoClientTest
                     client.GetIntegerAssignment(assignmentTestCase.Flag, subject.SubjectKey, subject.SubjectAttributes, (long)assignmentTestCase.DefaultValue));
 
                 Assert.That(longAssignments, Is.EqualTo(longExpectations), $"Unexpected values for test file: {assignmentTestCase.TestCaseFile}");
-
                 break;
-
             case (EppoValueType.JSON):
-                // var longExpectations = assignmentTestCase.Subjects.ConvertAll(x => (long?)x.Assignment);
-                // var longAssignments = assignmentTestCase.Subjects.ConvertAll(subject =>
-                //     client.GetIntegerAssignment(assignmentTestCase.Flag, subject.SubjectKey, subject.SubjectAttributes));
+                var jsonExpectations = assignmentTestCase.Subjects.ConvertAll(x => (JObject)x.Assignment);
+                var jsonAssignments = assignmentTestCase.Subjects.ConvertAll(subject =>
+                    client.GetJsonAssignment(assignmentTestCase.Flag, subject.SubjectKey, subject.SubjectAttributes, (JObject)assignmentTestCase.DefaultValue));
 
-                // Assert.That(longAssignments, Is.EqualTo(longExpectations));
-
+                Assert.That(jsonAssignments, Is.EqualTo(jsonExpectations), $"Unexpected values for test file: {assignmentTestCase.TestCaseFile}");
                 break;
-            // case (EppoValueType.NUMERIC):
-            //     var numExpectation = assignmentTestCase.Subjects.ConvertAll(x => (double?)x.Assignment);
-            //     var numAssignments = assignmentTestCase.Subjects.ConvertAll(subject =>
-            //         client.GetNumericAssignment(assignmentTestCase.Flag, subject.SubjectKey, subject.SubjectAttributes));
+            case (EppoValueType.NUMERIC):
+                var numExpectations = assignmentTestCase.Subjects.ConvertAll(x => (double?)x.Assignment);
+                var numAssignments = assignmentTestCase.Subjects.ConvertAll(subject =>
+                    client.GetNumericAssignment(assignmentTestCase.Flag, subject.SubjectKey, subject.SubjectAttributes, (double)assignmentTestCase.DefaultValue));
 
-            //     Assert.That(numAssignments, Is.EqualTo(numExpectation));
+                Assert.That(numAssignments, Is.EqualTo(numExpectations), $"Unexpected values for test file: {assignmentTestCase.TestCaseFile}");
+                break;
+            case (EppoValueType.STRING):
+                var stringExpectations = assignmentTestCase.Subjects.ConvertAll(x => (string)x.Assignment);
+                var stringAssignments = assignmentTestCase.Subjects.ConvertAll(subject =>
+                    client.GetStringAssignment(assignmentTestCase.Flag, subject.SubjectKey, subject.SubjectAttributes, (string)assignmentTestCase.DefaultValue));
 
-            //     break;
-            // case "number":
-            //     var numericExpectations = assignmentTestCase.expectedAssignments.ConvertAll(x => (double?)x);
-            //     Assert.That(GetNumericAssignments(assignmentTestCase), Is.EqualTo(numericExpectations));
-
-            //     break;
-            // case "integer":
-            //     var intExpectations = assignmentTestCase.expectedAssignments.ConvertAll(x => (long?)x);
-            //     Assert.That(GetIntegerAssignments(assignmentTestCase), Is.EqualTo(intExpectations));
-
-            //     break;
-            // case "string":
-            //     var stringExpectations = assignmentTestCase.expectedAssignments.ConvertAll(x => (string?)x);
-            //     Assert.That(GetStringAssignments(assignmentTestCase), Is.EqualTo(stringExpectations));
-
-            //     break;
+                Assert.That(stringAssignments, Is.EqualTo(stringExpectations), $"Unexpected values for test file: {assignmentTestCase.TestCaseFile}");
+                break;
         }
-        Console.WriteLine(assignmentTestCase);
     }
 
 
-    // private static List<double?> GetNumericAssignments(AssignmentTestCase assignmentTestCase)
-    // {
-    //     var client = EppoClient.GetInstance();
-    //     if (assignmentTestCase.subjectsWithAttributes != null)
-    //     {
-    //         return assignmentTestCase.subjectsWithAttributes.ConvertAll(subject => client.GetNumericAssignment(subject.subjectKey, assignmentTestCase.experiment,
-    //             subject.subjectAttributes));
-    //     }
-
-    //     return assignmentTestCase.subjects.ConvertAll(subject =>
-    //         client.GetNumericAssignment(subject, assignmentTestCase.experiment));
-    // }
-
-    // private static List<long?> GetIntegerAssignments(AssignmentTestCase assignmentTestCase)
-    // {
-    //     var client = EppoClient.GetInstance();
-    //     if (assignmentTestCase.subjectsWithAttributes != null)
-    //     {
-    //         return assignmentTestCase.subjectsWithAttributes.ConvertAll(subject => client.GetIntegerAssignment(subject.subjectKey, assignmentTestCase.experiment,
-    //             subject.subjectAttributes));
-    //     }
-
-    //     return assignmentTestCase.subjects.ConvertAll(subject =>
-    //         client.GetIntegerAssignment(subject, assignmentTestCase.experiment));
-    // }
-
-    // private static List<string?> GetStringAssignments(AssignmentTestCase assignmentTestCase)
-    // {
-    //     var client = EppoClient.GetInstance();
-    //     if (assignmentTestCase.subjectsWithAttributes != null)
-    //     {
-    //         return assignmentTestCase.subjectsWithAttributes.ConvertAll(subject => client.GetStringAssignment(subject.subjectKey, assignmentTestCase.experiment,
-    //             subject.subjectAttributes));
-    //     }
-
-    //     return assignmentTestCase.subjects.ConvertAll(subject =>
-    //         client.GetStringAssignment(subject, assignmentTestCase.experiment));
-    // }
-
-    private static List<AssignmentTestCase> GetTestAssignmentData()
+    static List<AssignmentTestCase> GetTestAssignmentData()
     {
         var dir = new DirectoryInfo(Environment.CurrentDirectory).Parent?.Parent?.Parent?.FullName;
         var files = Directory.EnumerateFiles($"{dir}/files/ufc/tests", "*.json");
