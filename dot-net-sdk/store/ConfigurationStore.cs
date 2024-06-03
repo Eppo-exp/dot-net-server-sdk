@@ -32,16 +32,16 @@ public class ConfigurationStore : IConfigurationStore
         return _instance;
     }
 
-    public void SetExperimentConfiguration(string key, ExperimentConfiguration experimentConfiguration)
+    public void SetExperimentConfiguration(string key, Flag experimentConfiguration)
     {
         _experimentConfigurationCache.Set(key, experimentConfiguration, new MemoryCacheEntryOptions().SetSize(1));
     }
 
-    public ExperimentConfiguration? GetExperimentConfiguration(string key)
+    public Flag? GetExperimentConfiguration(string key)
     {
         try
         {
-            if (_experimentConfigurationCache.TryGetValue(key, out ExperimentConfiguration? result))
+            if (_experimentConfigurationCache.TryGetValue(key, out Flag? result))
             {
                 return result;
             }

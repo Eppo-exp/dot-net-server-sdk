@@ -8,14 +8,14 @@ public class AssignmentLogData
     public string variation;
     public DateTime timestamp;
     public string subject;
-    public SubjectAttributes subjectAttributes;
+    public Subject subjectAttributes;
 
     public AssignmentLogData(
         string featureFlag,
         string allocation,
         string variation,
         string subject,
-        SubjectAttributes subjectAttributes)
+        Subject subjectAttributes)
     {
         this.experiment = featureFlag + "-" + allocation;
         this.featureFlag = featureFlag;

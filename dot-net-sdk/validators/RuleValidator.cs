@@ -4,6 +4,8 @@ using static eppo_sdk.dto.OperatorType;
 using NuGet.Versioning;
 using eppo_sdk.helpers;
 using eppo_sdk.exception;
+using Microsoft.Extensions.Logging;
+using NLog;
 
 namespace eppo_sdk.validators;
 
@@ -11,11 +13,14 @@ namespace eppo_sdk.validators;
 
 public static partial class RuleValidator
 {
-    public static FlagEvaluation? EvaluateFlag(Flag flag, string subjectKey, SubjectAttributes subjectAttributes)
+
+    private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+
+    public static FlagEvaluation? EvaluateFlag(Flag flag, string subjectKey, Subject subjectAttributes)
     {
         if (!flag.enabled) return null;
 
-        var now = DateTimeOffset.Now.ToUnixTimeSeconds();
+        var now = DateTimeOffset.Now;
         foreach (var allocation in flag.allocations)
         {
             if (allocation.startAt.HasValue && allocation.startAt.Value > now || allocation.endAt.HasValue && allocation.endAt.Value < now)
@@ -23,7 +28,9 @@ public static partial class RuleValidator
                 continue;
             }
 
-            subjectAttributes.Add("id", subjectKey);
+            if (!subjectAttributes.TryAdd("id", subjectKey)) {
+                Logger.Warn($"`id` {subjectKey} already added to subject attributes");
+            }
 
             if (allocation.rules.Count == 0 || MatchesAnyRule(allocation.rules, subjectAttributes))
             {
@@ -58,13 +65,13 @@ public static partial class RuleValidator
         return shard.ranges.Any(range => Sharder.IsInRange(subjectBucket, range));
     }
 
-    private static bool MatchesAnyRule(IEnumerable<Rule> rules, SubjectAttributes subject) => rules.Any() && FindMatchingRule(subject, rules) != null;
+    private static bool MatchesAnyRule(IEnumerable<Rule> rules, Subject subject) => rules.Any() && FindMatchingRule(subject, rules) != null;
 
-    public static Rule? FindMatchingRule(SubjectAttributes subjectAttributes, IEnumerable<Rule> rules) => rules.FirstOrDefault(rule => MatchesRule(subjectAttributes, rule));
+    public static Rule? FindMatchingRule(Subject subjectAttributes, IEnumerable<Rule> rules) => rules.FirstOrDefault(rule => MatchesRule(subjectAttributes, rule));
 
-    private static bool MatchesRule(SubjectAttributes subjectAttributes, Rule rule) => rule.conditions.All(condition => EvaluateCondition(subjectAttributes, condition));
+    private static bool MatchesRule(Subject subjectAttributes, Rule rule) => rule.conditions.All(condition => EvaluateCondition(subjectAttributes, condition));
 
-    private static bool EvaluateCondition(SubjectAttributes subjectAttributes, Condition condition)
+    private static bool EvaluateCondition(Subject subjectAttributes, Condition condition)
     {
         try
         {

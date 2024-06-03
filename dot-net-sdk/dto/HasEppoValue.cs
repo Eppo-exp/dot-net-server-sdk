@@ -51,7 +51,7 @@ public class HasEppoValue
     }
     public bool BoolValue() => _nonNullValue<bool>((o) => (bool)o);
     public double DoubleValue() => _nonNullValue(Convert.ToDouble);
-    public long IntegerValue() => _nonNullValue<long>((o) => (long)o);
+    public long IntegerValue() => _nonNullValue<long>(Convert.ToInt64);
 
     public string StringValue() => _nonNullValue<string>((o) => (string)o);
     public List<string> ArrayValue() => _nonNullValue<List<string>>((object o) =>
@@ -79,7 +79,7 @@ public class HasEppoValue
         }
         else if (value is float || value is double || value is Double || value is float)
         {
-            return EppoValueType.NUMBER;
+            return EppoValueType.NUMERIC;
 
         }
         else if (value is int || value is long || value is BigInteger)
@@ -106,7 +106,7 @@ public class HasEppoValue
 
     public static HasEppoValue Bool(string? value) => new(value, EppoValueType.BOOLEAN);
     public static HasEppoValue Bool(bool value) => new(value, EppoValueType.BOOLEAN);
-    public static HasEppoValue Number(string value) => new(value, EppoValueType.NUMBER);
+    public static HasEppoValue Number(string value) => new(value, EppoValueType.NUMERIC);
     public static HasEppoValue String(string? value) => new(value, EppoValueType.STRING);
     public static HasEppoValue Integer(string value) => new(value, EppoValueType.INTEGER);
     public static HasEppoValue Null() => new();
@@ -131,7 +131,7 @@ public class HasEppoValue
         this.Value = array;
     }
 
-    public bool IsNumeric() => _type == EppoValueType.NUMBER || _type == EppoValueType.INTEGER;
+    public bool IsNumeric() => _type == EppoValueType.NUMERIC || _type == EppoValueType.INTEGER;
 
     public bool IsNull() => EppoValueType.NULL.Equals(Type);
 

@@ -12,7 +12,7 @@ public class AssignmentLogDataTest
             "allocation",
             "variation",
             "subject",
-            new SubjectAttributes());
+            new Subject());
         Assert.That(assignmentLogData.experiment, Is.EqualTo("feature-flag-allocation"));
     }
 }

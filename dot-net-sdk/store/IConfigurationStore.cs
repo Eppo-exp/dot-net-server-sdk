@@ -5,6 +5,6 @@ namespace eppo_sdk.store;
 public interface IConfigurationStore
 {
     void FetchExperimentConfiguration();
-    ExperimentConfiguration? GetExperimentConfiguration(string key);
-    void SetExperimentConfiguration(string key, ExperimentConfiguration experimentConfiguration);
+    Flag? GetExperimentConfiguration(string key);
+    void SetExperimentConfiguration(string key, Flag experimentConfiguration);
 }

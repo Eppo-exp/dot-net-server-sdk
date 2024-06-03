@@ -11,7 +11,7 @@ public class RuleValidatorTest
         var ruleWithEmptyConditions = CreateRule(new List<Condition>());
 
         var rules = new List<Rule> { ruleWithEmptyConditions };
-        var subjectAttributes = new SubjectAttributes();
+        var subjectAttributes = new Subject();
         AddNameToSubjectAttribute(subjectAttributes);
 
         Assert.That(ruleWithEmptyConditions, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
@@ -21,7 +21,7 @@ public class RuleValidatorTest
     public void ShouldMatchAnyRuleWithEmptyRules()
     {
         var rules = new List<Rule>();
-        var subjectAttributes = new SubjectAttributes();
+        var subjectAttributes = new Subject();
         AddNameToSubjectAttribute(subjectAttributes);
 
         Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.Null);
@@ -35,7 +35,7 @@ public class RuleValidatorTest
         AddNumericConditionToRule(rule);
         rules.Add(rule);
 
-        var subjectAttributes = new SubjectAttributes();
+        var subjectAttributes = new Subject();
         AddPriceToSubjectAttribute(subjectAttributes);
 
         Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.Null);
@@ -50,7 +50,7 @@ public class RuleValidatorTest
         AddSemVerConditionToRule(rule);
         rules.Add(rule);
 
-        var subjectAttributes = new SubjectAttributes
+        var subjectAttributes = new Subject
         {
             { "price",  15 },
             { "appVersion", "1.15.0" }
@@ -67,7 +67,7 @@ public class RuleValidatorTest
         AddNumericConditionToRule(rule);
         rules.Add(rule);
 
-        var subjectAttributes = new SubjectAttributes { { "price", "abcd" } };
+        var subjectAttributes = new Subject { { "price", "abcd" } };
 
         Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.Null);
     }
@@ -80,7 +80,7 @@ public class RuleValidatorTest
         AddRegexConditionToRule(rule);
         rules.Add(rule);
 
-        var subjectAttributes = new SubjectAttributes { { "match", "abcd" } };
+        var subjectAttributes = new Subject { { "match", "abcd" } };
 
         Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
     }
@@ -93,7 +93,7 @@ public class RuleValidatorTest
         AddRegexConditionToRule(rule);
         rules.Add(rule);
 
-        var subjectAttributes = new SubjectAttributes { { "match", "123" } };
+        var subjectAttributes = new Subject { { "match", "123" } };
 
         Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.Null);
     }
@@ -106,7 +106,7 @@ public class RuleValidatorTest
         AddOneOfCondition(rule);
         rules.Add(rule);
 
-        var subjectAttributes = new SubjectAttributes { { "oneOf", "value2" } };
+        var subjectAttributes = new Subject { { "oneOf", "value2" } };
 
         Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
     }
@@ -119,7 +119,7 @@ public class RuleValidatorTest
         AddOneOfCondition(rule);
         rules.Add(rule);
 
-        var subjectAttributes = new SubjectAttributes { { "oneOf", "value3" } };
+        var subjectAttributes = new Subject { { "oneOf", "value3" } };
 
         Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.Null);
     }
@@ -132,7 +132,7 @@ public class RuleValidatorTest
         AddNotOneOfCondition(rule);
         rules.Add(rule);
 
-        var subjectAttributes = new SubjectAttributes { { "oneOf", "value3" } };
+        var subjectAttributes = new Subject { { "oneOf", "value3" } };
 
         Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.EqualTo(rule));
     }
@@ -145,7 +145,7 @@ public class RuleValidatorTest
         AddNotOneOfCondition(rule);
         rules.Add(rule);
 
-        var subjectAttributes = new SubjectAttributes { { "oneOf", "value1" } };
+        var subjectAttributes = new Subject { { "oneOf", "value1" } };
 
         Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.Null);
     }
@@ -158,7 +158,7 @@ public class RuleValidatorTest
         AddIsNullCondition(rule, true);
         rules.Add(rule);
 
-        var subjectAttributes = new SubjectAttributes { { "isnull", null } };
+        var subjectAttributes = new Subject { { "isnull", null } };
 
         Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
     }
@@ -171,7 +171,7 @@ public class RuleValidatorTest
         AddIsNullCondition(rule, true);
         rules.Add(rule);
 
-        var subjectAttributes = new SubjectAttributes { { "isnull", null } };
+        var subjectAttributes = new Subject { { "isnull", null } };
 
         Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
     }
@@ -185,7 +185,7 @@ public class RuleValidatorTest
         AddIsNullCondition(rule, true);
         rules.Add(rule);
 
-        var subjectAttributes = new SubjectAttributes { };
+        var subjectAttributes = new Subject { };
 
         Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
     }
@@ -198,7 +198,7 @@ public class RuleValidatorTest
         AddIsNullCondition(rule, false);
         rules.Add(rule);
 
-        var subjectAttributes = new SubjectAttributes { { "isnull", "not null" } };
+        var subjectAttributes = new Subject { { "isnull", "not null" } };
 
         Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
     }
@@ -211,7 +211,7 @@ public class RuleValidatorTest
         AddIsNullCondition(rule, true);
         rules.Add(rule);
 
-        var subjectAttributes = new SubjectAttributes { { "isnull", "not null" } };
+        var subjectAttributes = new Subject { { "isnull", "not null" } };
 
         Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.Null);
     }
@@ -224,7 +224,7 @@ public class RuleValidatorTest
         AddIsNullCondition(rule, false);
         rules.Add(rule);
 
-        var subjectAttributes = new SubjectAttributes { { "isnull", null } };
+        var subjectAttributes = new Subject { { "isnull", null } };
 
         Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.Null);
     }
@@ -245,7 +245,7 @@ public class RuleValidatorTest
             new("occupation",OperatorType.MATCHES, "musician"),
             new("albumCount", OperatorType.GTE, 50)
         });
-    private SubjectAttributes subject;
+    private Subject subject;
     private Variation matchVariation = new("match", "foo");
 
     [SetUp]
@@ -357,16 +357,17 @@ public class RuleValidatorTest
     public void DisabledFlag_ReturnsNull()
     {
         var flag = new Flag("disabled", false, new List<Allocation>(), EppoValueType.BOOLEAN, new Dictionary<string, Variation>(), TotalShards);
-        Assert.Null(RuleValidator.EvaluateFlag(flag, SubjectKey, new SubjectAttributes()));
+        Assert.Null(RuleValidator.EvaluateFlag(flag, SubjectKey, new Subject()));
     }
 
     [Test]
     public void FlagWithInactiveAllocations_ReturnsNull()
     {
 
-        var now = DateTimeOffset.Now.ToUnixTimeSeconds();
-        var overAlloc = new Allocation("over", new List<Rule>(), matchingSplits, false, null, endAt: now - 10000);
-        var futureAlloc = new Allocation("hasntStarted", new List<Rule>(), matchingSplits, false, startAt: now + 60000, null);
+        var now = DateTimeOffset.Now;
+        var overAlloc = new Allocation("over", new List<Rule>(), matchingSplits, false, null, endAt: now.Subtract( new TimeSpan( 0,0,10000)).DateTime );
+
+        var futureAlloc = new Allocation("hasntStarted", new List<Rule>(), matchingSplits, false, startAt: now.Add( new TimeSpan( 0,0,6000)).DateTime, null);
 
         var flag = new Flag(
             "inactive_allocs",
@@ -430,7 +431,7 @@ public class RuleValidatorTest
         rule.conditions.Add(condition);
     }
 
-    private static void AddPriceToSubjectAttribute(SubjectAttributes subjectAttributes)
+    private static void AddPriceToSubjectAttribute(Subject subjectAttributes)
     {
         subjectAttributes.Add("price", "30");
     }
@@ -448,7 +449,7 @@ public class RuleValidatorTest
         rule.conditions.Add(new Condition("appVersion", OperatorType.LTE, "2.2.0"));
     }
 
-    private static void AddNameToSubjectAttribute(SubjectAttributes subjectAttributes)
+    private static void AddNameToSubjectAttribute(Subject subjectAttributes)
     {
         subjectAttributes.Add("name", "test");
     }

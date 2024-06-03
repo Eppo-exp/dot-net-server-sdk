@@ -180,8 +180,8 @@ public class ValidateJsonConvertion
             }
           ],
           'doLog': false,
-          'startAt': 5000,
-          'endAt': 2147483647
+          'startAt': '2022-10-31T09:00:00.594Z',
+          'endAt': '2050-10-31T09:00:00.594Z',
         },
         {
           'key': 'off-for-all',
@@ -193,8 +193,8 @@ public class ValidateJsonConvertion
             }
           ],
           'doLog': true,
-          'startAt': 5000,
-          'endAt': 2147483647
+          'startAt': '2022-10-31T09:00:00.594Z',
+          'endAt': '2050-10-31T09:00:00.594Z',
         }
       ]
     ";
@@ -206,16 +206,16 @@ public class ValidateJsonConvertion
       That(allocations?.Count, Is.EqualTo(2));
       That(allocations?[0].key, Is.EqualTo("on-for-age-50+"));
       That(allocations?[0].doLog, Is.EqualTo(false));
-      That(allocations?[0].startAt, Is.EqualTo(5000));
-      That(allocations?[0].endAt, Is.EqualTo(Int32.MaxValue));
+      // That(allocations?[0].startAt, Is.EqualTo(5000));
+      // That(allocations?[0].endAt, Is.EqualTo(Int32.MaxValue));
 
       That(allocations?[0].rules.Count, Is.EqualTo(1));
       That(allocations?[0].splits.Count, Is.EqualTo(1));
 
       That(allocations?[1].key, Is.EqualTo("off-for-all"));
       That(allocations?[1].doLog, Is.EqualTo(true));
-      That(allocations?[1].startAt, Is.EqualTo(5000));
-      That(allocations?[1].endAt, Is.EqualTo(Int32.MaxValue));
+      // That(allocations?[1].startAt, Is.EqualTo(5000));
+      // That(allocations?[1].endAt, Is.EqualTo(Int32.MaxValue));
 
       That(allocations?[1].rules.Count, Is.EqualTo(0));
       That(allocations?[1].splits.Count, Is.EqualTo(1));

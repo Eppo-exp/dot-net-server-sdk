@@ -30,35 +30,35 @@ public class EppoClient
         _fetchExperimentsTask = fetchExperimentsTask;
     }
 
-    public JObject? GetJsonAssignment(string flagKey, string subjectKey, SubjectAttributes? subjectAttributes = null)
+    public JObject? GetJsonAssignment(string flagKey, string subjectKey, Subject? subjectAttributes = null)
     {
-        return GetAssignment(flagKey, subjectKey, subjectAttributes ?? new SubjectAttributes())?.JsonValue();
+        return GetAssignment(flagKey, subjectKey, subjectAttributes ?? new Subject())?.JsonValue();
     }
 
-    public bool? GetBoolAssignment(string flagKey, string subjectKey, SubjectAttributes? subjectAttributes = null)
+    public bool? GetBoolAssignment(string flagKey, string subjectKey, Subject? subjectAttributes = null)
     {
-        return GetAssignment(flagKey, subjectKey, subjectAttributes ?? new SubjectAttributes())?.BoolValue();
+        return GetAssignment(flagKey, subjectKey, subjectAttributes ?? new Subject())?.BoolValue();
     }
 
-    public double? GetNumericAssignment(string flagKey, string subjectKey, SubjectAttributes? subjectAttributes = null)
+    public double? GetNumericAssignment(string flagKey, string subjectKey, Subject? subjectAttributes = null)
     {
-        return GetAssignment(flagKey, subjectKey, subjectAttributes ?? new SubjectAttributes())?.DoubleValue();
-    }
-
-
-    public long? GetIntegerAssignment(string flagKey, string subjectKey, SubjectAttributes? subjectAttributes = null)
-    {
-        return GetAssignment(flagKey, subjectKey, subjectAttributes ?? new SubjectAttributes())?.IntegerValue();
+        return GetAssignment(flagKey, subjectKey, subjectAttributes ?? new Subject())?.DoubleValue();
     }
 
 
-    public string? GetStringAssignment(string flagKey, string subjectKey, SubjectAttributes? subjectAttributes = null)
+    public long? GetIntegerAssignment(string flagKey, string subjectKey, Subject? subjectAttributes = null)
     {
-        return GetAssignment(flagKey, subjectKey, subjectAttributes ?? new SubjectAttributes())?.StringValue();
+        return GetAssignment(flagKey, subjectKey, subjectAttributes ?? new Subject())?.IntegerValue();
     }
 
 
-    private HasEppoValue? GetAssignment(string flagKey, string subjectKey, SubjectAttributes subjectAttributes)
+    public string? GetStringAssignment(string flagKey, string subjectKey, Subject? subjectAttributes = null)
+    {
+        return GetAssignment(flagKey, subjectKey, subjectAttributes ?? new Subject())?.StringValue();
+    }
+
+
+    private HasEppoValue? GetAssignment(string flagKey, string subjectKey, Subject subjectAttributes)
     {
         InputValidator.ValidateNotBlank(subjectKey, "Invalid argument: subjectKey cannot be blank");
         InputValidator.ValidateNotBlank(flagKey, "Invalid argument: flagKey cannot be blank");
@@ -89,7 +89,7 @@ public class EppoClient
         {
             return null;
         }
-        
+
         try
         {
             _eppoClientConfig.AssignmentLogger
@@ -109,21 +109,8 @@ public class EppoClient
         return assignment;
     }
 
-    private bool IsInExperimentSample(string flagKey, string subjectKey, int subjectShards,
-        float percentageExposure)
-    {
-        var shard = Sharder.GetShard($"exposure-{subjectKey}-{flagKey}", subjectShards);
-        return shard <= percentageExposure * subjectShards;
-    }
-
-    private Variation GetAssignedVariation(string flagKey, string subjectKey, int subjectShards,
-        List<Variation> variations)
-    {
-        var shard = Sharder.GetShard($"assignment-{subjectKey}-{flagKey}", subjectShards);
-        return variations.Find(config => Sharder.IsInRange(shard, config.shardRange))!;
-    }
-
-    public static EppoClient Init(EppoClientConfig eppoClientConfig)
+    public static EppoClient Init(EppoClientConfig eppoClientConfig, bool startPolling = true)
+    
     {
         lock (Baton)
         {
@@ -157,7 +144,7 @@ public class EppoClient
 
             var fetchExperimentsTask = new FetchExperimentsTask(configurationStore, Constants.TIME_INTERVAL_IN_MILLIS,
                 Constants.JITTER_INTERVAL_IN_MILLIS);
-            fetchExperimentsTask.Run();
+            if (startPolling) fetchExperimentsTask.Run();
             _client = new EppoClient(configurationStore, eppoClientConfig, fetchExperimentsTask);
         }
 
