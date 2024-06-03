@@ -13,29 +13,14 @@ public class HasEppoValue
 
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
-    private bool _typed;
-
     private Object? _value;
     public Object? Value
     {
         get { return _value; }
         set
         {
-            if (!_typed)
-            {
-                _type = InferTypeFromValue(value);
-                _value = value;
-            }
-        }
-    }
-    public Object? typedValue
-    {
-        get { return _value; }
-        set
-        {
-            _typed = true;
-            _type = InferTypeFromValue(value);
-            _value = value;
+            _type = InferTypeFromValue(value, out object? typedValue);
+            _value = typedValue ?? value;
         }
     }
     private EppoValueType _type;
@@ -65,8 +50,9 @@ public class HasEppoValue
 
     public JObject JsonValue() => _nonNullValue<JObject>((o) => (JObject)o);
 
-    private static EppoValueType InferTypeFromValue(Object? value)
+    private static EppoValueType InferTypeFromValue(Object? value, out Object? typedValue)
     {
+        typedValue = null;
         if (value == null) return EppoValueType.NULL;
 
         if (value is Array || value.GetType().IsArray || value is JArray || value is List<string> || value is IEnumerable<string>)
@@ -89,6 +75,12 @@ public class HasEppoValue
         }
         else if (value is string || value is String)
         {
+            // This string could be encoded JSON.
+            if (TryGetJObject((string)value, out var jObject))
+            {
+                typedValue = jObject;
+                return EppoValueType.JSON;
+            }
             return EppoValueType.STRING;
         }
         else if (value is JObject)
@@ -101,6 +93,32 @@ public class HasEppoValue
             Logger.Error($"Unexpected value of type {type}");
             Console.WriteLine($"Unexpected value of type {type}");
             return EppoValueType.NULL;
+        }
+    }
+
+    private static bool TryGetJObject(string jsonString, out JObject? jObject)
+    {
+        jObject = null;
+        if (string.IsNullOrWhiteSpace(jsonString))
+        {
+            return false;
+        }
+
+        try
+        {
+            // Attempt to parse the JSON string using JToken.Parse
+            var token = JToken.Parse(jsonString);
+            // Check if the parsed token is of type JObject (represents an object)
+            if (token is JObject @object)
+            {
+                jObject = @object;
+                return true;
+            }
+            return false;
+        }
+        catch (JsonReaderException)
+        {
+            return false;
         }
     }
 
