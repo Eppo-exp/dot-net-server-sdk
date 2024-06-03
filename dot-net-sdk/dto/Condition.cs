@@ -4,6 +4,7 @@ using Newtonsoft.Json.Serialization;
 namespace eppo_sdk.dto;
 
 public class Condition : HasEppoValue
+public class Condition : HasEppoValue
 {
     public string Attribute { get; set; }
 
