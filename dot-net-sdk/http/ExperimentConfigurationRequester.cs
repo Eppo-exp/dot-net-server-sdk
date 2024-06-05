@@ -21,7 +21,7 @@ public class ExperimentConfigurationRequester
         }
         catch (Exception e)
         {
-            logger.Warn($"Unable to Fetch Experiment Configuration: {e.Message}");
+            logger.Warn($"[Eppo SDK] Unable to Fetch Experiment Configuration: {e.Message}");
         }
 
         return null;

@@ -90,8 +90,7 @@ public class HasEppoValue
         else
         {
             Type type = value!.GetType();
-            Logger.Error($"Unexpected value of type {type}");
-            Console.WriteLine($"Unexpected value of type {type}");
+            Logger.Error($"[Eppo SDK] Unexpected value of type {type}");
             return EppoValueType.NULL;
         }
     }

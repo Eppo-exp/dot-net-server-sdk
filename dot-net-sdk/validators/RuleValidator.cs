@@ -4,8 +4,6 @@ using static eppo_sdk.dto.OperatorType;
 using NuGet.Versioning;
 using eppo_sdk.helpers;
 using eppo_sdk.exception;
-using Microsoft.Extensions.Logging;
-using NLog;
 
 namespace eppo_sdk.validators;
 
@@ -13,9 +11,6 @@ namespace eppo_sdk.validators;
 
 public static partial class RuleValidator
 {
-
-    private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-
     public static FlagEvaluation? EvaluateFlag(Flag flag, string subjectKey, Subject subjectAttributes)
     {
         if (!flag.enabled) return null;
