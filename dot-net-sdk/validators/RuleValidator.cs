@@ -147,7 +147,7 @@ public static partial class RuleValidator
                         }
                     case MATCHES:
                         {
-                            return Regex.Match(value.StringValue(), condition.StringValue(), RegexOptions.IgnoreCase).Success;
+                            return Regex.Match(value.StringValue(), condition.StringValue()).Success;
                         }
                     case ONE_OF:
                         {
@@ -170,8 +170,5 @@ public static partial class RuleValidator
 
 internal class Compare
 {
-    public static bool IsOneOf(string a, List<string> arrayValues)
-    {
-        return arrayValues.ConvertAll(v => v.ToLower()).IndexOf(a.ToLower()) >= 0;
-    }
+    public static bool IsOneOf(string a, List<string> arrayValues) => arrayValues.IndexOf(a) >= 0;
 }
