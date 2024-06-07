@@ -4,6 +4,8 @@ using static eppo_sdk.dto.OperatorType;
 using NuGet.Versioning;
 using eppo_sdk.helpers;
 using eppo_sdk.exception;
+using Newtonsoft.Json;
+using System.ComponentModel;
 
 namespace eppo_sdk.validators;
 
@@ -151,11 +153,11 @@ public static partial class RuleValidator
                         }
                     case ONE_OF:
                         {
-                            return Compare.IsOneOf(value.StringValue(), condition.ArrayValue());
+                            return Compare.IsOneOf(value, condition.ArrayValue());
                         }
                     case NOT_ONE_OF:
                         {
-                            return !Compare.IsOneOf(value.StringValue(), condition.ArrayValue());
+                            return !Compare.IsOneOf(value, condition.ArrayValue());
                         }
                 }
             }
@@ -170,5 +172,21 @@ public static partial class RuleValidator
 
 internal class Compare
 {
-    public static bool IsOneOf(string a, List<string> arrayValues) => arrayValues.IndexOf(a) >= 0;
+    public static bool IsOneOf(HasEppoValue value, List<string> arrayValues)
+    {
+        return arrayValues.IndexOf(ToString(value.Value)) >= 0;
+    }
+    private static string ToString(object? obj) {
+        // Simple casting to string except for tricksy floats.
+        if (obj is string v) {
+            return v;
+        } else if (obj is long i) {
+            return Convert.ToString(i);
+        } else if ((obj is double || obj is float) && Math.Truncate((double)obj) == (double)obj) {
+            // Example: 123456789.0 is cast to a more suitable format of int.
+            return Convert.ToString(Convert.ToInt32(obj));
+        }
+        // Cross-SDK standard for encoding other possible value types such as bool, null and list<strings>
+        return JsonConvert.SerializeObject(obj);
+    }
 }
