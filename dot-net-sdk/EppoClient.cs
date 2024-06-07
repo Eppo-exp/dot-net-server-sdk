@@ -31,12 +31,14 @@ public class EppoClient
         _fetchExperimentsTask = fetchExperimentsTask;
     }
 
-    private HasEppoValue _typeCheckedAssignment(string flagKey, string subjectKey, Subject subjectAttributes, EppoValueType expectedValueType, object defaultValue) {
+    private HasEppoValue _typeCheckedAssignment(string flagKey, string subjectKey, Subject subjectAttributes, EppoValueType expectedValueType, object defaultValue)
+    {
         var result = GetAssignment(flagKey, subjectKey, subjectAttributes);
         var eppoDefaultValue = new HasEppoValue(defaultValue);
         if (HasEppoValue.IsNullValue(result)) return eppoDefaultValue;
         var assignment = result!;
-        if (assignment.Type != expectedValueType) {
+        if (assignment.Type != expectedValueType)
+        {
             Logger.Warn($"[Eppo SDK] Expected type {expectedValueType} does not match parsed type {assignment.Type}");
             return eppoDefaultValue;
         }
@@ -47,7 +49,7 @@ public class EppoClient
         return _typeCheckedAssignment(flagKey, subjectKey, subjectAttributes, EppoValueType.JSON, defaultValue).JsonValue();
     }
 
-    public bool GetBoolAssignment(string flagKey, string subjectKey, Subject subjectAttributes, bool defaultValue)
+    public bool GetBooleanAssignment(string flagKey, string subjectKey, Subject subjectAttributes, bool defaultValue)
     {
         return _typeCheckedAssignment(flagKey, subjectKey, subjectAttributes, EppoValueType.BOOLEAN, defaultValue).BoolValue();
     }
@@ -104,22 +106,28 @@ public class EppoClient
             return null;
         }
 
-        try
-        {
-            _eppoClientConfig.AssignmentLogger
-                .LogAssignment(new AssignmentLogData(
+        AssignmentLogData assignmentEvent = new AssignmentLogData(
                     flagKey,
                     result.AllocationKey,
-                    assignment.StringValue() ?? "null",
+                    result.Variation.Key,
                     subjectKey,
-                    subjectAttributes
-                ));
-        }
-        catch (Exception)
-        {
-            // Ignore Exception
-        }
+                    subjectAttributes,
+                    AppDetails.GetInstance().AsDict(),
+                    result.ExtraLogging
+                );
 
+        if (result.DoLog)
+        {
+            try
+            {
+                _eppoClientConfig.AssignmentLogger
+                    .LogAssignment(assignmentEvent);
+            }
+            catch (Exception)
+            {
+                // Ignore Exception
+            }
+        }
         return assignment;
     }
 

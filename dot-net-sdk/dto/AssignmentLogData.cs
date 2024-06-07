@@ -1,28 +1,38 @@
+using System.Reflection.Metadata.Ecma335;
+
 namespace eppo_sdk.dto;
 
-public class AssignmentLogData
+public record AssignmentLogData
 {
-    public string experiment;
-    public string featureFlag;
-    public string allocation;
-    public string variation;
-    public DateTime timestamp;
-    public string subject;
-    public Subject subjectAttributes;
+    public string Experiment;
+    public string FeatureFlag;
+    public string Allocation;
+    public string Variation;
+    public DateTime Timestamp;
+    public string Subject;
+    public Subject SubjectAttributes;
 
-    public AssignmentLogData(
-        string featureFlag,
-        string allocation,
-        string variation,
-        string subject,
-        Subject subjectAttributes)
+    public IReadOnlyDictionary<string, string>? ExtraLogging;
+    public IReadOnlyDictionary<string, string> MetaData;
+
+    public AssignmentLogData(string featureFlag,
+                             string allocation,
+                             string variation,
+                             string subject,
+                             Subject subjectAttributes,
+                             IReadOnlyDictionary<string, string> metaData,
+                             IReadOnlyDictionary<string, string> extraLoggging
+                             
+                             )
     {
-        this.experiment = featureFlag + "-" + allocation;
-        this.featureFlag = featureFlag;
-        this.allocation = allocation;
-        this.variation = variation;
-        this.timestamp = new DateTime();
-        this.subject = subject;
-        this.subjectAttributes = subjectAttributes;
+        this.Experiment = featureFlag + "-" + allocation;
+        this.FeatureFlag = featureFlag;
+        this.Allocation = allocation;
+        this.Variation = variation;
+        this.Timestamp = new DateTime();
+        this.Subject = subject;
+        this.SubjectAttributes = subjectAttributes;
+        MetaData = metaData;
+        ExtraLogging = extraLoggging;
     }
 }

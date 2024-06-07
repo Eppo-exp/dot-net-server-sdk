@@ -65,18 +65,18 @@ public class ValidateJsonConvertion
     {
       That(splits, Is.Not.Null);
       That(splits?.Count, Is.EqualTo(1));
-      That(splits?[0].variationKey, Is.EqualTo("on"));
-      That(splits?[0].shards.Count, Is.EqualTo(2));
-      That(splits?[0].shards[0].salt, Is.EqualTo("some-salt"));
-      That(splits?[0].shards[0].ranges.Count, Is.EqualTo(2));
-      That(splits?[0].shards[0].ranges[0].start, Is.EqualTo(0));
-      That(splits?[0].shards[0].ranges[0].end, Is.EqualTo(2500));
-      That(splits?[0].shards[0].ranges[1].start, Is.EqualTo(2500));
-      That(splits?[0].shards[0].ranges[1].end, Is.EqualTo(9999));
+      That(splits?[0].VariationKey, Is.EqualTo("on"));
+      That(splits?[0].Shards.Count, Is.EqualTo(2));
+      That(splits?[0].Shards[0].salt, Is.EqualTo("some-salt"));
+      That(splits?[0].Shards[0].ranges.Count, Is.EqualTo(2));
+      That(splits?[0].Shards[0].ranges[0].start, Is.EqualTo(0));
+      That(splits?[0].Shards[0].ranges[0].end, Is.EqualTo(2500));
+      That(splits?[0].Shards[0].ranges[1].start, Is.EqualTo(2500));
+      That(splits?[0].Shards[0].ranges[1].end, Is.EqualTo(9999));
 
-      That(splits?[0].shards[1].salt, Is.EqualTo("some-salt-two"));
+      That(splits?[0].Shards[1].salt, Is.EqualTo("some-salt-two"));
 
-      That(splits?[0].extraLogging, Is.EquivalentTo(new Dictionary<string, string>
+      That(splits?[0].ExtraLogging, Is.EquivalentTo(new Dictionary<string, string>
       {
         ["foo"] = "bar",
         ["bar"] = "baz"

@@ -301,21 +301,21 @@ public class RuleValidatorTest
     [Test]
     public void NoMatchingShards_ReturnsFalse()
     {
-        Assert.That(RuleValidator.MatchesAllShards(nonMatchingSplits[0].shards, SubjectKey, TotalShards), Is.False);
+        Assert.That(RuleValidator.MatchesAllShards(nonMatchingSplits[0].Shards, SubjectKey, TotalShards), Is.False);
     }
 
     [Test]
     public void SomeMatchingShards_ReturnsFalse()
     {
-        var allShards = matchingSplits[0].shards;
-        allShards.AddRange(nonMatchingSplits[0].shards);
+        var allShards = matchingSplits[0].Shards;
+        allShards.AddRange(nonMatchingSplits[0].Shards);
         Assert.That(RuleValidator.MatchesAllShards(allShards, SubjectKey, TotalShards), Is.False);
     }
 
     [Test]
     public void MatchesShards_ReturnsTrue()
     {
-        Assert.That(RuleValidator.MatchesAllShards(matchingSplits[0].shards, SubjectKey, TotalShards), Is.True);
+        Assert.That(RuleValidator.MatchesAllShards(matchingSplits[0].Shards, SubjectKey, TotalShards), Is.True);
     }
 
     [Test]

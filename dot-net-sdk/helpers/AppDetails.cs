@@ -4,6 +4,7 @@ namespace eppo_sdk.helpers;
 
 public class AppDetails
 {
+    private const string SDK_LANG = "c#";
     static AppDetails? _instance;
 
     private readonly string? _version;
@@ -36,5 +37,14 @@ public class AppDetails
     public string GetVersion()
     {
         return this._version!;
+    }
+
+    public IReadOnlyDictionary<string, string> AsDict()
+    {
+        return new Dictionary<string, string>() {
+            ["sdkLanguage"] = SDK_LANG,
+            ["sdkName"] = GetName(),
+            ["sdkVersion"] = GetVersion()
+        };
     }
 }

@@ -61,7 +61,7 @@ public class EppoClientTest
             case (EppoValueType.BOOLEAN):
                 var boolExpectations = assignmentTestCase.Subjects.ConvertAll(x => (bool?)x.Assignment);
                 var assignments = assignmentTestCase.Subjects.ConvertAll(subject =>
-                    client.GetBoolAssignment(assignmentTestCase.Flag, subject.SubjectKey, subject.SubjectAttributes, (bool)assignmentTestCase.DefaultValue));
+                    client.GetBooleanAssignment(assignmentTestCase.Flag, subject.SubjectKey, subject.SubjectAttributes, (bool)assignmentTestCase.DefaultValue));
 
                 Assert.That(assignments, Is.EqualTo(boolExpectations), $"Unexpected values for test file: {assignmentTestCase.TestCaseFile}");
                 break;

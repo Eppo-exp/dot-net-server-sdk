@@ -11,31 +11,36 @@ namespace eppo_sdk.validators;
 
 public static partial class RuleValidator
 {
+    private const string SUBJECT_KEY_FIELD = "id";
+
     public static FlagEvaluation? EvaluateFlag(Flag flag, string subjectKey, Subject subjectAttributes)
     {
         if (!flag.enabled) return null;
 
         var now = DateTimeOffset.Now.ToUniversalTime();
-        foreach (var allocation in flag.allocations)
+        foreach (var allocation in flag.Allocations)
         {
             if (allocation.startAt.HasValue && allocation.startAt.Value > now || allocation.endAt.HasValue && allocation.endAt.Value < now)
             {
                 continue;
             }
 
-            subjectAttributes["id"] = subjectKey;
+            if (!subjectAttributes.ContainsKey(SUBJECT_KEY_FIELD))
+            {
+                subjectAttributes[SUBJECT_KEY_FIELD] = subjectKey;
+            }
 
-            if (allocation?.rules == null || allocation.rules.Count == 0 || MatchesAnyRule(allocation.rules, subjectAttributes))
+            if (allocation.rules == null || allocation.rules.Count == 0 || MatchesAnyRule(allocation.rules, subjectAttributes))
             {
                 foreach (var split in allocation.splits)
                 {
-                    if (MatchesAllShards(split.shards, subjectKey, flag.totalShards))
+                    if (MatchesAllShards(split.Shards, subjectKey, flag.totalShards))
                     {
-                        if (flag.variations.TryGetValue(split.variationKey, out Variation variation) && variation != null)
+                        if (flag.variations.TryGetValue(split.VariationKey, out Variation? variation) && variation != null)
                         {
-                            return new FlagEvaluation(variation, allocation.doLog, allocation.key);
+                            return new FlagEvaluation(variation, allocation.doLog, allocation.key, split.ExtraLogging);
                         }
-                        throw new ExperimentConfigurationNotFound($"Variation {split.variationKey} could not be found");
+                        throw new ExperimentConfigurationNotFound($"Variation {split.VariationKey} could not be found");
 
                     }
                 }
