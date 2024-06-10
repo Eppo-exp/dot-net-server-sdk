@@ -76,12 +76,12 @@ public static partial class RuleValidator
         try
         {
             // Operators other than `IS_NULL` need to assume non-null
+                bool isNull = !subjectAttributes.TryGetValue(condition.Attribute, out Object? outVal) || HasEppoValue.IsNullValue(new HasEppoValue(outVal));
             if (condition.Operator == IS_NULL)
             {
-                bool isNull = !subjectAttributes.TryGetValue(condition.Attribute, out Object? outVal) || HasEppoValue.IsNullValue(new HasEppoValue(outVal));
                 return condition.BoolValue() == isNull;
             }
-            else if (subjectAttributes.TryGetValue(condition.Attribute, out Object? outVal))
+            else if (!isNull)
             {
                 var value = new HasEppoValue(outVal!); // Assuming non-null for simplicity, handle nulls as necessary
 
@@ -95,7 +95,7 @@ public static partial class RuleValidator
                             }
 
                             if (NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
-                                NuGetVersion.TryParse(condition.StringValue(), out var conditionSemver))
+                                NuGetVersion.TryParse(Compare.ToString(condition.Value), out var conditionSemver))
                             {
                                 return valueSemver >= conditionSemver;
                             }
@@ -110,7 +110,7 @@ public static partial class RuleValidator
                             }
 
                             if (NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
-                                NuGetVersion.TryParse(condition.StringValue(), out var conditionSemver))
+                                NuGetVersion.TryParse(Compare.ToString(condition.Value), out var conditionSemver))
                             {
                                 return valueSemver > conditionSemver;
                             }
@@ -125,7 +125,7 @@ public static partial class RuleValidator
                             }
 
                             if (NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
-                                NuGetVersion.TryParse(condition.StringValue(), out var conditionSemver))
+                                NuGetVersion.TryParse(Compare.ToString(condition.Value), out var conditionSemver))
                             {
                                 return valueSemver <= conditionSemver;
                             }
@@ -139,8 +139,8 @@ public static partial class RuleValidator
                                 return value.DoubleValue() < condition.DoubleValue();
                             }
 
-                            if (NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
-                                NuGetVersion.TryParse(condition.StringValue(), out var conditionSemver))
+                            if (NuGetVersion.TryParse(Compare.ToString(value.Value), out var valueSemver) &&
+                                NuGetVersion.TryParse(Compare.ToString(condition.Value), out var conditionSemver))
                             {
                                 return valueSemver < conditionSemver;
                             }
@@ -149,7 +149,11 @@ public static partial class RuleValidator
                         }
                     case MATCHES:
                         {
-                            return Regex.Match(value.StringValue(), condition.StringValue()).Success;
+                            return Regex.Match(Compare.ToString(value.Value), Compare.ToString(condition.Value)).Success;
+                        }
+                    case NOT_MATCHES:
+                        {
+                            return !Regex.Match(Compare.ToString(value.Value), Compare.ToString(condition.Value)).Success;
                         }
                     case ONE_OF:
                         {
@@ -174,9 +178,10 @@ internal class Compare
 {
     public static bool IsOneOf(HasEppoValue value, List<string> arrayValues)
     {
-        return arrayValues.IndexOf(ToString(value.Value)) >= 0;
+        var stringyValue = ToString(value.Value);
+        return arrayValues.IndexOf(stringyValue) >= 0;
     }
-    private static string ToString(object? obj) {
+    public static string ToString(object? obj) {
         // Simple casting to string except for tricksy floats.
         if (obj is string v) {
             return v;

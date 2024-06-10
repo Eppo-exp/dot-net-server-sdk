@@ -8,13 +8,13 @@ public class RuleValidatorTest
     [Test]
     public void ShouldMatchAndyRuleWithEmptyCondition()
     {
-        var ruleWithEmptyConditions = CreateRule(new List<Condition>());
+        var rule = CreateRule(new List<Condition>());
 
-        var rules = new List<Rule> { ruleWithEmptyConditions };
+        var rules = new List<Rule> { rule };
         var subjectAttributes = new Subject();
         AddNameToSubjectAttribute(subjectAttributes);
 
-        Assert.That(ruleWithEmptyConditions, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
+        Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.EqualTo(rule));
     }
 
     [Test]
@@ -56,7 +56,7 @@ public class RuleValidatorTest
             { "appVersion", "1.15.0" }
         };
 
-        Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
+        Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.EqualTo(rule));
     }
 
     [Test]
@@ -82,7 +82,33 @@ public class RuleValidatorTest
 
         var subjectAttributes = new Subject { { "match", "abcd" } };
 
-        Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
+        Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.EqualTo(rule));
+    }
+
+    [Test]
+    public void ShouldatchNotMatchesCondition()
+    {
+        var rules = new List<Rule>();
+        Rule rule = CreateRule(new List<Condition>());
+        AddRegexConditionToRule(rule , false); // Use the NOT_MATCHES operator
+        rules.Add(rule);
+
+        var subjectAttributes = new Subject { { "match", "1234" } }; // Regex Condition is [a-z]+
+
+        Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.EqualTo(rule));
+    }
+
+    [Test]
+    public void NotMatchesCondition_NullValue()
+    {
+        var rules = new List<Rule>();
+        Rule rule = CreateRule(new List<Condition>());
+        AddRegexConditionToRule(rule , false); // Use the NOT_MATCHES operator
+        rules.Add(rule);
+
+        var subjectAttributes = new Subject { { "match", null } };
+
+        Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.Null);
     }
 
     [Test]
@@ -108,7 +134,7 @@ public class RuleValidatorTest
 
         var subjectAttributes = new Subject { { "oneOf", "value2" } };
 
-        Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
+        Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.EqualTo(rule));
     }
 
     [Test]
@@ -160,7 +186,7 @@ public class RuleValidatorTest
 
         var subjectAttributes = new Subject { { "isnull", null } };
 
-        Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
+        Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.EqualTo(rule));
     }
 
     [Test]
@@ -173,7 +199,7 @@ public class RuleValidatorTest
 
         var subjectAttributes = new Subject { { "isnull", null } };
 
-        Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
+        Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.EqualTo(rule));
     }
 
 
@@ -187,7 +213,7 @@ public class RuleValidatorTest
 
         var subjectAttributes = new Subject { };
 
-        Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
+        Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.EqualTo(rule));
     }
 
     [Test]
@@ -200,7 +226,7 @@ public class RuleValidatorTest
 
         var subjectAttributes = new Subject { { "isnull", "not null" } };
 
-        Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
+        Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.EqualTo(rule));
     }
 
     [Test]
@@ -425,9 +451,9 @@ public class RuleValidatorTest
 
     }
 
-    private static void AddRegexConditionToRule(Rule rule)
+    private static void AddRegexConditionToRule(Rule rule, bool matches = true)
     {
-        var condition = new Condition("match", OperatorType.MATCHES, "[a-z]+");
+        var condition = new Condition("match", matches ? OperatorType.MATCHES : OperatorType.NOT_MATCHES, "[a-z]+");
         rule.conditions.Add(condition);
     }
 
