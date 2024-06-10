@@ -174,7 +174,7 @@ public static partial class RuleValidator
     }
 }
 
-internal class Compare
+public class Compare
 {
     public static bool IsOneOf(HasEppoValue value, List<string> arrayValues)
     {

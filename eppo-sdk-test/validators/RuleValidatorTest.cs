@@ -1,10 +1,32 @@
 using eppo_sdk.dto;
 using eppo_sdk.validators;
+using Newtonsoft.Json.Linq;
 
 namespace eppo_sdk_test.validators;
 
 public class RuleValidatorTest
 {
+
+    [Test]
+    public void ShouldConvertToString()
+    {
+
+        var someJson = @"{""foo"":""bar"",""bar"":""baz""}"; // The ToString will serialize objects without any indenting.
+        var jObj = JObject.Parse(someJson);
+
+
+        var values = new List<Tuple<object, string>> (){
+            new(true, "true"),
+            new("true", "true"),
+            new(1.0, "1"),
+            new(3, "3"),
+            new(4e3, "4000"),
+            new(1.5, "1.5"),
+            new(jObj, someJson)
+        };
+
+        Assert.That(values.Select( v => Compare.ToString(v.Item1)), Is.EquivalentTo(values.Select(v => v.Item2)));
+    }
     [Test]
     public void ShouldMatchAndyRuleWithEmptyCondition()
     {
