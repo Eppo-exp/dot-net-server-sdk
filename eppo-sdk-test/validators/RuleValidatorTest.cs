@@ -1,20 +1,42 @@
 using eppo_sdk.dto;
 using eppo_sdk.validators;
+using Newtonsoft.Json.Linq;
 
 namespace eppo_sdk_test.validators;
 
 public class RuleValidatorTest
 {
+
+    [Test]
+    public void ShouldConvertToString()
+    {
+
+        var someJson = @"{""foo"":""bar"",""bar"":""baz""}"; // The ToString will serialize objects without any indenting.
+        var jObj = JObject.Parse(someJson);
+
+
+        var values = new List<Tuple<object, string>> (){
+            new(true, "true"),
+            new("true", "true"),
+            new(1.0, "1"),
+            new(3, "3"),
+            new(4e3, "4000"),
+            new(1.5, "1.5"),
+            new(jObj, someJson)
+        };
+
+        Assert.That(values.Select( v => Compare.ToString(v.Item1)), Is.EquivalentTo(values.Select(v => v.Item2)));
+    }
     [Test]
     public void ShouldMatchAndyRuleWithEmptyCondition()
     {
-        var ruleWithEmptyConditions = CreateRule(new List<Condition>());
+        var rule = CreateRule(new List<Condition>());
 
-        var rules = new List<Rule> { ruleWithEmptyConditions };
+        var rules = new List<Rule> { rule };
         var subjectAttributes = new Subject();
         AddNameToSubjectAttribute(subjectAttributes);
 
-        Assert.That(ruleWithEmptyConditions, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
+        Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.EqualTo(rule));
     }
 
     [Test]
@@ -56,7 +78,7 @@ public class RuleValidatorTest
             { "appVersion", "1.15.0" }
         };
 
-        Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
+        Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.EqualTo(rule));
     }
 
     [Test]
@@ -82,7 +104,33 @@ public class RuleValidatorTest
 
         var subjectAttributes = new Subject { { "match", "abcd" } };
 
-        Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
+        Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.EqualTo(rule));
+    }
+
+    [Test]
+    public void ShouldatchNotMatchesCondition()
+    {
+        var rules = new List<Rule>();
+        Rule rule = CreateRule(new List<Condition>());
+        AddRegexConditionToRule(rule , false); // Use the NOT_MATCHES operator
+        rules.Add(rule);
+
+        var subjectAttributes = new Subject { { "match", "1234" } }; // Regex Condition is [a-z]+
+
+        Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.EqualTo(rule));
+    }
+
+    [Test]
+    public void NotMatchesCondition_NullValue()
+    {
+        var rules = new List<Rule>();
+        Rule rule = CreateRule(new List<Condition>());
+        AddRegexConditionToRule(rule , false); // Use the NOT_MATCHES operator
+        rules.Add(rule);
+
+        var subjectAttributes = new Subject { { "match", null } };
+
+        Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.Null);
     }
 
     [Test]
@@ -108,7 +156,7 @@ public class RuleValidatorTest
 
         var subjectAttributes = new Subject { { "oneOf", "value2" } };
 
-        Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
+        Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.EqualTo(rule));
     }
 
     [Test]
@@ -160,7 +208,7 @@ public class RuleValidatorTest
 
         var subjectAttributes = new Subject { { "isnull", null } };
 
-        Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
+        Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.EqualTo(rule));
     }
 
     [Test]
@@ -173,7 +221,7 @@ public class RuleValidatorTest
 
         var subjectAttributes = new Subject { { "isnull", null } };
 
-        Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
+        Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.EqualTo(rule));
     }
 
 
@@ -187,7 +235,7 @@ public class RuleValidatorTest
 
         var subjectAttributes = new Subject { };
 
-        Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
+        Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.EqualTo(rule));
     }
 
     [Test]
@@ -200,7 +248,7 @@ public class RuleValidatorTest
 
         var subjectAttributes = new Subject { { "isnull", "not null" } };
 
-        Assert.That(rule, Is.EqualTo(RuleValidator.FindMatchingRule(subjectAttributes, rules)));
+        Assert.That(RuleValidator.FindMatchingRule(subjectAttributes, rules), Is.EqualTo(rule));
     }
 
     [Test]
@@ -425,9 +473,9 @@ public class RuleValidatorTest
 
     }
 
-    private static void AddRegexConditionToRule(Rule rule)
+    private static void AddRegexConditionToRule(Rule rule, bool matches = true)
     {
-        var condition = new Condition("match", OperatorType.MATCHES, "[a-z]+");
+        var condition = new Condition("match", matches ? OperatorType.MATCHES : OperatorType.NOT_MATCHES, "[a-z]+");
         rule.conditions.Add(condition);
     }
 

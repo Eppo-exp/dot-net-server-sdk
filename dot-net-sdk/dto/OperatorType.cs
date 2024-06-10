@@ -7,6 +7,7 @@ namespace eppo_sdk.dto;
 public enum OperatorType
 {
     MATCHES,
+    NOT_MATCHES,
     GTE,
     GT,
     LTE,
