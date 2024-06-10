@@ -38,7 +38,7 @@ public class HasEppoValue
     public double DoubleValue() => _nonNullValue(Convert.ToDouble);
     public long IntegerValue() => _nonNullValue<long>(Convert.ToInt64);
 
-    public string StringValue() => _nonNullValue<string>((o) => (string)o);
+    public string StringValue() => _nonNullValue<string>((o) => o.ToString() ?? "");
     public List<string> ArrayValue() => _nonNullValue<List<string>>((object o) =>
         {
             if (o is JArray array)

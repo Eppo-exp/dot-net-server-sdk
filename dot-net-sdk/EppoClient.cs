@@ -44,9 +44,15 @@ public class EppoClient
         }
         return assignment;
     }
+
     public JObject GetJsonAssignment(string flagKey, string subjectKey, Subject subjectAttributes, JObject defaultValue)
     {
         return _typeCheckedAssignment(flagKey, subjectKey, subjectAttributes, EppoValueType.JSON, defaultValue).JsonValue();
+    }
+
+    public string GetJsonStringAssignment(string flagKey, string subjectKey, Subject subjectAttributes, string defaultValue)
+    {
+        return _typeCheckedAssignment(flagKey, subjectKey, subjectAttributes, EppoValueType.JSON, defaultValue).StringValue();
     }
 
     public bool GetBooleanAssignment(string flagKey, string subjectKey, Subject subjectAttributes, bool defaultValue)
@@ -59,12 +65,10 @@ public class EppoClient
         return _typeCheckedAssignment(flagKey, subjectKey, subjectAttributes, EppoValueType.NUMERIC, defaultValue).DoubleValue();
     }
 
-
     public long GetIntegerAssignment(string flagKey, string subjectKey, Subject subjectAttributes, long defaultValue)
     {
         return _typeCheckedAssignment(flagKey, subjectKey, subjectAttributes, EppoValueType.INTEGER, defaultValue).IntegerValue();
     }
-
 
     public string GetStringAssignment(string flagKey, string subjectKey, Subject subjectAttributes, string defaultValue)
     {
