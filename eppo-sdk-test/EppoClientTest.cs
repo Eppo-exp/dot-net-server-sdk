@@ -78,6 +78,14 @@ public class EppoClientTest
                     client.GetJsonAssignment(assignmentTestCase.Flag, subject.SubjectKey, subject.SubjectAttributes, (JObject)assignmentTestCase.DefaultValue));
 
                 Assert.That(jsonAssignments, Is.EqualTo(jsonExpectations), $"Unexpected values for test file: {assignmentTestCase.TestCaseFile}");
+
+
+                // Also verify that the GetJsonStringAssignment method is working.
+                var jsonStringExpectations = assignmentTestCase.Subjects.ConvertAll(x => ((JObject)x.Assignment).ToString());
+                var jsonStringAssignments = assignmentTestCase.Subjects.ConvertAll(subject =>
+                    client.GetJsonStringAssignment(assignmentTestCase.Flag, subject.SubjectKey, subject.SubjectAttributes, ((JObject)assignmentTestCase.DefaultValue).ToString()));
+
+                Assert.That(jsonStringAssignments, Is.EqualTo(jsonStringExpectations), $"Unexpected values for test file: {assignmentTestCase.TestCaseFile}");
                 break;
             case (EppoValueType.NUMERIC):
                 var numExpectations = assignmentTestCase.Subjects.ConvertAll(x => (double?)x.Assignment);
