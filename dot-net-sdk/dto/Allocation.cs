@@ -1,7 +1,5 @@
 namespace eppo_sdk.dto;
 
-public class Allocation
+public record Allocation(string key, List<Rule> rules, List<Split> splits, bool doLog, DateTime? startAt, DateTime? endAt)
 {
-    public float percentExposure { get; set; }
-    public List<Variation> variations { get; set; }
 }

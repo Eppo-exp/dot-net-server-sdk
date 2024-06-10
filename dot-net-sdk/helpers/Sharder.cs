@@ -5,7 +5,7 @@ using eppo_sdk.dto;
 
 namespace eppo_sdk.helpers;
 
-public class Shard
+public class Sharder
 {
     public static string GetHex(string input)
     {

@@ -2,115 +2,165 @@ using System.Text.RegularExpressions;
 using eppo_sdk.dto;
 using static eppo_sdk.dto.OperatorType;
 using NuGet.Versioning;
+using eppo_sdk.helpers;
+using eppo_sdk.exception;
+using Newtonsoft.Json;
+using System.ComponentModel;
 
 namespace eppo_sdk.validators;
 
-public class RuleValidator
+
+
+public static partial class RuleValidator
 {
-    public static Rule? FindMatchingRule(SubjectAttributes subjectAttributes, List<Rule> rules)
+    private const string SUBJECT_KEY_FIELD = "id";
+
+    public static FlagEvaluation? EvaluateFlag(Flag flag, string subjectKey, Subject subjectAttributes)
     {
-        return rules.Find(rule => MatchesRule(subjectAttributes, rule));
+        if (!flag.enabled) return null;
+
+        var now = DateTimeOffset.Now.ToUniversalTime();
+        foreach (var allocation in flag.Allocations)
+        {
+            if (allocation.startAt.HasValue && allocation.startAt.Value > now || allocation.endAt.HasValue && allocation.endAt.Value < now)
+            {
+                continue;
+            }
+
+            if (!subjectAttributes.ContainsKey(SUBJECT_KEY_FIELD))
+            {
+                subjectAttributes[SUBJECT_KEY_FIELD] = subjectKey;
+            }
+
+            if (allocation.rules == null || allocation.rules.Count == 0 || MatchesAnyRule(allocation.rules, subjectAttributes))
+            {
+                foreach (var split in allocation.splits)
+                {
+                    if (MatchesAllShards(split.Shards, subjectKey, flag.totalShards))
+                    {
+                        if (flag.variations.TryGetValue(split.VariationKey, out Variation? variation) && variation != null)
+                        {
+                            return new FlagEvaluation(variation, allocation.doLog, allocation.key, split.ExtraLogging);
+                        }
+                        throw new ExperimentConfigurationNotFound($"Variation {split.VariationKey} could not be found");
+
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
-    private static bool MatchesRule(SubjectAttributes subjectAttributes, Rule rule)
+
+
+    // Find the first shard that does not match. If it's null. then all shards match.     
+    public static bool MatchesAllShards(IEnumerable<Shard> shards, string subjectKey, int totalShards) => shards.FirstOrDefault(shard => !MatchesShard(shard, subjectKey, totalShards)) == null;
+
+    private static bool MatchesShard(Shard shard, string subjectKey, int totalShards)
     {
-        List<bool> conditionEvaluations = EvaluateRuleCondition(subjectAttributes, rule.conditions);
-        return !conditionEvaluations.Contains(false);
+        var hashKey = shard.salt + "-" + subjectKey;
+        var subjectBucket = Sharder.GetShard(hashKey, totalShards);
+
+        return shard.ranges.Any(range => Sharder.IsInRange(subjectBucket, range));
     }
 
-    private static List<bool> EvaluateRuleCondition(SubjectAttributes subjectAttributes, List<Condition> ruleConditions)
-    {
-        return
-            ruleConditions.ConvertAll(condition => EvaluateCondition(subjectAttributes, condition));
-    }
+    private static bool MatchesAnyRule(IEnumerable<Rule> rules, Subject subject) => rules.Any() && FindMatchingRule(subject, rules) != null;
 
-    private static bool EvaluateCondition(SubjectAttributes subjectAttributes, Condition condition)
+    public static Rule? FindMatchingRule(Subject subjectAttributes, IEnumerable<Rule> rules) => rules.FirstOrDefault(rule => MatchesRule(subjectAttributes, rule));
+
+    private static bool MatchesRule(Subject subjectAttributes, Rule rule) => rule.conditions.All(condition => EvaluateCondition(subjectAttributes, condition));
+
+    private static bool EvaluateCondition(Subject subjectAttributes, Condition condition)
     {
         try
         {
             // Operators other than `IS_NULL` need to assume non-null
-            if (condition.operatorType == IS_NULL) {
-                bool isNull = !subjectAttributes.TryGetValue(condition.attribute, out Object? outVal) || HasEppoValue.IsNullValue(new HasEppoValue(outVal));
+            if (condition.Operator == IS_NULL)
+            {
+                bool isNull = !subjectAttributes.TryGetValue(condition.Attribute, out Object? outVal) || HasEppoValue.IsNullValue(new HasEppoValue(outVal));
                 return condition.BoolValue() == isNull;
             }
-            else if (subjectAttributes.TryGetValue(condition.attribute, out Object? outVal))
+            else if (subjectAttributes.TryGetValue(condition.Attribute, out Object? outVal))
             {
                 var value = new HasEppoValue(outVal!); // Assuming non-null for simplicity, handle nulls as necessary
 
-                if (condition.operatorType == GTE)
+                switch (condition.Operator)
                 {
-                    if (value.IsNumeric() && condition.IsNumeric())
-                    {
-                        return value.DoubleValue() >= condition.DoubleValue();
-                    }
+                    case GTE:
+                        {
+                            if (value.IsNumeric() && condition.IsNumeric())
+                            {
+                                return value.DoubleValue() >= condition.DoubleValue();
+                            }
 
-                    if (NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
-                        NuGetVersion.TryParse(condition.StringValue(), out var conditionSemver))
-                    {
-                        return valueSemver >= conditionSemver;
-                    }
+                            if (NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
+                                NuGetVersion.TryParse(condition.StringValue(), out var conditionSemver))
+                            {
+                                return valueSemver >= conditionSemver;
+                            }
 
-                    return false;
-                }
-                else if (condition.operatorType == GT)
-                {
-                    if (value.IsNumeric() && condition.IsNumeric())
-                    {
-                        return value.DoubleValue() > condition.DoubleValue();
-                    }
+                            return false;
+                        }
+                    case GT:
+                        {
+                            if (value.IsNumeric() && condition.IsNumeric())
+                            {
+                                return value.DoubleValue() > condition.DoubleValue();
+                            }
 
-                    if (NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
-                        NuGetVersion.TryParse(condition.StringValue(), out var conditionSemver))
-                    {
-                        return valueSemver > conditionSemver;
-                    }
+                            if (NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
+                                NuGetVersion.TryParse(condition.StringValue(), out var conditionSemver))
+                            {
+                                return valueSemver > conditionSemver;
+                            }
 
-                    return false;
-                }
-                else if (condition.operatorType == LTE)
-                {
-                    if (value.IsNumeric() && condition.IsNumeric())
-                    {
-                        return value.DoubleValue() <= condition.DoubleValue();
-                    }
+                            return false;
+                        }
+                    case LTE:
+                        {
+                            if (value.IsNumeric() && condition.IsNumeric())
+                            {
+                                return value.DoubleValue() <= condition.DoubleValue();
+                            }
 
-                    if (NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
-                        NuGetVersion.TryParse(condition.StringValue(), out var conditionSemver))
-                    {
-                        return valueSemver <= conditionSemver;
-                    }
+                            if (NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
+                                NuGetVersion.TryParse(condition.StringValue(), out var conditionSemver))
+                            {
+                                return valueSemver <= conditionSemver;
+                            }
 
-                    return false;
-                }
-                else if (condition.operatorType == LT)
-                {
-                    if (value.IsNumeric() && condition.IsNumeric())
-                    {
-                        return value.DoubleValue() < condition.DoubleValue();
-                    }
+                            return false;
+                        }
+                    case LT:
+                        {
+                            if (value.IsNumeric() && condition.IsNumeric())
+                            {
+                                return value.DoubleValue() < condition.DoubleValue();
+                            }
 
-                    if (NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
-                        NuGetVersion.TryParse(condition.StringValue(), out var conditionSemver))
-                    {
-                        return valueSemver < conditionSemver;
-                    }
+                            if (NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
+                                NuGetVersion.TryParse(condition.StringValue(), out var conditionSemver))
+                            {
+                                return valueSemver < conditionSemver;
+                            }
 
-                    return false;
-                }
-                else if (condition.operatorType == MATCHES)
-                {
-                    return Regex.Match(value.StringValue(), condition.StringValue(), RegexOptions.IgnoreCase).Success;
-                }
-                else if (condition.operatorType == ONE_OF)
-                {
-                    return Compare.IsOneOf(value.StringValue(), condition.ArrayValue());
-                }
-                else if (condition.operatorType == NOT_ONE_OF)
-                {
-                    return !Compare.IsOneOf(value.StringValue(), condition.ArrayValue());
+                            return false;
+                        }
+                    case MATCHES:
+                        {
+                            return Regex.Match(value.StringValue(), condition.StringValue()).Success;
+                        }
+                    case ONE_OF:
+                        {
+                            return Compare.IsOneOf(value, condition.ArrayValue());
+                        }
+                    case NOT_ONE_OF:
+                        {
+                            return !Compare.IsOneOf(value, condition.ArrayValue());
+                        }
                 }
             }
-
             return false; // Return false if attribute is not found or other errors occur
         }
         catch (Exception)
@@ -122,8 +172,21 @@ public class RuleValidator
 
 internal class Compare
 {
-    public static bool IsOneOf(string a, List<string> arrayValues)
+    public static bool IsOneOf(HasEppoValue value, List<string> arrayValues)
     {
-        return arrayValues.ConvertAll(v => v.ToLower()).IndexOf(a.ToLower()) >= 0;
+        return arrayValues.IndexOf(ToString(value.Value)) >= 0;
+    }
+    private static string ToString(object? obj) {
+        // Simple casting to string except for tricksy floats.
+        if (obj is string v) {
+            return v;
+        } else if (obj is long i) {
+            return Convert.ToString(i);
+        } else if ((obj is double || obj is float) && Math.Truncate((double)obj) == (double)obj) {
+            // Example: 123456789.0 is cast to a more suitable format of int.
+            return Convert.ToString(Convert.ToInt32(obj));
+        }
+        // Cross-SDK standard for encoding other possible value types such as bool, null and list<strings>
+        return JsonConvert.SerializeObject(obj);
     }
 }

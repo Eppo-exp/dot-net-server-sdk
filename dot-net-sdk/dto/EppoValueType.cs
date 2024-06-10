@@ -2,7 +2,7 @@ namespace eppo_sdk.dto;
 
 public enum EppoValueType
 {
-    NUMBER,
+    NUMERIC,
     INTEGER,
     STRING,
     BOOLEAN,

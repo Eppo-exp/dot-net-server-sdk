@@ -8,13 +8,22 @@ help: Makefile
 	@sed -n 's/^##//p' $<
 
 
-.PHONY: test-data
+
+
 testDataDir := eppo-sdk-test/files
+tempDir := ${testDataDir}/temp
+gitDataDir := ${tempDir}/sdk-test-data
+branchName := main
+githubRepoLink := https://github.com/Eppo-exp/sdk-test-data.git
+
+.PHONY: test-data
 test-data: 
 	rm -rf $(testDataDir)
-	mkdir -p $(testDataDir)
-	gsutil cp gs://sdk-test-data/rac-experiments-*.json $(testDataDir)
-	gsutil cp -r gs://sdk-test-data/assignment-v2 $(testDataDir)
+	mkdir -p $(tempDir)
+	git clone -b ${branchName} --depth 1 --single-branch ${githubRepoLink} ${gitDataDir}
+	cp -r ${gitDataDir}/ufc ${testDataDir}/
+	rm -rf ${tempDir}
+
 
 .PHONY: build
 build: 

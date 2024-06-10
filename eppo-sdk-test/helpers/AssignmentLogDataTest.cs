@@ -1,4 +1,5 @@
 using eppo_sdk.dto;
+using eppo_sdk.helpers;
 
 namespace eppo_sdk_test.helpers;
 
@@ -12,7 +13,9 @@ public class AssignmentLogDataTest
             "allocation",
             "variation",
             "subject",
-            new SubjectAttributes());
-        Assert.That(assignmentLogData.experiment, Is.EqualTo("feature-flag-allocation"));
+            new Subject(),
+            AppDetails.GetInstance().AsDict(),
+            new Dictionary<string, string>());
+        Assert.That(assignmentLogData.Experiment, Is.EqualTo("feature-flag-allocation"));
     }
 }
