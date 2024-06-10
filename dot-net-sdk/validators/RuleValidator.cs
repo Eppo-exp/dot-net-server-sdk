@@ -178,8 +178,7 @@ internal class Compare
 {
     public static bool IsOneOf(HasEppoValue value, List<string> arrayValues)
     {
-        var stringyValue = ToString(value.Value);
-        return arrayValues.IndexOf(stringyValue) >= 0;
+        return arrayValues.IndexOf(ToString(value.Value)) >= 0;
     }
     public static string ToString(object? obj) {
         // Simple casting to string except for tricksy floats.
