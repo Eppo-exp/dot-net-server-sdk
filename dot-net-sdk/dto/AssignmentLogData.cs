@@ -10,7 +10,7 @@ public record AssignmentLogData
     public string Variation;
     public DateTime Timestamp;
     public string Subject;
-    public Subject SubjectAttributes;
+    public IReadOnlyDictionary<string, object> SubjectAttributes;
 
     public IReadOnlyDictionary<string, string>? ExtraLogging;
     public IReadOnlyDictionary<string, string> MetaData;
@@ -19,7 +19,7 @@ public record AssignmentLogData
                              string allocation,
                              string variation,
                              string subject,
-                             Subject subjectAttributes,
+                             IReadOnlyDictionary<string, object> subjectAttributes,
                              IReadOnlyDictionary<string, string> metaData,
                              IReadOnlyDictionary<string, string> extraLoggging
                              
