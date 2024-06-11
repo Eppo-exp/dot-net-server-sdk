@@ -1,8 +1,6 @@
-using System.Text.Json.Nodes;
 using eppo_sdk.dto;
 using eppo_sdk.dto.bandit;
 using Newtonsoft.Json;
-using NSwag;
 using static NUnit.Framework.Assert;
 
 namespace eppo_sdk_test;
