@@ -15,4 +15,6 @@ public class Constants
     public const int MAX_CACHE_ENTRIES = 1000;
 
     public const string UFC_ENDPOINT = "/flag-config/v1/config";
+
+    public const string BANDIT_ENDPOINT = "/flag-config/v1/bandits";
 }

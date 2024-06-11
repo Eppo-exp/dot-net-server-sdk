@@ -11,7 +11,7 @@ public class FetchExperimentsTaskTest
     {
         var count = 0;
         var mockConfigStore = new Mock<IConfigurationStore>();
-        mockConfigStore.Setup(x => x.FetchExperimentConfiguration()).Callback(() =>
+        mockConfigStore.Setup(x => x.FetchConfiguration()).Callback(() =>
         {
             count++;
         });
