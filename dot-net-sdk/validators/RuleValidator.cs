@@ -76,7 +76,7 @@ public static partial class RuleValidator
         try
         {
             // Operators other than `IS_NULL` need to assume non-null
-                bool isNull = !subjectAttributes.TryGetValue(condition.Attribute, out Object? outVal) || HasEppoValue.IsNullValue(new HasEppoValue(outVal));
+            bool isNull = !subjectAttributes.TryGetValue(condition.Attribute, out Object? outVal) || HasEppoValue.IsNullValue(new HasEppoValue(outVal));
             if (condition.Operator == IS_NULL)
             {
                 return condition.BoolValue() == isNull;
@@ -180,15 +180,26 @@ public class Compare
     {
         return arrayValues.IndexOf(ToString(value.Value)) >= 0;
     }
-    public static string ToString(object? obj) {
+    public static string ToString(object? obj)
+    {
         // Simple casting to string except for tricksy floats.
-        if (obj is string v) {
+        if (obj is string v)
+        {
             return v;
-        } else if (obj is long i) {
+        }
+        else if (obj is long i)
+        {
             return Convert.ToString(i);
-        } else if ((obj is double || obj is float) && Math.Truncate((double)obj) == (double)obj) {
+        }
+        else if ((obj is double || obj is float) && Math.Truncate((double)obj) == (double)obj)
+        {
             // Example: 123456789.0 is cast to a more suitable format of int.
             return Convert.ToString(Convert.ToInt32(obj));
+        }
+        else if (obj != null && (obj is double || obj is float))
+        {
+            // Explicit conversion of doubles/floats although they're handled by the fallthrough below.
+            return Convert.ToString(obj)!;
         }
         // Cross-SDK standard for encoding other possible value types such as bool, null and list<strings>
         return JsonConvert.SerializeObject(obj);
