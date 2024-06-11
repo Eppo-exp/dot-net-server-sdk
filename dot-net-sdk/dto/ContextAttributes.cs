@@ -5,12 +5,13 @@ using eppo_sdk.exception;
 
 namespace eppo_sdk.dto;
 
-/// A set of attributes (string and numbers only) for a given context `Key`.
+/// A set of attributes for a given context `Key`.
 public interface IContextAttributes : IDictionary<string, object>
 {
     public string Key { get; init; }
 };
 
+/// A contextual dictionary allowing only string and numerical values.
 public class ContextAttributes : IContextAttributes
 {
 
@@ -22,6 +23,13 @@ public class ContextAttributes : IContextAttributes
     public ContextAttributes(string key)
     {
         this.Key = key;
+    }
+
+    public ContextAttributes(string key, Dictionary<string, object> other) {
+        Key = key;
+        foreach( var kvp in other) {
+            this[kvp.Key] = kvp.Value;
+        }
     }
 
     /// Adds a value to the subject dictionary enforcing only string and numeric values.
@@ -38,11 +46,14 @@ public class ContextAttributes : IContextAttributes
         }
     }
 
+    /// Gets only the numeric attributes.
     public DoubleDictionary GetNumeric()
     {
         var nums = this.Where(kvp => IsNumeric(kvp.Value));
         return (DoubleDictionary)nums.ToDictionary(kvp => kvp.Key, kvp => Convert.ToDouble(kvp.Value));
     }
+
+    /// Gets only the string attributes.
     public StringDictionary GetCategorical()
     {
         var cats = this.Where(kvp => kvp.Value is string);

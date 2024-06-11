@@ -7,9 +7,9 @@ public record BanditEvaluation{
     [SetsRequiredMembers]
     public BanditEvaluation(string flagKey,
                             string subjectKey,
-                            IDictionary<string, object> subjectAttributes,
+                            AttributeSet subjectAttributes,
                             string selectedAction,
-                            IDictionary<string, object> actionAttributes,
+                            AttributeSet? actionAttributes,
                             double actionScore,
                             double actionWeight,
                             double gamma)
@@ -26,9 +26,9 @@ public record BanditEvaluation{
 
     public required string FlagKey { get; init; }
     public required string SubjectKey { get; init; }
-    public required IDictionary<string, object> SubjectAttributes { get; init; }
+    public required AttributeSet SubjectAttributes { get; init; }
     public string ActionKey { get; init; }
-    public IDictionary<string, object>? ActionAttributes { get; init; }
+    public AttributeSet? ActionAttributes { get; init; }
     public double ActionScore { get; init; }
     public double ActionWeight { get; init; }
     public double Gamma { get; init; }
