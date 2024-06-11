@@ -15,7 +15,7 @@ public static partial class RuleValidator
 {
     private const string SUBJECT_KEY_FIELD = "id";
 
-    public static FlagEvaluation? EvaluateFlag(Flag flag, string subjectKey, Subject subjectAttributes)
+    public static FlagEvaluation? EvaluateFlag(Flag flag, string subjectKey, IDictionary<string, object> subjectAttributes)
     {
         if (!flag.enabled) return null;
 
@@ -65,13 +65,13 @@ public static partial class RuleValidator
         return shard.ranges.Any(range => Sharder.IsInRange(subjectBucket, range));
     }
 
-    private static bool MatchesAnyRule(IEnumerable<Rule> rules, Subject subject) => rules.Any() && FindMatchingRule(subject, rules) != null;
+    private static bool MatchesAnyRule(IEnumerable<Rule> rules, IDictionary<string, object> subject) => rules.Any() && FindMatchingRule(subject, rules) != null;
 
-    public static Rule? FindMatchingRule(Subject subjectAttributes, IEnumerable<Rule> rules) => rules.FirstOrDefault(rule => MatchesRule(subjectAttributes, rule));
+    public static Rule? FindMatchingRule(IDictionary<string, object> subjectAttributes, IEnumerable<Rule> rules) => rules.FirstOrDefault(rule => MatchesRule(subjectAttributes, rule));
 
-    private static bool MatchesRule(Subject subjectAttributes, Rule rule) => rule.conditions.All(condition => EvaluateCondition(subjectAttributes, condition));
+    private static bool MatchesRule(IDictionary<string, object> subjectAttributes, Rule rule) => rule.conditions.All(condition => EvaluateCondition(subjectAttributes, condition));
 
-    private static bool EvaluateCondition(Subject subjectAttributes, Condition condition)
+    private static bool EvaluateCondition(IDictionary<string, object> subjectAttributes, Condition condition)
     {
         try
         {
