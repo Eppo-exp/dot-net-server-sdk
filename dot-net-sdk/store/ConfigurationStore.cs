@@ -92,7 +92,7 @@ public class ConfigurationStore : IConfigurationStore
             return response;
         }
 
-        throw new SystemException("[Eppo SDK] Unable to fetch experiment configuration");
+        throw new SystemException("Unable to fetch experiment configuration");
     }
     private BanditModelResponse GetBandits()
     {
@@ -102,6 +102,6 @@ public class ConfigurationStore : IConfigurationStore
             return response;
         }
 
-        throw new SystemException("[Eppo SDK] Unable to fetch bandit models");
+        throw new SystemException("Unable to fetch bandit models");
     }
 }
