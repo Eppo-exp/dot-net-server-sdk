@@ -13,8 +13,6 @@ namespace eppo_sdk.validators;
 
 public static partial class RuleValidator
 {
-    private const string SUBJECT_KEY_FIELD = "id";
-
     public static FlagEvaluation? EvaluateFlag(Flag flag, string subjectKey, IDictionary<string, object> subjectAttributes)
     {
         if (!flag.enabled) return null;
@@ -27,9 +25,9 @@ public static partial class RuleValidator
                 continue;
             }
 
-            if (!subjectAttributes.ContainsKey(SUBJECT_KEY_FIELD))
+            if (!subjectAttributes.ContainsKey(Subject.SUBJECT_KEY_FIELD))
             {
-                subjectAttributes[SUBJECT_KEY_FIELD] = subjectKey;
+                subjectAttributes[Subject.SUBJECT_KEY_FIELD] = subjectKey;
             }
 
             if (allocation.rules == null || allocation.rules.Count == 0 || MatchesAnyRule(allocation.rules, subjectAttributes))
