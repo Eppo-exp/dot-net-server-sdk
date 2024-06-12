@@ -12,7 +12,8 @@ public record BanditEvaluation{
                             AttributeSet? actionAttributes,
                             double actionScore,
                             double actionWeight,
-                            double gamma)
+                            double gamma,
+                            double optimalityGap)
     {
         FlagKey = flagKey;
         SubjectKey = subjectKey;
@@ -22,6 +23,7 @@ public record BanditEvaluation{
         ActionScore = actionScore;
         ActionWeight = actionWeight;
         Gamma = gamma;
+        OptimalityGap = optimalityGap;
     }
 
     public required string FlagKey { get; init; }
@@ -32,4 +34,5 @@ public record BanditEvaluation{
     public double ActionScore { get; init; }
     public double ActionWeight { get; init; }
     public double Gamma { get; init; }
+    public double OptimalityGap { get; init; }
 }
