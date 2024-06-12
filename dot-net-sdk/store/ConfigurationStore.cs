@@ -13,19 +13,19 @@ public class ConfigurationStore : IConfigurationStore
     private readonly ConfigurationRequester _requester;
     private static ConfigurationStore? _instance;
 
-    public ConfigurationStore(ConfigurationRequester requester, MemoryCache experimentConfigurationCache, MemoryCache banditModelCache)
+    public ConfigurationStore(ConfigurationRequester requester, MemoryCache flagConfigurationCache, MemoryCache banditModelCache)
     {
         _requester = requester;
-        _experimentConfigurationCache = experimentConfigurationCache;
+        _experimentConfigurationCache = flagConfigurationCache;
         _banditModelCache = banditModelCache;
     }
 
-    public static ConfigurationStore GetInstance(MemoryCache experimentConfigurationCache, MemoryCache banditModelCache,
+    public static ConfigurationStore GetInstance(MemoryCache flagConfigurationCache, MemoryCache banditModelCache,
         ConfigurationRequester requester)
     {
         if (_instance == null)
         {
-            _instance = new ConfigurationStore(requester, experimentConfigurationCache, banditModelCache);
+            _instance = new ConfigurationStore(requester, flagConfigurationCache, banditModelCache);
         }
         else
         {
