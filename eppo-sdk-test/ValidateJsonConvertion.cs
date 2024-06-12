@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using static NUnit.Framework.Assert;
 
 namespace eppo_sdk_test;
+using DoubleDictionary = Dictionary<string, double>;
 
 public class ValidateJsonConvertion
 {

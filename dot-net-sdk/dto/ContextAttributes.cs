@@ -5,6 +5,9 @@ using eppo_sdk.exception;
 
 namespace eppo_sdk.dto;
 
+using DoubleDictionary = Dictionary<string, double>;
+using StringDictionary = Dictionary<string, string>;
+
 /// A set of attributes for a given context `Key`.
 public interface IContextAttributes : IDictionary<string, object>
 {
@@ -59,6 +62,8 @@ public class ContextAttributes : IContextAttributes
         var cats = this.Where(kvp => kvp.Value is string);
         return (StringDictionary)cats.ToDictionary(kvp => kvp.Key, kvp => (String)kvp.Value);
     }
+
+    public AttributeSet AsAttributeSet() => new AttributeSet(GetNumeric(), GetCategorical());
 
     public static bool IsNumeric(object v) => v is double || v is int || v is long || v is float;
 
