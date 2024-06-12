@@ -318,7 +318,7 @@ public class ValidateJsonConvertion
       That(ac.SubjectCategoricalCoefficients, Is.Not.Null);
       That(ac.SubjectNumericCoefficients, Is.Not.Null);
 
-      var loyaltyDict = new DoubleDictionary
+      var loyaltyDict = new Dictionary<string, double>
       {
         ["gold"] = 4.5,
         ["silver"] = 3.2,
@@ -327,7 +327,7 @@ public class ValidateJsonConvertion
       var loyaltyAttrCoef = new CategoricalAttributeCoefficient("loyalty_tier", 0.0, loyaltyDict);
       AssertCategoricalCoefficients(ac.ActionCategoricalCoefficients, new() { loyaltyAttrCoef });
 
-      var genderDict = new DoubleDictionary
+      var genderDict = new Dictionary<string, double>
       {
         ["male"] = -0.5,
         ["female"] = 0.5

@@ -43,6 +43,10 @@ public class BanditEvaluator
         var actionScore = actionScores.Find(a => a.Key == selectedAction)!.Value;
         var actionWeight = actionWeights.Find(a => a.Key == selectedAction)!.Value;
 
+        // Determine optimality gap
+        var max = actionScores.Max(score=>score.Value);
+        var gap = max - actionScores.Find(s=>s.Key == selectedAction).Value;
+
         return new BanditEvaluation(
             flagKey,
             subject.Key,
@@ -51,7 +55,8 @@ public class BanditEvaluator
             selectedActionContext.AsAttributeSet(),
             actionScore,
             actionWeight,
-            banditModel.Gamma
+            banditModel.Gamma,
+            gap
         );
     }
 

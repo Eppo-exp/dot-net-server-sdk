@@ -2,6 +2,7 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using eppo_sdk;
 using eppo_sdk.dto;
+using eppo_sdk.dto.bandit;
 using eppo_sdk.logger;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
