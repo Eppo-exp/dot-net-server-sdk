@@ -11,7 +11,7 @@ public interface IContextAttributes : IDictionary<string, object>
     public string Key { get; init; }
 };
 
-/// A contextual dictionary allowing only string and numerical values.
+/// A contextual dictionary allowing only string, bool and numeric types.
 public class ContextAttributes : IContextAttributes
 {
 
@@ -32,11 +32,11 @@ public class ContextAttributes : IContextAttributes
         }
     }
 
-    /// Adds a value to the subject dictionary enforcing only string and numeric values.
+    /// Adds a value to the subject dictionary enforcing only string, bool and numeric types.
     public void Add(string key, object value)
     {
         // Implement your custom validation logic here
-        if (IsNumeric(value) || value is string)
+        if (IsNumeric(value) || IsCategorical(value))
         {
             _internalDictionary.Add(key, value);
         }
@@ -61,6 +61,8 @@ public class ContextAttributes : IContextAttributes
     }
 
     public static bool IsNumeric(object v) => v is double || v is int || v is long || v is float;
+
+    private static bool IsCategorical(object value) => value is string || value is bool;
 
 
     // Standard Dictionary methods are "sealed" so overriding isn't possible. Thus we delegate everything here.
