@@ -1,7 +1,5 @@
 namespace eppo_sdk.dto.bandit;
 
-public class DoubleDictionary: Dictionary<string, double>{}
-
-public class StringDictionary : Dictionary<string, string>{};
-
+using DoubleDictionary = Dictionary<string, double>;
+using StringDictionary = Dictionary<string, string>;
 public record AttributeSet(DoubleDictionary NumericAttributes, StringDictionary CategoricalAttributes);

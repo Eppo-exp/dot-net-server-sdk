@@ -98,7 +98,7 @@ public class EppoClient
         var result = RuleValidator.EvaluateFlag(configuration, subjectKey, subjectAttributes);
         if (result == null)
         {
-            Logger.Info("[Eppo SDK] No assigned variation. The idictionary<string, object> attributes did not match any targeting rules");
+            Logger.Info("[Eppo SDK] No assigned variation. The subject attributes did not match any targeting rules");
             return null;
         }
 

@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
-using eppo_sdk.dto.bandit;
 using eppo_sdk.exception;
+using eppo_sdk.validators;
 
 namespace eppo_sdk.dto;
 
@@ -47,17 +47,17 @@ public class ContextAttributes : IContextAttributes
     }
 
     /// Gets only the numeric attributes.
-    public DoubleDictionary GetNumeric()
+    public IDictionary<string, double> GetNumeric()
     {
         var nums = this.Where(kvp => IsNumeric(kvp.Value));
-        return (DoubleDictionary)nums.ToDictionary(kvp => kvp.Key, kvp => Convert.ToDouble(kvp.Value));
+        return nums.ToDictionary(kvp => kvp.Key, kvp => Convert.ToDouble(kvp.Value));
     }
 
     /// Gets only the string attributes.
-    public StringDictionary GetCategorical()
+    public IDictionary<string, string> GetCategorical()
     {
-        var cats = this.Where(kvp => kvp.Value is string);
-        return (StringDictionary)cats.ToDictionary(kvp => kvp.Key, kvp => (String)kvp.Value);
+        var cats = this.Where(kvp => kvp.Value is string || kvp.Value is bool);
+        return cats.ToDictionary(kvp => kvp.Key, kvp => Compare.ToString(kvp.Value));
     }
 
     public static bool IsNumeric(object v) => v is double || v is int || v is long || v is float;
