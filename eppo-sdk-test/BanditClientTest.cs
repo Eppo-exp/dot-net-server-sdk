@@ -1,25 +1,39 @@
 using System.Net;
-using System.Runtime.CompilerServices;
 using eppo_sdk;
-using eppo_sdk.dto;
 using eppo_sdk.dto.bandit;
-using eppo_sdk.logger;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using SharpYaml.Tokens;
 using WireMock.Matchers;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
+using static NUnit.Framework.Assert;
 
 namespace eppo_sdk_test;
+
+[TestFixture]
 public class BanditClientTest
 {
+    private EppoClient? _client;
+
     private const string BANDIT_CONFIG_FILE = "files/ufc/bandit-flags-v1.json";
     private const string BANDIT_MODEL_FILE = "files/ufc/bandit-models-v1.json";
     private const string FLAG_CONFIG_FILE = "files/ufc/flags-v1.json";
     private WireMockServer? _mockServer;
-    private ContextAttributes? _subject;
+    private ContextAttributes _subject = new("userID")
+    {
+        {"account_age", 3},
+        {"favourite_colour","red"}
+    };
+    private readonly Dictionary<string, ContextAttributes> _actions = new()
+    {
+        {"action1" , new("action1") {
+            {"foo", "bar"},
+            {"bar", "baz"}
+        }},
+        {"action2" , new("action2") {
+            {"height", 10},
+            {"isfast", true}
+        }}
+    };
 
     [OneTimeSetUp]
     public void Setup()
@@ -30,16 +44,11 @@ public class BanditClientTest
         {
             BaseUrl = _mockServer?.Urls[0]!
         };
-        EppoClient.Init(config);
+        _client = EppoClient.Init(config, "BanditClientTest");
     }
 
     private void SetupSubjectMocks()
     {
-        _subject = new ContextAttributes("userID")
-            {
-                {"account_age", 3},
-                {"favourite_colour","red"}
-            };
         _subject["timeofday"] = "night";
         _subject["loyalty_tier"] = "gold";
     }
@@ -59,6 +68,7 @@ public class BanditClientTest
     [OneTimeTearDown]
     public void TearDown()
     {
+        // EppoClient.DeInit();
         _mockServer?.Stop();
     }
 
@@ -73,6 +83,19 @@ public class BanditClientTest
             resourceFile);
         using var sr = new StreamReader(filePath);
         return sr.ReadToEnd();
+    }
+
+    [Test]
+    public void ShouldReturnDefaultValue()
+    {
+        // var client = EppoClient.GetInstance();
+        // var result = client.GetBanditAction("unknownflag", _subject, _actions, "defaultVariation");
+        // Multiple(() =>
+        // {
+        //     That(result, Is.Not.Null);
+        //     That(result.Variation, Is.EqualTo("defaultVariation"));
+        //     That(result.Action, Is.Null);
+        // });
     }
 
     // [Test, TestCaseSource(nameof(GetTestAssignmentData))]

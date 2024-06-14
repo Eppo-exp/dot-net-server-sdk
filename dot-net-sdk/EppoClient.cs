@@ -1,4 +1,5 @@
 ﻿using System.Linq.Expressions;
+using System.Reflection.Metadata;
 using eppo_sdk.constants;
 using eppo_sdk.dto;
 using eppo_sdk.dto.bandit;
@@ -21,6 +22,7 @@ public class EppoClient
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
     private static EppoClient? _client = null;
+    private static string? _name;
     private readonly IConfigurationStore _configurationStore;
     private readonly FetchExperimentsTask _fetchExperimentsTask;
     private readonly BanditEvaluator _banditEvaluator;
@@ -138,8 +140,19 @@ public class EppoClient
         return assignment;
     }
 
-    public static EppoClient Init(EppoClientConfig eppoClientConfig)
+    public static void DeInit() {
+        _client?._fetchExperimentsTask.Dispose();
+        _client = null;
+    }
+
+    public static EppoClient Init(EppoClientConfig eppoClientConfig, string? name = null)
     {
+        _name = name;
+        // if (_client != null) {
+
+
+        //     throw new SystemException("Eppo Client already initialized");
+        // }
         lock (Baton)
         {
             InputValidator.ValidateNotBlank(eppoClientConfig.ApiKey,
@@ -167,10 +180,7 @@ public class EppoClient
                 expConfigRequester
             );
 
-            if (_client != null)
-            {
-                _client._fetchExperimentsTask.Dispose();
-            }
+            _client?._fetchExperimentsTask.Dispose();
 
             var fetchExperimentsTask = new FetchExperimentsTask(configurationStore, Constants.TIME_INTERVAL_IN_MILLIS,
                 Constants.JITTER_INTERVAL_IN_MILLIS);

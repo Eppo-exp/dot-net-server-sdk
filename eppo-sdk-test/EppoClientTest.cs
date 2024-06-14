@@ -11,9 +11,11 @@ using WireMock.Server;
 
 namespace eppo_sdk_test;
 
+[TestFixture]
 public class EppoClientTest
 {
     private WireMockServer? _mockServer;
+    private EppoClient? _client;
 
     [OneTimeSetUp]
     public void Setup()
@@ -23,7 +25,7 @@ public class EppoClientTest
         {
             BaseUrl = _mockServer?.Urls[0]!
         };
-        EppoClient.Init(config);
+        _client = EppoClient.Init(config, "EppoClientTest");
     }
 
     private void SetupMockServer()
@@ -39,6 +41,7 @@ public class EppoClientTest
     [OneTimeTearDown]
     public void TearDown()
     {
+        // EppoClient.DeInit();
         _mockServer?.Stop();
     }
 
@@ -53,7 +56,7 @@ public class EppoClientTest
     [Test, TestCaseSource(nameof(GetTestAssignmentData))]
     public void ShouldValidateAssignments(AssignmentTestCase assignmentTestCase)
     {
-        var client = EppoClient.GetInstance();
+        var client = _client!;
         
 
         switch (assignmentTestCase.VariationType)
