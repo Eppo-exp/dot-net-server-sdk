@@ -21,12 +21,12 @@ public class EppoClient
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
     private static EppoClient? _client = null;
-    private readonly ConfigurationStore _configurationStore;
+    private readonly IConfigurationStore _configurationStore;
     private readonly FetchExperimentsTask _fetchExperimentsTask;
     private readonly BanditEvaluator _banditEvaluator;
     private readonly EppoClientConfig _eppoClientConfig;
 
-    private EppoClient(ConfigurationStore configurationStore, EppoClientConfig eppoClientConfig,
+    private EppoClient(IConfigurationStore configurationStore, EppoClientConfig eppoClientConfig,
         FetchExperimentsTask fetchExperimentsTask)
     {
         _configurationStore = configurationStore;
@@ -222,7 +222,7 @@ public class EppoClient
 
         try
         {
-            if (_configurationStore.TryGetBanditModel(variation, out Bandit? bandit) && bandit != null)
+            if (_configurationStore.TryGetBandit(variation, out Bandit? bandit) && bandit != null)
             {
                 var result = _banditEvaluator.EvaluateBandit(flagKey, subject, actions, bandit.ModelData);
 

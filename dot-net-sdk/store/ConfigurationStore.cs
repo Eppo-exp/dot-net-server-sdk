@@ -64,16 +64,6 @@ public class ConfigurationStore : IConfigurationStore
 
     public bool TryGetBandit(string key, out Bandit? bandit) => _banditModelCache.TryGetValue(key, out bandit);
 
-    public Bandit? GetBanditModel(string key)
-    {
-        if (_banditModelCache.TryGetValue(key, out Bandit? result))
-        {
-            return result;
-        }
-
-        return null;
-    }
-
     public void LoadConfiguration()
     {
         FlagConfigurationResponse experimentConfigurationResponse = FetchFlags();
@@ -105,8 +95,6 @@ public class ConfigurationStore : IConfigurationStore
 
         throw new SystemException("Unable to fetch bandit models");
     }
-
-    internal bool TryGetBanditModel(string variation, out Bandit? bandit) => _banditModelCache.TryGetValue(variation, out bandit);
 
     public bool TryGetFlag(string key, out Flag? result) => _flagConfigurationCache.TryGetValue(key, out result);
 }
