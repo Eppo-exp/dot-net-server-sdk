@@ -11,28 +11,12 @@ public class ConfigurationStore : IConfigurationStore
     private readonly MemoryCache _flagConfigurationCache;
     private readonly MemoryCache _banditModelCache;
     private readonly ConfigurationRequester _requester;
-    private static ConfigurationStore? _instance;
 
     public ConfigurationStore(ConfigurationRequester requester, MemoryCache flagConfigurationCache, MemoryCache banditModelCache)
     {
         _requester = requester;
         _flagConfigurationCache = flagConfigurationCache;
         _banditModelCache = banditModelCache;
-    }
-
-    public static ConfigurationStore GetInstance(MemoryCache flagConfigurationCache, MemoryCache banditModelCache,
-        ConfigurationRequester requester)
-    {
-        if (_instance == null)
-        {
-            _instance = new ConfigurationStore(requester, flagConfigurationCache, banditModelCache);
-        }
-        else
-        {
-            _instance._flagConfigurationCache.Clear();
-        }
-
-        return _instance;
     }
 
     public void SetExperimentConfiguration(string key, Flag experimentConfiguration)

@@ -148,11 +148,6 @@ public class EppoClient
     public static EppoClient Init(EppoClientConfig eppoClientConfig, string? name = null)
     {
         _name = name;
-        // if (_client != null) {
-
-
-        //     throw new SystemException("Eppo Client already initialized");
-        // }
         lock (Baton)
         {
             InputValidator.ValidateNotBlank(eppoClientConfig.ApiKey,
@@ -174,10 +169,10 @@ public class EppoClient
             var expConfigRequester = new ConfigurationRequester(eppoHttpClient);
             var configCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
             var modelCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
-            var configurationStore = ConfigurationStore.GetInstance(
+            var configurationStore = new ConfigurationStore(
+                expConfigRequester,
                 configCache,
-                modelCache,
-                expConfigRequester
+                modelCache
             );
 
             _client?._fetchExperimentsTask.Dispose();
