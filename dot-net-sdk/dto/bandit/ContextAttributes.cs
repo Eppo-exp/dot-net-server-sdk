@@ -25,7 +25,7 @@ public class ContextAttributes : IContextAttributes
         this.Key = key;
     }
 
-    public ContextAttributes(string key, Dictionary<string, object> other) {
+    public ContextAttributes(string key, IDictionary<string, object> other) {
         Key = key;
         foreach( var kvp in other) {
             this[kvp.Key] = kvp.Value;

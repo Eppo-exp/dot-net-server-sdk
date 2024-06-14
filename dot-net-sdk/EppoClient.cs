@@ -1,12 +1,14 @@
 ﻿using System.Linq.Expressions;
 using eppo_sdk.constants;
 using eppo_sdk.dto;
+using eppo_sdk.dto.bandit;
 using eppo_sdk.exception;
 using eppo_sdk.helpers;
 using eppo_sdk.http;
 using eppo_sdk.store;
 using eppo_sdk.tasks;
 using eppo_sdk.validators;
+using Moq;
 using Newtonsoft.Json.Linq;
 using NLog;
 
@@ -21,6 +23,7 @@ public class EppoClient
     private static EppoClient? _client = null;
     private readonly ConfigurationStore _configurationStore;
     private readonly FetchExperimentsTask _fetchExperimentsTask;
+    private readonly BanditEvaluator _banditEvaluator;
     private readonly EppoClientConfig _eppoClientConfig;
 
     private EppoClient(ConfigurationStore configurationStore, EppoClientConfig eppoClientConfig,
@@ -29,6 +32,7 @@ public class EppoClient
         _configurationStore = configurationStore;
         _eppoClientConfig = eppoClientConfig;
         _fetchExperimentsTask = fetchExperimentsTask;
+        _banditEvaluator = new BanditEvaluator();
     }
 
     private HasEppoValue _typeCheckedAssignment(string flagKey, string subjectKey, IDictionary<string, object> subjectAttributes, EppoValueType expectedValueType, object defaultValue)
@@ -178,6 +182,67 @@ public class EppoClient
         return _client;
     }
 
+
+    public BanditResult GetBanditAction(string flagKey,
+                                        ContextAttributes subject,
+                                        Dictionary<string, ContextAttributes> actions,
+                                        string defaultValue)
+    {
+        try
+        {
+            return _getBanditDetail(flagKey, subject, actions, defaultValue);
+        }
+        catch (Exception e)
+        {
+            Logger.Error("[Eppo SDK] error getting Bandit action: " + e.Message);
+            return new BanditResult(defaultValue);
+        }
+
+    }
+
+    public BanditResult GetBanditAction(string flagKey,
+                                        string subjectKey,
+                                        IDictionary<string, object> subjectAttributes,
+                                        IDictionary<string, IDictionary<string, object>> actions,
+                                        string defaultValue)
+    {
+        return GetBanditAction(
+            flagKey,
+            new ContextAttributes(subjectKey, subjectAttributes),
+            actions.ToDictionary(kvp => kvp.Key, kvp => new ContextAttributes(kvp.Key, kvp.Value)),
+            defaultValue);
+    }
+
+
+    private BanditResult _getBanditDetail(string flagKey, ContextAttributes subject, Dictionary<string, ContextAttributes> actions, string defaultValue)
+    {
+        // Get the user's flag assignment for the given key.
+        var variation = GetStringAssignment(flagKey, subject.Key, subject, defaultValue);
+
+
+        try
+        {
+            if (_configurationStore.TryGetBanditModel(variation, out Bandit? bandit) && bandit != null)
+            {
+                var result = _banditEvaluator.EvaluateBandit(flagKey, subject, actions, bandit.ModelData);
+
+                // var logEvent = new BanditEl
+                return new BanditResult(variation, result.ActionKey);
+
+            }
+            else
+            {
+                Logger.Info($"[Eppo SDK] Variation {variation} is not a valid bandit");
+            }
+        }
+        catch (BanditEvaluationException bee)
+        {
+            Logger.Error("[Eppo SDK] Error evaluating bandit, returning variation only: " + bee.Message);
+        }
+
+        return new(variation);
+
+    }
     public static EppoClient GetInstance()
     {
         if (_client == null)

@@ -5,10 +5,10 @@ using eppo_sdk.helpers;
 
 namespace eppo_sdk.validators;
 
-
 using ActionScore = KeyValuePair<string, double>;
 
 
+/// Scores and selects and action based on the supplied contexts and Bandit Model data.
 public class BanditEvaluator
 {
 
@@ -19,15 +19,15 @@ public class BanditEvaluator
         this.totalShards = totalShards;
     }
 
-    public BanditEvaluation? EvaluateBandit(
+    public BanditEvaluation EvaluateBandit(
         string flagKey,
         ContextAttributes subject,
         IDictionary<string, ContextAttributes> actionsWithContexts,
         ModelData banditModel)
     {
-        if (!actionsWithContexts.Any())
+        if (actionsWithContexts.Count == 0)
         {
-            return null;//CreateNullEvaluation(flagKey, subjectKey, subjectAttributes, banditModel.Gamma);
+            throw new BanditEvaluationException("No actions provided for bandit evaluation");
         }
 
         // Score all potential actions.
