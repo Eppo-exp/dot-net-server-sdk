@@ -28,7 +28,6 @@ public class ConfigurationStore : IConfigurationStore
                                                  MemoryCache banditModelCache,
                                                  ConfigurationRequester requester)
     {
-        // if (_instance == null)
         if (!_instance.TryGetValue(requester.UID, out ConfigurationStore? value) || value == null)
         {
             _instance[requester.UID] = new ConfigurationStore(requester, flagConfigurationCache, banditModelCache) ;
