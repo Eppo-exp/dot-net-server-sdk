@@ -45,22 +45,7 @@ public class ConfigurationStore : IConfigurationStore
         _banditModelCache.Set(banditModel.BanditKey, banditModel, new MemoryCacheEntryOptions().SetSize(1));
     }
 
-    public Flag? GetExperimentConfiguration(string key)
-    {
-        try
-        {
-            if (_flagConfigurationCache.TryGetValue(key, out Flag? result))
-            {
-                return result;
-            }
-        }
-        catch (Exception)
-        {
-            throw new ExperimentConfigurationNotFound($"[Eppo SDK] Experiment configuration for key: {key} not found.");
-        }
-
-        return null;
-    }
+    public bool TryGetFlag(string key, out Flag? result) => _flagConfigurationCache.TryGetValue(key, out result);
 
     public bool TryGetBandit(string key, out Bandit? bandit) => _banditModelCache.TryGetValue(key, out bandit);
 
@@ -96,5 +81,4 @@ public class ConfigurationStore : IConfigurationStore
         throw new SystemException("Unable to fetch bandit models");
     }
 
-    public bool TryGetFlag(string key, out Flag? result) => _flagConfigurationCache.TryGetValue(key, out result);
 }

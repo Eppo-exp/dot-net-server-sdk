@@ -6,9 +6,8 @@ namespace eppo_sdk.store;
 public interface IConfigurationStore
 {
     void LoadConfiguration();
-    Flag? GetExperimentConfiguration(string key);
     void SetExperimentConfiguration(string key, Flag experimentConfiguration);
     bool TryGetBandit(string key, out Bandit? bandit);
-    bool TryGetFlag(string key, out Flag? bandit);
+    bool TryGetFlag(string key, out Flag? flag);
     void SetBanditModel(Bandit bandit);
 }

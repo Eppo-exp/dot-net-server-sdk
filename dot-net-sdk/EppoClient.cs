@@ -85,8 +85,7 @@ public class EppoClient
         InputValidator.ValidateNotBlank(subjectKey, "Invalid argument: subjectKey cannot be blank");
         InputValidator.ValidateNotBlank(flagKey, "Invalid argument: flagKey cannot be blank");
 
-        var configuration = this._configurationStore.GetExperimentConfiguration(flagKey);
-        if (configuration == null)
+        if (!_configurationStore.TryGetFlag(flagKey, out Flag? configuration) || configuration == null)
         {
             Logger.Warn($"[Eppo SDK] No configuration found for key: {flagKey}");
             return null;
