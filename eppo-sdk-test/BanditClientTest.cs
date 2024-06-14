@@ -75,16 +75,6 @@ public class BanditClientTest
         return sr.ReadToEnd();
     }
 
-
-    // internal class TestAssignmentLogger : IAssignmentLogger
-    // {
-    //     public void LogAssignment(AssignmentLogData assignmentLogData)
-    //     {
-    //         // Do nothing
-    //     }
-    // }
-
-
     // [Test, TestCaseSource(nameof(GetTestAssignmentData))]
     //     public void ShouldValidateAssignments(AssignmentTestCase assignmentTestCase)
     //     {
@@ -153,11 +143,3 @@ public class BanditClientTest
     //         return testCases;
     //     }
 }
-
-// internal class TestAssignmentLogger : IAssignmentLogger
-// {
-//     public void LogAssignment(AssignmentLogData assignmentLogData)
-//     {
-//         // Do nothing
-//     }
-// }
