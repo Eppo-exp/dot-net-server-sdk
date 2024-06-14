@@ -1,4 +1,5 @@
 using eppo_sdk.dto;
+using eppo_sdk.dto.bandit;
 using eppo_sdk.exception;
 using eppo_sdk.http;
 using Microsoft.Extensions.Caching.Memory;
@@ -8,21 +9,23 @@ namespace eppo_sdk.store;
 public class ConfigurationStore : IConfigurationStore
 {
     private readonly MemoryCache _experimentConfigurationCache;
-    private readonly ExperimentConfigurationRequester _requester;
+    private readonly MemoryCache _banditModelCache;
+    private readonly ConfigurationRequester _requester;
     private static ConfigurationStore? _instance;
 
-    public ConfigurationStore(ExperimentConfigurationRequester requester, MemoryCache experimentConfigurationCache)
+    public ConfigurationStore(ConfigurationRequester requester, MemoryCache flagConfigurationCache, MemoryCache banditModelCache)
     {
         _requester = requester;
-        _experimentConfigurationCache = experimentConfigurationCache;
+        _experimentConfigurationCache = flagConfigurationCache;
+        _banditModelCache = banditModelCache;
     }
 
-    public static ConfigurationStore GetInstance(MemoryCache experimentConfigurationCache,
-        ExperimentConfigurationRequester requester)
+    public static ConfigurationStore GetInstance(MemoryCache flagConfigurationCache, MemoryCache banditModelCache,
+        ConfigurationRequester requester)
     {
         if (_instance == null)
         {
-            _instance = new ConfigurationStore(requester, experimentConfigurationCache);
+            _instance = new ConfigurationStore(requester, flagConfigurationCache, banditModelCache);
         }
         else
         {
@@ -37,6 +40,11 @@ public class ConfigurationStore : IConfigurationStore
         _experimentConfigurationCache.Set(key, experimentConfiguration, new MemoryCacheEntryOptions().SetSize(1));
     }
 
+    public void SetBanditModel(Bandit banditModel)
+    {
+        _banditModelCache.Set(banditModel.BanditKey, banditModel, new MemoryCacheEntryOptions().SetSize(1));
+    }
+
     public Flag? GetExperimentConfiguration(string key)
     {
         try
@@ -48,27 +56,52 @@ public class ConfigurationStore : IConfigurationStore
         }
         catch (Exception)
         {
-            throw new ExperimentConfigurationNotFound($"Experiment configuration for key: {key} not found.");
+            throw new ExperimentConfigurationNotFound($"[Eppo SDK] Experiment configuration for key: {key} not found.");
         }
 
         return null;
     }
 
-    public void FetchExperimentConfiguration()
+
+    public Bandit? GetBanditModel(string key)
     {
-        ExperimentConfigurationResponse experimentConfigurationResponse = Get();
-        experimentConfigurationResponse.flags.ToList()
-            .ForEach(x => { this.SetExperimentConfiguration(x.Key, x.Value); });
+        if (_banditModelCache.TryGetValue(key, out Bandit? result))
+        {
+            return result;
+        }
+
+        return null;
     }
 
-    private ExperimentConfigurationResponse Get()
+    public void FetchConfiguration()
     {
-        ExperimentConfigurationResponse? response = this._requester.FetchExperimentConfiguration();
+        FlagConfigurationResponse experimentConfigurationResponse = Get();
+        experimentConfigurationResponse.Flags.ToList()
+            .ForEach(x => { this.SetExperimentConfiguration(x.Key, x.Value); });
+
+        BanditModelResponse banditModels = GetBandits();
+        banditModels.Bandits?.ToList()
+            .ForEach(x => { this.SetBanditModel(x.Value); });
+    }
+
+    private FlagConfigurationResponse Get()
+    {
+        FlagConfigurationResponse? response = this._requester.FetchFlagConfiguration();
         if (response != null)
         {
             return response;
         }
 
         throw new SystemException("Unable to fetch experiment configuration");
+    }
+    private BanditModelResponse GetBandits()
+    {
+        BanditModelResponse? response = this._requester.FetchBanditModels();
+        if (response != null)
+        {
+            return response;
+        }
+
+        throw new SystemException("Unable to fetch bandit models");
     }
 }

@@ -40,12 +40,12 @@ public class EppoHttpClient
         this._defaultParams.Add(key, value);
     }
 
-    public ExperimentConfigurationResponse? Get(string url)
+    public RType? Get<RType>(string url)
     {
-        return this.Get(url, new Dictionary<string, string>(), new Dictionary<string, string>());
+        return this.Get<RType>(url, new Dictionary<string, string>(), new Dictionary<string, string>());
     }
 
-    public ExperimentConfigurationResponse? Get(
+    public RType? Get<RType>(
         string url,
         Dictionary<string, string> parameters,
         Dictionary<string, string> headers
@@ -57,10 +57,13 @@ public class EppoHttpClient
         {
             Timeout = _requestTimeOutMillis
         };
+
         parameters.ToList().ForEach(x => request.AddParameter(new QueryParameter(x.Key, x.Value)));
         request.AddHeaders(headers);
+
         var client = new RestClient(_baseUrl + url, configureSerialization: s => s.UseNewtonsoftJson());
-        var restResponse = client.Execute<ExperimentConfigurationResponse>(request);
+        var restResponse = client.Execute<RType>(request);
+
         if (restResponse.StatusCode == HttpStatusCode.Unauthorized)
         {
             throw new UnauthorizedAccessException("Invalid Eppo API Key");

@@ -32,7 +32,7 @@ public class EppoClientTest
         var response = GetMockFlagConfig();
         Console.WriteLine($"MockServer started at: {_mockServer.Urls[0]}");
         this._mockServer
-            .Given(Request.Create().UsingGet().WithPath(new RegexMatcher("flag-config.*")))
+            .Given(Request.Create().UsingGet().WithPath(new RegexMatcher("flag-config/v1/config")))
             .RespondWith(Response.Create().WithStatusCode(HttpStatusCode.OK).WithBody(response).WithHeader("Content-Type", "application/json"));
     }
 
