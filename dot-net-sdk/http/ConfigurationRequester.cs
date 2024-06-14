@@ -8,6 +8,8 @@ public class ConfigurationRequester
 {
     private static Logger logger = LogManager.GetCurrentClassLogger();
     private readonly EppoHttpClient eppoHttpClient;
+    
+    public string UID { get => Convert.ToString(eppoHttpClient.Url.GetHashCode());}
 
     public ConfigurationRequester(EppoHttpClient eppoHttpClient) {
         this.eppoHttpClient = eppoHttpClient;

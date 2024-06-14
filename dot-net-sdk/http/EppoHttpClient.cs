@@ -9,6 +9,8 @@ public class EppoHttpClient
 {
     private readonly Dictionary<string, string> _defaultParams = new();
     private readonly string _baseUrl;
+    public string Url {get => _baseUrl;}
+
     private readonly int _requestTimeOutMillis = 3000;
 
     public EppoHttpClient(string apikey, string sdkName, string sdkVersion, string baseUrl)

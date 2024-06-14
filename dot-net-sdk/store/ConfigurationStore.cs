@@ -11,7 +11,7 @@ public class ConfigurationStore : IConfigurationStore
     private readonly MemoryCache _experimentConfigurationCache;
     private readonly MemoryCache _banditModelCache;
     private readonly ConfigurationRequester _requester;
-    private static ConfigurationStore? _instance;
+    private static Dictionary<string, ConfigurationStore> _instance = new();
 
     public ConfigurationStore(ConfigurationRequester requester, MemoryCache flagConfigurationCache, MemoryCache banditModelCache)
     {
@@ -20,19 +20,25 @@ public class ConfigurationStore : IConfigurationStore
         _banditModelCache = banditModelCache;
     }
 
-    public static ConfigurationStore GetInstance(MemoryCache flagConfigurationCache, MemoryCache banditModelCache,
-        ConfigurationRequester requester)
+
+    /// Gets an instance of `ConfigurationStore`
+    /// Instances are indexed by the `UID` of the `ConfigurationRequester` which is based on the underlying URL
+    /// Mutliple instances, hashed by URL are supported to allow parrallel testing of the EppoClient.
+    public static ConfigurationStore GetInstance(MemoryCache flagConfigurationCache,
+                                                 MemoryCache banditModelCache,
+                                                 ConfigurationRequester requester)
     {
-        if (_instance == null)
+        // if (_instance == null)
+        if (!_instance.TryGetValue(requester.UID, out ConfigurationStore? value) || value == null)
         {
-            _instance = new ConfigurationStore(requester, flagConfigurationCache, banditModelCache);
+            _instance[requester.UID] = new ConfigurationStore(requester, flagConfigurationCache, banditModelCache) ;
         }
         else
         {
-            _instance._experimentConfigurationCache.Clear();
+            value._experimentConfigurationCache.Clear();
         }
 
-        return _instance;
+        return _instance[requester.UID];
     }
 
     public void SetExperimentConfiguration(string key, Flag experimentConfiguration)
