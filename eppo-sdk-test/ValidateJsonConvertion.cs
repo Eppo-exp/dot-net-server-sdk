@@ -1,5 +1,5 @@
-using System.Text.Json.Nodes;
 using eppo_sdk.dto;
+using eppo_sdk.dto.bandit;
 using Newtonsoft.Json;
 using static NUnit.Framework.Assert;
 
@@ -223,4 +223,179 @@ public class ValidateJsonConvertion
     });
 
   }
+
+
+
+  [Test]
+  public void ShouldParseBandit()
+  {
+    const string banditJson = @"{
+    ""banditKey"": ""banner_bandit"",
+    ""modelName"": ""falcon"",
+    ""updatedAt"": ""2023-09-13T04:52:06.462Z"",
+    ""modelVersion"": ""v123"",
+    ""modelData"": {
+      ""gamma"": 1.0,
+      ""defaultActionScore"": 0.0,
+      ""actionProbabilityFloor"": 0.0,
+      ""coefficients"": {
+        ""nike"": {
+          ""actionKey"": ""nike"",
+          ""intercept"": 1.0,
+          ""actionNumericCoefficients"": [
+            {
+              ""attributeKey"": ""brand_affinity"",
+              ""coefficient"": 1.0,
+              ""missingValueCoefficient"": -0.1
+            }
+          ],
+          ""actionCategoricalCoefficients"": [
+            {
+              ""attributeKey"": ""loyalty_tier"",
+              ""valueCoefficients"": {
+                  ""gold"": 4.5,
+                  ""silver"":  3.2,
+                  ""bronze"":  1.9
+              },
+              ""missingValueCoefficient"": 0.0
+            }
+          ],
+          ""subjectNumericCoefficients"": [
+            {
+              ""attributeKey"": ""account_age"",
+              ""coefficient"": 0.3,
+              ""missingValueCoefficient"": 0.0
+            }
+          ],
+          ""subjectCategoricalCoefficients"": [
+            {
+              ""attributeKey"": ""gender_identity"",
+              ""valueCoefficients"": {
+                ""female"": 0.5,
+                ""male"": -0.5
+              },
+              ""missingValueCoefficient"": 2.3
+            }
+          ]
+        },
+      }
+    }
+  }";
+
+    Bandit? bandit = JsonConvert.DeserializeObject<Bandit>(banditJson);
+
+    Assert.Multiple(() =>
+    {
+      That(bandit, Is.Not.Null);
+      var notNullBandit = bandit!;
+
+      That(notNullBandit.BanditKey, Is.EqualTo("banner_bandit"));
+      That(notNullBandit.ModelName, Is.EqualTo("falcon"));
+      That(notNullBandit.ModelVersion, Is.EqualTo("v123"));
+      That(notNullBandit.UpdatedAt, Is.EqualTo(DateTime.Parse("2023-09-13T04:52:06.462Z").ToUniversalTime()));
+
+      That(notNullBandit.ModelData, Is.Not.Null);
+      var model = notNullBandit.ModelData;
+
+      That(model.Gamma, Is.EqualTo(1.0));
+      That(model.DefaultActionScore, Is.EqualTo(0.0));
+      That(model.ActionProbabilityFloor, Is.EqualTo(0.0));
+
+      That(model.Coefficients, Is.Not.Null);
+      That(model.Coefficients, Has.Count.EqualTo(1));
+
+      That(model.Coefficients.TryGetValue("nike", out var actionCoefficients), Is.True);
+      That(actionCoefficients, Is.Not.Null);
+
+      var ac = actionCoefficients!;
+      That(ac.ActionKey, Is.EqualTo("nike"));
+      That(ac.Intercept, Is.EqualTo(1.0));
+
+
+      That(ac.ActionCategoricalCoefficients, Is.Not.Null);
+      That(ac.ActionNumericCoefficients, Is.Not.Null);
+      That(ac.SubjectCategoricalCoefficients, Is.Not.Null);
+      That(ac.SubjectNumericCoefficients, Is.Not.Null);
+
+      var loyaltyDict = new Dictionary<string, double>
+      {
+        ["gold"] = 4.5,
+        ["silver"] = 3.2,
+        ["bronze"] = 1.9
+      };
+      var loyaltyAttrCoef = new CategoricalAttributeCoefficient("loyalty_tier", 0.0, loyaltyDict);
+      AssertCategoricalCoefficients(ac.ActionCategoricalCoefficients, new() { loyaltyAttrCoef });
+
+      var genderDict = new Dictionary<string, double>
+      {
+        ["male"] = -0.5,
+        ["female"] = 0.5
+      };
+      var genderAttrCoef = new CategoricalAttributeCoefficient("gender_identity", 2.3, genderDict);
+      AssertCategoricalCoefficients(ac.SubjectCategoricalCoefficients, new() { genderAttrCoef });
+
+      That(ac.ActionNumericCoefficients, Is.EquivalentTo(new List<NumericAttributeCoefficient>() { new("brand_affinity", 1, -0.1) }));
+      That(ac.SubjectNumericCoefficients, Is.EquivalentTo(new List<NumericAttributeCoefficient>() { new("account_age", 0.3, 0) }));
+    });
+  }
+
+
+
+  [Test]
+  public void ShouldParsePartialBandit()
+  {
+    const string banditJson = @"{
+
+      ""banditKey"": ""cold_start_bandit"",
+      ""modelName"": ""falcon"",
+      ""updatedAt"": ""2023-09-13T04:52:06.462Z"",
+      ""modelVersion"": ""cold start"",
+      ""modelData"": {
+        ""gamma"": 1.0,
+        ""defaultActionScore"": 0.0,
+        ""actionProbabilityFloor"": 0.0,
+        ""coefficients"": {}
+      }
+
+
+  }";
+
+    Bandit? bandit = JsonConvert.DeserializeObject<Bandit>(banditJson);
+
+    Assert.Multiple(() =>
+    {
+      That(bandit, Is.Not.Null);
+      var notNullBandit = bandit!;
+
+      That(notNullBandit.BanditKey, Is.EqualTo("cold_start_bandit"));
+      That(notNullBandit.ModelName, Is.EqualTo("falcon"));
+      That(notNullBandit.ModelVersion, Is.EqualTo("cold start"));
+      That(notNullBandit.UpdatedAt, Is.EqualTo(DateTime.Parse("2023-09-13T04:52:06.462Z").ToUniversalTime()));
+
+      That(notNullBandit.ModelData, Is.Not.Null);
+      var model = notNullBandit.ModelData;
+
+      That(model.Gamma, Is.EqualTo(1.0));
+      That(model.DefaultActionScore, Is.EqualTo(0.0));
+      That(model.ActionProbabilityFloor, Is.EqualTo(0.0));
+
+      That(model.Coefficients, Is.Not.Null);
+      That(model.Coefficients, Has.Count.EqualTo(0));
+
+    });
+  }
+
+  private static void AssertCategoricalCoefficients(IReadOnlyList<CategoricalAttributeCoefficient> actual, List<CategoricalAttributeCoefficient> expected)
+  {
+    // Can't use EquivalentTo here b/c the nested collection won't match (EquivalentTo appears to use EqualTo on nested values)
+    That(actual, Has.Count.EqualTo(expected.Count));
+
+    for (var i = 0; i < actual.Count; ++i)
+    {
+      That(actual[i].AttributeKey, Is.EqualTo(expected[i].AttributeKey));
+      That(actual[i].MissingValueCoefficient, Is.EqualTo(expected[i].MissingValueCoefficient));
+      That(actual[i].ValueCoefficients, Is.EquivalentTo(expected[i].ValueCoefficients));
+    }
+  }
+
 }

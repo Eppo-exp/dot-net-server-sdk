@@ -31,7 +31,7 @@ public class EppoClient
         _fetchExperimentsTask = fetchExperimentsTask;
     }
 
-    private HasEppoValue _typeCheckedAssignment(string flagKey, string subjectKey, Subject subjectAttributes, EppoValueType expectedValueType, object defaultValue)
+    private HasEppoValue _typeCheckedAssignment(string flagKey, string subjectKey, IDictionary<string, object> subjectAttributes, EppoValueType expectedValueType, object defaultValue)
     {
         var result = GetAssignment(flagKey, subjectKey, subjectAttributes);
         var eppoDefaultValue = new HasEppoValue(defaultValue);
@@ -45,38 +45,38 @@ public class EppoClient
         return assignment;
     }
 
-    public JObject GetJsonAssignment(string flagKey, string subjectKey, Subject subjectAttributes, JObject defaultValue)
+    public JObject GetJsonAssignment(string flagKey, string subjectKey, IDictionary<string, object> subjectAttributes, JObject defaultValue)
     {
         return _typeCheckedAssignment(flagKey, subjectKey, subjectAttributes, EppoValueType.JSON, defaultValue).JsonValue();
     }
 
-    public string GetJsonStringAssignment(string flagKey, string subjectKey, Subject subjectAttributes, string defaultValue)
+    public string GetJsonStringAssignment(string flagKey, string subjectKey, IDictionary<string, object> subjectAttributes, string defaultValue)
     {
         return _typeCheckedAssignment(flagKey, subjectKey, subjectAttributes, EppoValueType.JSON, defaultValue).StringValue();
     }
 
-    public bool GetBooleanAssignment(string flagKey, string subjectKey, Subject subjectAttributes, bool defaultValue)
+    public bool GetBooleanAssignment(string flagKey, string subjectKey, IDictionary<string, object> subjectAttributes, bool defaultValue)
     {
         return _typeCheckedAssignment(flagKey, subjectKey, subjectAttributes, EppoValueType.BOOLEAN, defaultValue).BoolValue();
     }
 
-    public double GetNumericAssignment(string flagKey, string subjectKey, Subject subjectAttributes, double defaultValue)
+    public double GetNumericAssignment(string flagKey, string subjectKey, IDictionary<string, object> subjectAttributes, double defaultValue)
     {
         return _typeCheckedAssignment(flagKey, subjectKey, subjectAttributes, EppoValueType.NUMERIC, defaultValue).DoubleValue();
     }
 
-    public long GetIntegerAssignment(string flagKey, string subjectKey, Subject subjectAttributes, long defaultValue)
+    public long GetIntegerAssignment(string flagKey, string subjectKey, IDictionary<string, object> subjectAttributes, long defaultValue)
     {
         return _typeCheckedAssignment(flagKey, subjectKey, subjectAttributes, EppoValueType.INTEGER, defaultValue).IntegerValue();
     }
 
-    public string GetStringAssignment(string flagKey, string subjectKey, Subject subjectAttributes, string defaultValue)
+    public string GetStringAssignment(string flagKey, string subjectKey, IDictionary<string, object> subjectAttributes, string defaultValue)
     {
         return _typeCheckedAssignment(flagKey, subjectKey, subjectAttributes, EppoValueType.STRING, defaultValue).StringValue();
     }
 
 
-    private HasEppoValue? GetAssignment(string flagKey, string subjectKey, Subject subjectAttributes)
+    private HasEppoValue? GetAssignment(string flagKey, string subjectKey, IDictionary<string, object> subjectAttributes)
     {
         InputValidator.ValidateNotBlank(subjectKey, "Invalid argument: subjectKey cannot be blank");
         InputValidator.ValidateNotBlank(flagKey, "Invalid argument: flagKey cannot be blank");
@@ -115,7 +115,7 @@ public class EppoClient
                     result.AllocationKey,
                     result.Variation.Key,
                     subjectKey,
-                    subjectAttributes,
+                    subjectAttributes.AsReadOnly(),
                     AppDetails.GetInstance().AsDict(),
                     result.ExtraLogging
                 );

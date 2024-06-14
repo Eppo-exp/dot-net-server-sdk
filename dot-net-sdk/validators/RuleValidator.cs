@@ -13,9 +13,7 @@ namespace eppo_sdk.validators;
 
 public static partial class RuleValidator
 {
-    private const string SUBJECT_KEY_FIELD = "id";
-
-    public static FlagEvaluation? EvaluateFlag(Flag flag, string subjectKey, Subject subjectAttributes)
+    public static FlagEvaluation? EvaluateFlag(Flag flag, string subjectKey, IDictionary<string, object> subjectAttributes)
     {
         if (!flag.enabled) return null;
 
@@ -27,9 +25,9 @@ public static partial class RuleValidator
                 continue;
             }
 
-            if (!subjectAttributes.ContainsKey(SUBJECT_KEY_FIELD))
+            if (!subjectAttributes.ContainsKey(Subject.SUBJECT_KEY_FIELD))
             {
-                subjectAttributes[SUBJECT_KEY_FIELD] = subjectKey;
+                subjectAttributes[Subject.SUBJECT_KEY_FIELD] = subjectKey;
             }
 
             if (allocation.rules == null || allocation.rules.Count == 0 || MatchesAnyRule(allocation.rules, subjectAttributes))
@@ -65,18 +63,18 @@ public static partial class RuleValidator
         return shard.ranges.Any(range => Sharder.IsInRange(subjectBucket, range));
     }
 
-    private static bool MatchesAnyRule(IEnumerable<Rule> rules, Subject subject) => rules.Any() && FindMatchingRule(subject, rules) != null;
+    private static bool MatchesAnyRule(IEnumerable<Rule> rules, IDictionary<string, object> subject) => rules.Any() && FindMatchingRule(subject, rules) != null;
 
-    public static Rule? FindMatchingRule(Subject subjectAttributes, IEnumerable<Rule> rules) => rules.FirstOrDefault(rule => MatchesRule(subjectAttributes, rule));
+    public static Rule? FindMatchingRule(IDictionary<string, object> subjectAttributes, IEnumerable<Rule> rules) => rules.FirstOrDefault(rule => MatchesRule(subjectAttributes, rule));
 
-    private static bool MatchesRule(Subject subjectAttributes, Rule rule) => rule.conditions.All(condition => EvaluateCondition(subjectAttributes, condition));
+    private static bool MatchesRule(IDictionary<string, object> subjectAttributes, Rule rule) => rule.conditions.All(condition => EvaluateCondition(subjectAttributes, condition));
 
-    private static bool EvaluateCondition(Subject subjectAttributes, Condition condition)
+    private static bool EvaluateCondition(IDictionary<string, object> subjectAttributes, Condition condition)
     {
         try
         {
             // Operators other than `IS_NULL` need to assume non-null
-                bool isNull = !subjectAttributes.TryGetValue(condition.Attribute, out Object? outVal) || HasEppoValue.IsNullValue(new HasEppoValue(outVal));
+            bool isNull = !subjectAttributes.TryGetValue(condition.Attribute, out Object? outVal) || HasEppoValue.IsNullValue(new HasEppoValue(outVal));
             if (condition.Operator == IS_NULL)
             {
                 return condition.BoolValue() == isNull;
@@ -180,15 +178,26 @@ public class Compare
     {
         return arrayValues.IndexOf(ToString(value.Value)) >= 0;
     }
-    public static string ToString(object? obj) {
+    public static string ToString(object? obj)
+    {
         // Simple casting to string except for tricksy floats.
-        if (obj is string v) {
+        if (obj is string v)
+        {
             return v;
-        } else if (obj is long i) {
+        }
+        else if (obj is long i)
+        {
             return Convert.ToString(i);
-        } else if ((obj is double || obj is float) && Math.Truncate((double)obj) == (double)obj) {
+        }
+        else if ((obj is double || obj is float) && Math.Truncate((double)obj) == (double)obj)
+        {
             // Example: 123456789.0 is cast to a more suitable format of int.
             return Convert.ToString(Convert.ToInt32(obj));
+        }
+        else if (obj != null && (obj is double || obj is float))
+        {
+            // Explicit conversion of doubles/floats although they're handled by the fallthrough below.
+            return Convert.ToString(obj)!;
         }
         // Cross-SDK standard for encoding other possible value types such as bool, null and list<strings>
         return JsonConvert.SerializeObject(obj);
