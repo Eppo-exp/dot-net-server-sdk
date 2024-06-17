@@ -11,14 +11,6 @@ public class EppoHttpClient
     private readonly string _baseUrl;
     private readonly int _requestTimeOutMillis = 3000;
 
-    public string Url { get => _baseUrl; }
-
-    public override string ToString()
-    {
-        var propString = $"url: {_baseUrl}";
-        return $"EppoHttpClient [{propString}]";
-    }
-
     public EppoHttpClient(string apikey, string sdkName, string sdkVersion, string baseUrl)
     {
         this._defaultParams.Add("apiKey", apikey);

@@ -30,13 +30,22 @@ public class BanditEvaluator
         }
 
         // Score all potential actions.
-        var actionScores = ScoreActions(subject.AsAttributeSet(), actionsWithContexts.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.AsAttributeSet()), banditModel);
+        var actionScores = ScoreActions(
+            subject.AsAttributeSet(),
+            actionsWithContexts.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.AsAttributeSet()),
+            banditModel);
 
         // Assign action weights using FALCON.
-        var actionWeights = WeighActions(actionScores, banditModel.Gamma, banditModel.ActionProbabilityFloor);
+        var actionWeights = WeighActions(
+            actionScores,
+            banditModel.Gamma,
+            banditModel.ActionProbabilityFloor);
 
         // Shuffle the actions and select one based on the subject's bucket.
-        var selectedAction = SelectAction(flagKey, subject.Key, actionWeights);
+        var selectedAction = SelectAction(
+            flagKey,
+            subject.Key,
+            actionWeights);
 
         var selectedActionContext = actionsWithContexts[selectedAction];
         var actionScore = actionScores.Find(a => a.Key == selectedAction)!.Value;
@@ -59,7 +68,9 @@ public class BanditEvaluator
         );
     }
 
-    public static List<ActionScore> ScoreActions(AttributeSet subjectAttributes, IDictionary<string, AttributeSet> actionsWithContexts, ModelData banditModel)
+    public static List<ActionScore> ScoreActions(AttributeSet subjectAttributes,
+                                                 IDictionary<string, AttributeSet> actionsWithContexts,
+                                                 ModelData banditModel)
     {
         return actionsWithContexts.Select(kvp =>
         {
@@ -73,19 +84,31 @@ public class BanditEvaluator
         }).ToList();
     }
 
-    private static double ScoreAction(AttributeSet subjectAttributes, AttributeSet actionAttributes, ActionCoefficients coefficients)
+    private static double ScoreAction(AttributeSet subjectAttributes,
+                                      AttributeSet actionAttributes,
+                                      ActionCoefficients coefficients)
     {
         double score = coefficients.Intercept;
 
-        score += ScoreNumericAttributes(coefficients.SubjectNumericCoefficients, subjectAttributes.NumericAttributes);
-        score += ScoreCategoricalAttributes(coefficients.SubjectCategoricalCoefficients, subjectAttributes.CategoricalAttributes);
-        score += ScoreNumericAttributes(coefficients.ActionNumericCoefficients, actionAttributes.NumericAttributes);
-        score += ScoreCategoricalAttributes(coefficients.ActionCategoricalCoefficients, actionAttributes.CategoricalAttributes);
+        score += ScoreNumericAttributes(
+            coefficients.SubjectNumericCoefficients,
+            subjectAttributes.NumericAttributes);
+        score += ScoreCategoricalAttributes(
+            coefficients.SubjectCategoricalCoefficients,
+            subjectAttributes.CategoricalAttributes);
+        score += ScoreNumericAttributes(
+            coefficients.ActionNumericCoefficients,
+            actionAttributes.NumericAttributes);
+        score += ScoreCategoricalAttributes(
+            coefficients.ActionCategoricalCoefficients,
+            actionAttributes.CategoricalAttributes);
 
         return score;
     }
 
-    public List<ActionScore> WeighActions(List<ActionScore> actionScores, double gamma, double probabilityFloor)
+    public List<ActionScore> WeighActions(List<ActionScore> actionScores,
+                                          double gamma,
+                                          double probabilityFloor)
     {
         var numberOfActions = actionScores.Count;
 
@@ -105,7 +128,9 @@ public class BanditEvaluator
 
 
 
-    private string SelectAction(string flagKey, string subjectKey, List<ActionScore> actionWeights)
+    private string SelectAction(string flagKey,
+                                string subjectKey,
+                                List<ActionScore> actionWeights)
     {
         // Shuffle the actions "randomly" by using the sharder to hash and bucket them
         var sortedActionWeights = actionWeights.OrderBy(t => Sharder.GetShard($"{flagKey}-{subjectKey}-{t.Key}", totalShards))
@@ -130,7 +155,8 @@ public class BanditEvaluator
     }
 
 
-    public static double ScoreNumericAttributes(IReadOnlyList<NumericAttributeCoefficient> coefficients, IDictionary<string, double> attributes)
+    public static double ScoreNumericAttributes(IReadOnlyList<NumericAttributeCoefficient> coefficients,
+                                                IDictionary<string, double> attributes)
     {
         double score = 0.0f;
         foreach (var coefficient in coefficients)
@@ -147,7 +173,8 @@ public class BanditEvaluator
         return score;
     }
 
-    public static double ScoreCategoricalAttributes(IReadOnlyList<CategoricalAttributeCoefficient> coefficients, IDictionary<string, string> attributes)
+    public static double ScoreCategoricalAttributes(IReadOnlyList<CategoricalAttributeCoefficient> coefficients,
+                                                    IDictionary<string, string> attributes)
     {
         double score = 0.0f;
         foreach (var coefficient in coefficients)
@@ -163,11 +190,5 @@ public class BanditEvaluator
             }
         }
         return score;
-    }
-
-    private static BanditEvaluation CreateNullEvaluation(string flagKey, string subjectKey, AttributeSet subjectAttributes, double gamma)
-    {
-        // Implement logic to create a null evaluation as needed
-        throw new NotImplementedException("CreateNullEvaluation implementation required.");
     }
 }

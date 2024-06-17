@@ -228,19 +228,21 @@ public class BanditEvaluatorTest
         var weights = banditEvaluator.WeighActions(scores, gamma, minProbability);
 
         // The actual weights are kind of hand-wavy and black box if they're just pulled from the underlying calculation
-        // What matters is that the weights add up to 1 and (for this dataset) that the action weightss are in the same ranking as their scores.
-        // Note: with a low gamma and a high min probabilty, the evaluation can favour lower scoring actions over the highest scoring action.
-        Assert.That(weights.Select(aScore => aScore.Value).Sum(), Is.EqualTo(1));
-        Assert.That(weights.OrderBy(w => w.Value).Select(w => w.Key), Is.EquivalentTo(
-            new List<string>
-                {
+        // What matters is that the weights add up to 1 and (for this dataset) that the action weights are in the same ranking as their scores.
+        Assert.Multiple(() =>
+        {
+            Assert.That(weights.Select(aScore => aScore.Value).Sum(), Is.EqualTo(1));
+            Assert.That(weights.OrderBy(w => w.Value).Select(w => w.Key), Is.EquivalentTo(
+                new List<string>
+                    {
                     "Gretzky",
                     "Lindros",
                     "Crosby",
                     "Lemieux",
                     "Ovechkin"
-                }
-        ));
+                    }
+            ));
+        });
     }
 
     [Test]
@@ -260,10 +262,14 @@ public class BanditEvaluatorTest
         Assert.Multiple(() =>
         {
             // Winner shares more of their score with a smaller gamma
-            Assert.That(smallGammaWeights.Find(w => w.Key == "action").Value, Is.LessThan(largeGammaWeights.Find(w => w.Key == "action").Value));
+            Assert.That(
+                smallGammaWeights.Find(w => w.Key == "action").Value,
+                Is.LessThan(largeGammaWeights.Find(w => w.Key == "action").Value));
 
             // Non-winners get bigger share of weight with a smaller gamma
-            Assert.That(smallGammaWeights.Find(w => w.Key == "action2").Value, Is.GreaterThan(largeGammaWeights.Find(w => w.Key == "action2").Value));
+            Assert.That(
+                smallGammaWeights.Find(w => w.Key == "action2").Value,
+                Is.GreaterThan(largeGammaWeights.Find(w => w.Key == "action2").Value));
         });
     }
 
@@ -313,19 +319,19 @@ public class BanditEvaluatorTest
             {
                 "action1", new ActionCoefficients("action1", 0.5)
                 {
-                    SubjectNumericCoefficients = new List<NumericAttributeCoefficient>() { new NumericAttributeCoefficient("age", 0.1, 0.0) },
-                    SubjectCategoricalCoefficients = new List<CategoricalAttributeCoefficient>() { new CategoricalAttributeCoefficient ( "location",  0.0, new DoubleDictionary() { { "US", 0.2 } } )},
-                    ActionNumericCoefficients = new List<NumericAttributeCoefficient>() { new NumericAttributeCoefficient ( "price", 0.05,  0.0 )},
-                    ActionCategoricalCoefficients = new List<CategoricalAttributeCoefficient>() { new CategoricalAttributeCoefficient ( "category",  0.0, new DoubleDictionary(){ { "A", 0.3 } } )}
+                    SubjectNumericCoefficients = new List<NumericAttributeCoefficient>() { new("age", 0.1, 0.0) },
+                    SubjectCategoricalCoefficients = new List<CategoricalAttributeCoefficient>() { new( "location",  0.0, new DoubleDictionary() { { "US", 0.2 } } )},
+                    ActionNumericCoefficients = new List<NumericAttributeCoefficient>() { new( "price", 0.05,  0.0 )},
+                    ActionCategoricalCoefficients = new List<CategoricalAttributeCoefficient>() { new( "category",  0.0, new DoubleDictionary(){ { "A", 0.3 } } )}
                 }
             },
             {
                 "action2", new ActionCoefficients("action2", 0.3)
                 {
-                    SubjectNumericCoefficients = new List<NumericAttributeCoefficient>() { new NumericAttributeCoefficient("age", 0.1, 0.0) },
-                    SubjectCategoricalCoefficients = new List<CategoricalAttributeCoefficient>() { new CategoricalAttributeCoefficient ( "location",  0.0, new DoubleDictionary() { { "US", 0.2 } } )},
-                    ActionNumericCoefficients = new List<NumericAttributeCoefficient>() { new NumericAttributeCoefficient ( "price", 0.05,  0.0 )},
-                    ActionCategoricalCoefficients = new List<CategoricalAttributeCoefficient>() { new CategoricalAttributeCoefficient ( "category",  0.0, new DoubleDictionary(){ { "A", 0.3 } } )}
+                    SubjectNumericCoefficients = new List<NumericAttributeCoefficient>() { new("age", 0.1, 0.0) },
+                    SubjectCategoricalCoefficients = new List<CategoricalAttributeCoefficient>() { new( "location",  0.0, new DoubleDictionary() { { "US", 0.2 } } )},
+                    ActionNumericCoefficients = new List<NumericAttributeCoefficient>() { new( "price", 0.05,  0.0 )},
+                    ActionCategoricalCoefficients = new List<CategoricalAttributeCoefficient>() { new( "category",  0.0, new DoubleDictionary(){ { "A", 0.3 } } )}
                 }
             }
         };
@@ -341,7 +347,7 @@ public class BanditEvaluatorTest
         var evaluator = new BanditEvaluator(10_000);
 
         // Evaluate bandit
-        var evaluation = evaluator.EvaluateBandit(flagKey, subjectAttributes, actionContexts.ToDictionary(i=>i.Key), banditModel);
+        var evaluation = evaluator.EvaluateBandit(flagKey, subjectAttributes, actionContexts.ToDictionary(i => i.Key), banditModel);
         Assert.Multiple(() =>
         {
             Assert.That(evaluation, Is.Not.Null);
@@ -351,9 +357,9 @@ public class BanditEvaluatorTest
             Assert.That(evaluation.SubjectAttributes.NumericAttributes, Is.EquivalentTo(subjectAttributes.AsAttributeSet().NumericAttributes));
             Assert.That(evaluation.SubjectAttributes.CategoricalAttributes, Is.EquivalentTo(subjectAttributes.AsAttributeSet().CategoricalAttributes));
 
-            // Note: The test result here is different than in the python SDK for the same inputs because of the mechanism used to shuffle the actions
-            // Here, we use the same sharder as we would for non-test environments. In Python, a pass-thru sharder is used, so the actions
-            // are shuffled into a differtent order.
+            // Note: The test result here is different than in the python SDK for the same inputs because of the 
+            // mechanism used to shuffle the actions. Here, we use the same sharder as we would for non-test environments.
+            // In Python, a pass-thru sharder is used, so the actions are shuffled into a differtent order.
             Assert.That(evaluation.ActionKey, Is.EqualTo("action2"));
             Assert.That(evaluation.Gamma, Is.EqualTo(banditModel.Gamma));
             Assert.That(evaluation.ActionScore, Is.EqualTo(4.0));

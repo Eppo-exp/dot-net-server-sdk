@@ -87,7 +87,6 @@ public class BanditClientTest
     [OneTimeTearDown]
     public void TearDown()
     {
-        // EppoClient.DeInit();
         _mockServer?.Stop();
     }
 

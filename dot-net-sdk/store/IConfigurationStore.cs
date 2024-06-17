@@ -1,6 +1,5 @@
 using eppo_sdk.dto;
 using eppo_sdk.dto.bandit;
-using eppo_sdk.dto.bandit;
 
 namespace eppo_sdk.store;
 

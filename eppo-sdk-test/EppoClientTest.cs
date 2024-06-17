@@ -42,7 +42,6 @@ public class EppoClientTest
     [OneTimeTearDown]
     public void TearDown()
     {
-        // EppoClient.DeInit();
         _mockServer?.Stop();
     }
 
@@ -58,7 +57,6 @@ public class EppoClientTest
     public void ShouldValidateAssignments(AssignmentTestCase assignmentTestCase)
     {
         var client = _client!;
-        
 
         switch (assignmentTestCase.VariationType)
         {
