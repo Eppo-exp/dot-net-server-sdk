@@ -1,9 +1,13 @@
+using System.Diagnostics;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using eppo_sdk;
+using eppo_sdk.dto;
 using eppo_sdk.dto.bandit;
+using eppo_sdk.logger;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
+using Moq;
 using Newtonsoft.Json;
 using NUnit.Framework.Constraints;
 using RandomDataGenerator.CreditCardValidator;
@@ -23,11 +27,14 @@ public class BanditClientTest
     private const string BANDIT_CONFIG_FILE = "files/ufc/bandit-flags-v1.json";
     private const string BANDIT_MODEL_FILE = "files/ufc/bandit-models-v1.json";
     private WireMockServer? _mockServer;
-    private ContextAttributes _subject = new("userID")
+    private ContextAttributes _subject = new("subject_key")
     {
         {"account_age", 3},
-        {"favourite_colour","red"}
+        {"favourite_colour", "red"},
+        {"age", 30},
+        {"country", "UK"}
     };
+    private Mock<IAssignmentLogger> _mockAssignmentLogger;
     private readonly Dictionary<string, ContextAttributes> _actions = new()
     {
         {"action1" , new("action1") {
@@ -45,11 +52,18 @@ public class BanditClientTest
     {
         SetupMockServer();
         SetupSubjectMocks();
-        var config = new EppoClientConfig("mock-api-key", new TestAssignmentLogger())
+        _mockAssignmentLogger = new Mock<IAssignmentLogger>();
+        var config = new EppoClientConfig("mock-api-key", _mockAssignmentLogger.Object)
         {
             BaseUrl = _mockServer?.Urls[0]!
         };
         _client = EppoClient.Init(config, "BanditClientTest");
+    }
+
+    [TearDown]
+    public void TeardownEach()
+    {
+        _mockAssignmentLogger.Invocations.Clear();
     }
 
     private void SetupSubjectMocks()
@@ -89,10 +103,9 @@ public class BanditClientTest
     }
 
     [Test]
-    public void ShouldReturnDefaultValue()
+    public void ShouldReturnDefaultForNonBandit()
     {
-        var client = EppoClient.GetInstance();
-        var result = client.GetBanditAction("unknownflag", _subject, _actions, "defaultVariation");
+        var result = _client!.GetBanditAction("unknownflag", _subject, _actions, "defaultVariation");
         Multiple(() =>
         {
             That(result, Is.Not.Null);
@@ -101,8 +114,100 @@ public class BanditClientTest
         });
     }
 
+    [Test]
+    public void ShouldReturnDefaultForNonBanditFlag()
+    {
+        var result = _client!.GetBanditAction("a_flag", _subject, new Dictionary<string, ContextAttributes>(), "default_variation");
+        Multiple(() =>
+        {
+            That(result, Is.Not.Null);
+            That(result.Variation, Is.EqualTo("default_variation"));
+            That(result.Action, Is.Null);
+        });
+    }
+
+
+    [Test]
+    public void Test_GetBanditAction_WithSubjectAttributes()
+    {
+        var client = _client!;
+        var subjectKey = "subject_key";
+        var defaultSubjectAttributes = _subject.AsDict();
+        var actions = new Dictionary<string, ContextAttributes>()
+        {
+            ["adidas"] = new ContextAttributes(
+                "adidas")
+            {
+                ["discount"] = 0.1,
+                ["from"] = "germany"
+            },
+            ["nike"] = new ContextAttributes(
+                "nike")
+            {
+                ["discount"] = 0.2,
+                ["from"] = "usa"
+            }
+        };
+
+        var defaultVariation = "default_variation";
+
+
+        // Act
+        var result = client.GetBanditAction("banner_bandit_flag_uk_only", _subject, actions, defaultVariation);
+
+        Multiple(() =>
+        {
+            // Assert - Result verification
+            That(result.Variation, Is.EqualTo("banner_bandit"));
+            That(result.Action == "adidas" || result.Action == "nike", Is.True);
+
+            // Assert - Assignment logger verification
+            var assignmentLogStatement = _mockAssignmentLogger.Invocations.First().Arguments[0] as AssignmentLogData;
+            That(assignmentLogStatement, Is.Not.Null);
+            var logEvent = assignmentLogStatement!;
+
+            That(logEvent.FeatureFlag, Is.EqualTo("banner_bandit_flag_uk_only"));
+            That(logEvent.Variation, Is.EqualTo("banner_bandit"));
+            That(logEvent.Subject, Is.EqualTo(subjectKey));
+
+            // Assert - Bandit logger verification
+            var banditLogStatement = _mockAssignmentLogger.Invocations.Last().Arguments[0] as BanditLogEvent;
+
+            That(banditLogStatement, Is.Not.Null);
+            var banditLog = banditLogStatement!;
+            That(banditLog.FlagKay, Is.EqualTo("banner_bandit_flag_uk_only"));
+            That(banditLog.BanditKey, Is.EqualTo("banner_bandit"));
+            That(banditLog.SubjectKey, Is.EqualTo(subjectKey));
+            GreaterOrEqual(banditLog.OptimalityGap, 0);
+            GreaterOrEqual(banditLog.ActionProbability, 0);
+
+
+            That(result.Action, Is.Not.Null);
+            var chosenAction = actions[result.Action!];
+
+            That(banditLog.actionNumericAttributes, Is.Not.Null);
+            That(banditLog.actionCategoricalAttributes, Is.Not.Null);
+            AssertDictsEquivalent(banditLog.actionNumericAttributes!, chosenAction.GetNumeric().AsReadOnly());
+            AssertDictsEquivalent(banditLog.actionCategoricalAttributes!, chosenAction.GetCategorical().AsReadOnly());
+
+
+        });
+    }
+
+    private void AssertDictsEquivalent<TKey, TValue>(IReadOnlyDictionary<TKey, TValue> a, IReadOnlyDictionary<TKey, TValue> b)
+    {
+        Multiple(() =>
+        {
+            That(a.Count, Is.EqualTo(b.Count));
+            foreach (var kvp in a)
+            {
+                That(b[kvp.Key], Is.EqualTo(kvp.Value));
+            }
+        });
+    }
+
     [Test, TestCaseSource(nameof(GetTestAssignmentData))]
-    public void ShouldAssignBandits(BanditTestCase banditTestCase)
+    public void ShouldAssignCorrectlyAgainstUniversalTestCases(BanditTestCase banditTestCase)
     {
         var client = EppoClient.GetInstance();
 
@@ -110,7 +215,7 @@ public class BanditClientTest
         {
             var expected = subject.Assignment;
             Dictionary<string, ContextAttributes> actions =
-                subject.Actions.ToDictionary(atr => atr.ActionKey, atr => new ContextAttributes(atr.ActionKey, atr.CategoricalAttributes, atr.NumericalAttributes));
+                subject.Actions.ToDictionary(atr => atr.ActionKey, atr => new ContextAttributes(atr.ActionKey, atr.CategoricalAttributes, atr.NumericAttributes));
 
 
             var result = client.GetBanditAction(
@@ -120,10 +225,10 @@ public class BanditClientTest
                 actions.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.AsDict()),
                 banditTestCase.DefaultValue
             );
-            Assert.Multiple(() =>
+            Multiple(() =>
             {
-                Assert.That(result.Variation, Is.EqualTo(expected.Variation), "Unexpected assignment in " + banditTestCase.TestCaseFile);
-                Assert.That(result.Action, Is.EqualTo(expected.Action), "Unexpected assignment in " + banditTestCase.TestCaseFile);
+                That(result.Variation, Is.EqualTo(expected.Variation), "Unexpected assignment in " + banditTestCase.TestCaseFile);
+                That(result.Action, Is.EqualTo(expected.Action), "Unexpected assignment in " + banditTestCase.TestCaseFile);
             });
         }
     }
@@ -161,7 +266,7 @@ public record BanditSubjectTestRecord(string SubjectKey,
 
 public record ActionTestRecord(string ActionKey,
                                Dictionary<string, string?> CategoricalAttributes,
-                               Dictionary<string, double?> NumericalAttributes)
+                               Dictionary<string, double?> NumericAttributes)
 {
 }
 

@@ -128,6 +128,11 @@ internal class TestAssignmentLogger : IAssignmentLogger
     {
         // Do nothing
     }
+
+    public void LogBanditAction(BanditLogEvent banditLogEvent)
+    {
+        // Do nothing
+    }
 }
 
 

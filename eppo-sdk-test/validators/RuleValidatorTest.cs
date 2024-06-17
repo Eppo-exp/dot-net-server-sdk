@@ -374,7 +374,9 @@ public class RuleValidatorTest
                 "rock",
                 new List<Rule>() { rockAndRollLegendRule },
                 musicSplits,
-                false, null, null)
+                null,
+                null,
+                false)
         };
         var variations = new Dictionary<string, Variation>() {
             { "music", new("music", "rockandroll") },
@@ -413,9 +415,20 @@ public class RuleValidatorTest
     {
 
         var now = DateTimeOffset.Now;
-        var overAlloc = new Allocation("over", new List<Rule>(), matchingSplits, false, null, endAt: now.Subtract( new TimeSpan( 0,0,10000)).DateTime );
+        var overAlloc = new Allocation(
+            "over",
+            new List<Rule>(),
+            matchingSplits,
+            null,
+            endAt: now.Subtract(new TimeSpan(0, 0, 10000)).DateTime,
+            false);
 
-        var futureAlloc = new Allocation("hasntStarted", new List<Rule>(), matchingSplits, false, startAt: now.Add( new TimeSpan( 0,0,6000)).DateTime, null);
+        var futureAlloc = new Allocation(
+            "hasntStarted",
+            new List<Rule>(),
+            matchingSplits,
+            startAt: now.Add(new TimeSpan(0, 0, 6000)).DateTime,
+            null);
 
         var flag = new Flag(
             "inactive_allocs",
@@ -438,7 +451,13 @@ public class RuleValidatorTest
     [Test]
     public void MatchesVariationWithoutRules_ReturnsMatchingVariation()
     {
-        var allocation1 = new Allocation("alloc1", new List<Rule>(), matchingSplits, false, null, null);
+        var allocation1 = new Allocation(
+            "alloc1",
+            new List<Rule>(),
+            matchingSplits,
+            null,
+            null,
+            false);
         var basicVariation = new Variation("foo", "bar");
         var flag = new Flag(
             "matches",

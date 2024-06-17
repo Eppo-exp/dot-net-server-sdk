@@ -140,7 +140,8 @@ public class EppoClient
         return assignment;
     }
 
-    public static void DeInit() {
+    public static void DeInit()
+    {
         _client?._fetchExperimentsTask.Dispose();
         _client = null;
     }
@@ -206,8 +207,8 @@ public class EppoClient
 
     public BanditResult GetBanditAction(string flagKey,
                                         string subjectKey,
-                                        IDictionary<string, object> subjectAttributes,
-                                        IDictionary<string, IDictionary<string, object>> actions,
+                                        IDictionary<string, object?> subjectAttributes,
+                                        IDictionary<string, IDictionary<string, object?>> actions,
                                         string defaultValue)
     {
         return GetBanditAction(
@@ -230,9 +231,13 @@ public class EppoClient
             {
                 var result = _banditEvaluator.EvaluateBandit(flagKey, subject, actions, bandit.ModelData);
 
-                // var logEvent = new BanditEl
+                var banditActionLog = new BanditLogEvent(
+                    variation,
+                    result,
+                    bandit, 
+                    AppDetails.GetInstance().AsDict());
+                _eppoClientConfig.AssignmentLogger.LogBanditAction(banditActionLog);
                 return new BanditResult(variation, result.ActionKey);
-
             }
             else
             {
