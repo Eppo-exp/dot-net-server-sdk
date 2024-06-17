@@ -273,16 +273,39 @@ public class EppoClient
     {
         return GetBanditAction(
             flagKey,
-            new ContextAttributes(subjectKey, subjectAttributes),
-            actions.ToDictionary(kvp => kvp.Key, kvp => new ContextAttributes(kvp.Key, kvp.Value)),
+            ContextAttributes.FromDict(subjectKey, subjectAttributes),
+            actions.ToDictionary(kvp => kvp.Key, kvp => ContextAttributes.FromDict(kvp.Key, kvp.Value)),
             defaultValue);
     }
 
+    /// <summary>Gets the selected action, if applicable, for the given <paramref name="flagKey"/> and contexts.
+    /// </summary>
+    /// <param name="flagKey">The flag or bandit key to lookup.</param>
+    /// <param name="subjectKey">The subject's identifier.</param>
+    /// <param name="subjectAttributes">The subject's attributes for consideration.</param>
+    /// <param name="actions">The actions to consider and their contextual attributes./param>
+    /// <param name="defaultValue">Default flag variation.</param>
+    public BanditResult GetBanditAction(string flagKey,
+                                        string subjectKey,
+                                        AttributeSet subjectAttributes,
+                                        IDictionary<string, AttributeSet> actions,
+                                        string defaultValue)
+    {
+
+        var contextualSubject = new ContextAttributes(subjectKey, subjectAttributes.CategoricalAttributes, subjectAttributes.NumericAttributes);
+        var actionContexts = actions.ToDictionary(kvp => kvp.Key, kvp => new ContextAttributes(kvp.Key, kvp.Value.CategoricalAttributes, kvp.Value.NumericAttributes));
+
+        return _getBanditDetail(
+            flagKey,
+            contextualSubject,
+            actionContexts,
+            defaultValue);
+    }
 
     private BanditResult _getBanditDetail(string flagKey,
-                                          ContextAttributes subject,
-                                          IDictionary<string, ContextAttributes> actions,
-                                          string defaultValue)
+                                        ContextAttributes subject,
+                                        IDictionary<string, ContextAttributes> actions,
+                                        string defaultValue)
     {
         // Get the user's flag assignment for the given key.
         var variation = GetStringAssignment(

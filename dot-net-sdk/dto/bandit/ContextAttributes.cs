@@ -25,55 +25,32 @@ public class ContextAttributes : IContextAttributes
         this.Key = key;
     }
 
-    public ContextAttributes(string key, IDictionary<string, object?> other)
+    public static ContextAttributes FromDict(string key, IDictionary<string, object?> other)
     {
-        Key = key;
-        AddDict(other);
+        var obj = new ContextAttributes(key);
+        obj.AddDict(other);
+        return obj;
+    }
+
+    public static ContextAttributes FromNullableAttributes(string key, IDictionary<string, string?>? categoricalAttributes, IDictionary<string, double?>? numericAttributes)
+    {
+        var obj = new ContextAttributes(key);
+        obj.AddDict(categoricalAttributes);
+        obj.AddDict(numericAttributes);
+        return obj;
     }
 
 
-    public ContextAttributes(string key,
-                             AttributeSet attributes) : this(key,
-                                                             (IDictionary<string, string?>?)attributes.CategoricalAttributes,
-                                                             (IDictionary<string, double?>?)attributes.NumericAttributes)
-    { }
-
-    public ContextAttributes(string key, IDictionary<string, string?>? categoricalAttributes, IDictionary<string, double?>? numericalAttributes)
+    public ContextAttributes(string key, IDictionary<string, string>? categoricalAttributes, IDictionary<string, double>? numericAttributes)
     {
         Key = key;
         AddDict(categoricalAttributes);
-        AddDict(numericalAttributes);
+        AddDict(numericAttributes);
     }
 
-    private void AddDict(IDictionary<string, double?>? dict)
+    private void AddDict<TV>(IDictionary<string, TV>? dict)
     {
         if (dict == null) return;
-        foreach (var kvp in dict)
-        {
-            if (kvp.Value == null)
-            {
-                continue;
-            }
-            Add(kvp.Key, kvp.Value);
-        }
-    }
-
-    private void AddDict(IDictionary<string, string?>? dict)
-    {
-        if (dict == null) return;
-        foreach (var kvp in dict)
-        {
-            if (kvp.Value == null)
-            {
-                continue;
-            }
-            Add(kvp.Key, kvp.Value);
-        }
-    }
-
-
-    private void AddDict(IDictionary<string, object?> dict)
-    {
         foreach (var kvp in dict)
         {
             if (kvp.Value == null)

@@ -1,16 +1,10 @@
-using System.Diagnostics;
 using System.Net;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography.X509Certificates;
 using eppo_sdk;
 using eppo_sdk.dto;
 using eppo_sdk.dto.bandit;
 using eppo_sdk.logger;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Moq;
 using Newtonsoft.Json;
-using NUnit.Framework.Constraints;
-using RandomDataGenerator.CreditCardValidator;
 using WireMock.Matchers;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
@@ -215,14 +209,14 @@ public class BanditClientTest
         {
             var expected = subject.Assignment;
             Dictionary<string, ContextAttributes> actions =
-                subject.Actions.ToDictionary(atr => atr.ActionKey, atr => new ContextAttributes(atr.ActionKey, atr.CategoricalAttributes, atr.NumericAttributes));
+                subject.Actions.ToDictionary(atr => atr.ActionKey, atr => ContextAttributes.FromNullableAttributes(atr.ActionKey, atr.CategoricalAttributes, atr.NumericAttributes));
 
 
             var result = client.GetBanditAction(
                 banditTestCase.Flag,
                 subject.SubjectKey,
                 subject.SubjectAttributes.AsDict(),
-                actions.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.AsDict()),
+                subject.Actions.ToDictionary(atr => atr.ActionKey, atr => atr.AsDict()),
                 banditTestCase.DefaultValue
             );
             Multiple(() =>
@@ -268,6 +262,21 @@ public record ActionTestRecord(string ActionKey,
                                Dictionary<string, string?> CategoricalAttributes,
                                Dictionary<string, double?> NumericAttributes)
 {
+    public IDictionary<string, object?> AsDict()
+    {
+        var combinedDictionary = new Dictionary<string, object?>();
+
+        foreach (var kvp in NumericAttributes)
+        {
+            combinedDictionary.Add(kvp.Key, kvp.Value);
+        }
+
+        foreach (var kvp in CategoricalAttributes)
+        {
+            combinedDictionary.Add(kvp.Key, kvp.Value);
+        }
+        return combinedDictionary;
+    }
 }
 
 
