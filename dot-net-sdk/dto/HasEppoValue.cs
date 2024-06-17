@@ -43,9 +43,9 @@ public class HasEppoValue
         {
             if (o is JArray array)
             {
-                return new List<string>(array.ToObject<string[]>());
+                return new List<string>(array.ToObject<string[]>() ?? Array.Empty<string>());
             }
-            return (List<string>)_value;
+            return (List<string>)o;
         });
 
     public JObject JsonValue() => _nonNullValue<JObject>((o) => (JObject)o);

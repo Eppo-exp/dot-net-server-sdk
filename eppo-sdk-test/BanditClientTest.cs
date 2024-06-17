@@ -96,7 +96,8 @@ public class BanditClientTest
 
     private static string GetMockConfig(string resourceFile)
     {
-        var filePath = Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent?.Parent?.Parent?.FullName,
+        var directoryPath = new DirectoryInfo(Environment.CurrentDirectory).Parent?.Parent?.Parent?.FullName;
+        var filePath = Path.Combine(directoryPath!,
             resourceFile);
         using var sr = new StreamReader(filePath);
         return sr.ReadToEnd();

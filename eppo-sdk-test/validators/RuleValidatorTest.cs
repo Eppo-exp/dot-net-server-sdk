@@ -397,7 +397,7 @@ public class RuleValidatorTest
         Assert.Multiple(() =>
             {
                 Assert.NotNull(result);
-                Assert.That(result.Variation.Key, Is.EqualTo("music"));
+                Assert.That(result!.Variation.Key, Is.EqualTo("music"));
                 Assert.That(result.Variation.Value, Is.EqualTo("rockandroll"));
             }
         );
