@@ -26,7 +26,7 @@ public class ContextAttributesTest
             {"referralUser","true"},
             {"favouriteColour","green"}
         };
-        var actual = new ContextAttributes("context", (IDictionary<string, object?>)attrs);
+        var actual = new ContextAttributes("context", attrs);
         Assert.Multiple(() =>
         {
             Assert.That(actual.GetNumeric(), Is.EquivalentTo(expectedNumeric));

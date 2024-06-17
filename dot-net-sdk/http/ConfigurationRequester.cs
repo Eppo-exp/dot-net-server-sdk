@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using eppo_sdk.constants;
 using eppo_sdk.dto;
 using NLog;
@@ -10,12 +9,9 @@ public class ConfigurationRequester
     private static Logger logger = LogManager.GetCurrentClassLogger();
     private readonly EppoHttpClient eppoHttpClient;
 
-    public ConfigurationRequester(EppoHttpClient eppoHttpClient)
-    {
+    public ConfigurationRequester(EppoHttpClient eppoHttpClient) {
         this.eppoHttpClient = eppoHttpClient;
     }
-
-    public string UID {get => Convert.ToString(eppoHttpClient.Url.GetHashCode());}
 
     public FlagConfigurationResponse? FetchFlagConfiguration()
     {
@@ -44,8 +40,4 @@ public class ConfigurationRequester
 
         return null;
     }
-
-
-
-    public override string ToString() => $"Requestor [httpClient: " + eppoHttpClient.ToString() + "]";
 }

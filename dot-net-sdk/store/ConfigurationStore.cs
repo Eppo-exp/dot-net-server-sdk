@@ -12,7 +12,9 @@ public class ConfigurationStore : IConfigurationStore
     private readonly MemoryCache _banditModelCache;
     private readonly ConfigurationRequester _requester;
 
-    public ConfigurationStore(ConfigurationRequester requester, MemoryCache flagConfigurationCache, MemoryCache banditModelCache)
+    public ConfigurationStore(ConfigurationRequester requester,
+                              MemoryCache flagConfigurationCache,
+                              MemoryCache banditModelCache)
     {
         _requester = requester;
         _flagConfigurationCache = flagConfigurationCache;
@@ -26,7 +28,10 @@ public class ConfigurationStore : IConfigurationStore
 
     public void SetBanditModel(Bandit banditModel)
     {
-        _banditModelCache.Set(banditModel.BanditKey, banditModel, new MemoryCacheEntryOptions().SetSize(1));
+        _banditModelCache.Set(
+            banditModel.BanditKey,
+            banditModel,
+            new MemoryCacheEntryOptions().SetSize(1));
     }
 
     public bool TryGetFlag(string key, out Flag? result) => _flagConfigurationCache.TryGetValue(key, out result);
