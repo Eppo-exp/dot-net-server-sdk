@@ -92,7 +92,7 @@ public class ContextAttributes : IContextAttributes
         return cats.ToDictionary(kvp => kvp.Key, kvp => Compare.ToString(kvp.Value));
     }
 
-    public AttributeSet AsAttributeSet() => new AttributeSet(GetNumeric(), GetCategorical());
+    public AttributeSet AsAttributeSet() => new AttributeSet(GetCategorical(), GetNumeric());
 
     public static bool IsNumeric(object v) => v is double || v is int || v is long || v is float;
 

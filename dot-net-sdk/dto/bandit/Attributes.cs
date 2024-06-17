@@ -27,9 +27,9 @@ public class AttributeSet
         }
     }
 
-    public AttributeSet(IDictionary<string, double> numericAttributes, IDictionary<string, string> categoricalAttributes)
+    public AttributeSet(IDictionary<string, string> categoricalAttributes, IDictionary<string, double> numericAttributes)
     {
-        NumericAttributes = numericAttributes;
         CategoricalAttributes = categoricalAttributes;
+        NumericAttributes = numericAttributes;
     }
 }

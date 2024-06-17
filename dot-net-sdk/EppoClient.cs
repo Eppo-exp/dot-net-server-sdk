@@ -1,4 +1,5 @@
-﻿using eppo_sdk.constants;
+﻿using System.Runtime.CompilerServices;
+using eppo_sdk.constants;
 using eppo_sdk.dto;
 using eppo_sdk.dto.bandit;
 using eppo_sdk.exception;
@@ -232,11 +233,42 @@ public class EppoClient
 
 
     /// <summary>Gets the selected action, if applicable, for the given <paramref name="flagKey"/> and contexts.
-    /// </summary>
     /// <param name="flagKey">The flag or bandit key to lookup.</param>
     /// <param name="subject">The subject's identifier and a collection of attributes.</param>
     /// <param name="actions">The actions to consider and their contextual attributes.</param>
     /// <param name="defaultValue">Default flag variation.</param>
+    /// <example>
+    /// For Example:
+    /// <code>
+    /// var client = EppoClient.GetInstance();
+    /// var subject = new ContextAttributes("subjectKey")
+    /// {
+    ///     ["age"] = 30,
+    ///     ["country"] = "uk",
+    ///     ["pricingTier"] = "1"  // NOTE: Deliberately setting to string causes this to be treated as a categorical attribute
+    /// };
+    ///
+    /// var actions = new Dictionary<string, ContextAttributes>()
+    /// {
+    ///     ["nike"] = new ContextAttributes("nike")
+    ///     {
+    ///         ["brandLoyalty"] = 0.4,
+    ///         ["from"] = "usa"
+    ///     },
+    ///     ["adidas"] = new ContextAttributes("adidas")
+    ///     {
+    ///         ["brandLoyalty"] = 2,
+    ///         ["from"] = "germany"
+    ///     },
+    /// };
+    /// var result = client.GetBanditAction(
+    ///     "flagKey",
+    ///     subject,
+    ///     actions,
+    ///     "defaultValue"
+    /// );
+    /// </code></example>
+    /// </summary>
     public BanditResult GetBanditAction(string flagKey,
                                         ContextAttributes subject,
                                         IDictionary<string, ContextAttributes> actions,
@@ -255,7 +287,6 @@ public class EppoClient
     }
 
     /// <summary>Gets the selected action, if applicable, for the given <paramref name="flagKey"/> and contexts.
-    /// </summary>
     /// <param name="flagKey">The flag or bandit key to lookup.</param>
     /// <param name="subjectKey">The subject's identifier.</param>
     /// <param name="subjectAttributes">The subject's attributes for consideration
@@ -265,26 +296,97 @@ public class EppoClient
     /// <para>Note: Attributes are sorted based on type into Categorical (String, boolean) and 
     /// Numerical attributes (numbers). All other attributes are discarded and a warning is logged.</para></param>
     /// <param name="defaultValue">Default flag variation.</param>
+    /// <example>
+    /// For Example:
+    /// <code>
+    /// var client = EppoClient.GetInstance();
+    /// var subjectAttributes = new Dictionary<string, object?>()
+    /// {
+    ///     ["age"] = 30,
+    ///     ["country"] = "uk",
+    ///     ["pricingTier"] = "1"  // NOTE: Deliberately setting to string causes this to be treated as a categorical attribute
+    /// };
+    /// var actions = new Dictionary<string, IDictionary<string, object?>>()
+    /// {
+    ///     ["nike"] = new Dictionary<string, object?>()
+    ///     {
+    ///         ["brandLoyalty"] = 0.4,
+    ///         ["from"] = "usa"
+    ///     },
+    ///     ["adidas"] = new Dictionary<string, object?>()
+    ///     {
+    ///         ["brandLoyalty"] = 2,
+    ///         ["from"] = "germany"
+    ///     }
+    /// };
+    /// var result = client.GetBanditAction(
+    ///     "flagKey",
+    ///     "subjecKey",
+    ///     subjectAttributes,
+    ///     actions,
+    ///     "defaultValue");
+    /// </code></example>
+    /// </summary>
     public BanditResult GetBanditAction(string flagKey,
                                         string subjectKey,
                                         IDictionary<string, object?> subjectAttributes,
                                         IDictionary<string, IDictionary<string, object?>> actions,
                                         string defaultValue)
     {
-        return GetBanditAction(
+        return _getBanditDetail(
             flagKey,
             ContextAttributes.FromDict(subjectKey, subjectAttributes),
             actions.ToDictionary(kvp => kvp.Key, kvp => ContextAttributes.FromDict(kvp.Key, kvp.Value)),
             defaultValue);
     }
 
+
     /// <summary>Gets the selected action, if applicable, for the given <paramref name="flagKey"/> and contexts.
-    /// </summary>
     /// <param name="flagKey">The flag or bandit key to lookup.</param>
     /// <param name="subjectKey">The subject's identifier.</param>
     /// <param name="subjectAttributes">The subject's attributes for consideration.</param>
     /// <param name="actions">The actions to consider and their contextual attributes./param>
     /// <param name="defaultValue">Default flag variation.</param>
+    /// <example>
+    /// For example:
+    /// <code>
+    /// var client = EppoClient.GetInstance();
+    /// var subjectAttributes = new AttributeSet(
+    ///     new Dictionary<string, string>(){
+    ///         ["planTier"] = "free",
+    ///         ["favouriteColour"] = "red"
+    ///     },
+    ///     new Dictionary<string, double>(){
+    ///         ["accountAge"] = 4
+    ///     }
+    /// );
+    /// var actions = new Dictionary<string, AttributeSet>() {
+    ///     ["nike"] = new AttributeSet(
+    ///         new Dictionary<string, string>(){
+    ///             ["origin"] = "usa"
+    ///         },
+    ///         new Dictionary<string, double>(){
+    ///             ["brandLoyalty"] = 0.1
+    ///         }
+    ///     ),
+    ///     ["adidas"] = new AttributeSet(
+    ///         new Dictionary<string, string>(){
+    ///             ["origin"] = "germany"
+    ///         },
+    ///         new Dictionary<string, double>(){
+    ///             ["brandLoyalty"] = 1
+    ///         }
+    ///     )};
+    ///  var result = client.GetBanditAction(
+    ///      "flagname",
+    ///      "subjectKey",
+    ///      subjectAttributes,
+    ///      actions,
+    ///      "defaultValue");
+    /// </code>
+    /// </example>
+    /// <example>
+    /// </summary>
     public BanditResult GetBanditAction(string flagKey,
                                         string subjectKey,
                                         AttributeSet subjectAttributes,
