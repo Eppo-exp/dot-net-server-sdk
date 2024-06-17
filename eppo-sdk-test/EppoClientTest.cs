@@ -3,12 +3,14 @@ using eppo_sdk;
 using eppo_sdk.dto;
 using eppo_sdk.dto.bandit;
 using eppo_sdk.logger;
+using Moq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using WireMock.Matchers;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
+using static NUnit.Framework.Assert;
 
 namespace eppo_sdk_test;
 
@@ -18,11 +20,14 @@ public class EppoClientTest
     private WireMockServer? _mockServer;
     private EppoClient? _client;
 
+    private Mock<IAssignmentLogger> _mockAssignmentLogger;
+
     [OneTimeSetUp]
     public void Setup()
     {
         SetupMockServer();
-        var config = new EppoClientConfig("mock-api-key", new TestAssignmentLogger())
+        _mockAssignmentLogger = new Mock<IAssignmentLogger>();
+        var config = new EppoClientConfig("mock-api-key", _mockAssignmentLogger.Object)
         {
             BaseUrl = _mockServer?.Urls[0]!
         };
@@ -45,12 +50,45 @@ public class EppoClientTest
         _mockServer?.Stop();
     }
 
+    [TearDown]
+    public void TeardownEach()
+    {
+        _mockAssignmentLogger.Invocations.Clear();
+    }
+
     private static string GetMockFlagConfig()
     {
         var filePath = Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent?.Parent?.Parent?.FullName,
             "files/ufc/flags-v1.json");
         using var sr = new StreamReader(filePath);
         return sr.ReadToEnd();
+    }
+
+    [Test]
+    public void ShouldLogAssignment()
+    {
+
+        var alice = new Dictionary<string, object>()
+        {
+            ["email"] = "alice@company.com",
+            ["country"] = "US"
+        };
+        var result = _client!.GetIntegerAssignment("integer-flag", "alice", alice, 1);
+
+        Multiple(() =>
+        {
+            // Assert - Result verification
+            That(result, Is.EqualTo(3));
+
+            // Assert - Assignment logger verification
+            var assignmentLogStatement = _mockAssignmentLogger.Invocations.First().Arguments[0] as AssignmentLogData;
+            That(assignmentLogStatement, Is.Not.Null);
+            var logEvent = assignmentLogStatement!;
+
+            That(logEvent.FeatureFlag, Is.EqualTo("integer-flag"));
+            That(logEvent.Variation, Is.EqualTo("three"));
+            That(logEvent.Subject, Is.EqualTo("alice"));
+        });
     }
 
     [Test, TestCaseSource(nameof(GetTestAssignmentData))]
@@ -111,8 +149,9 @@ public class EppoClientTest
     {
         var dir = new DirectoryInfo(Environment.CurrentDirectory).Parent?.Parent?.Parent?.FullName;
         var files = Directory.EnumerateFiles($"{dir}/files/ufc/tests", "*.json");
-        var testCases = new List<AssignmentTestCase>(){};
-        foreach (var file in files) {
+        var testCases = new List<AssignmentTestCase>() { };
+        foreach (var file in files)
+        {
             var atc = JsonConvert.DeserializeObject<AssignmentTestCase>(File.ReadAllText(file))!;
             atc.TestCaseFile = file;
             testCases.Add(atc);
@@ -120,20 +159,6 @@ public class EppoClientTest
         return testCases;
     }
 }
-
-internal class TestAssignmentLogger : IAssignmentLogger
-{
-    public void LogAssignment(AssignmentLogData assignmentLogData)
-    {
-        // Do nothing
-    }
-
-    public void LogBanditAction(BanditLogEvent banditLogEvent)
-    {
-        // Do nothing
-    }
-}
-
 
 public class AssignmentTestCase
 {
