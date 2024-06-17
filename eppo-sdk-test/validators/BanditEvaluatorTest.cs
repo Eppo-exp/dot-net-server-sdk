@@ -1,11 +1,13 @@
 using eppo_sdk.dto.bandit;
 using eppo_sdk.validators;
+using static NUnit.Framework.Assert;
 
 namespace eppo_sdk_test.validators;
 
 using ActionScore = KeyValuePair<string, double>;
 using StringDictionary = Dictionary<string, string>;
 using DoubleDictionary = Dictionary<string, double>;
+
 
 public class BanditEvaluatorTest
 {
@@ -45,7 +47,7 @@ public class BanditEvaluatorTest
         };
         var expectedScore = 30 * 2.0 + 170 * 1.5;
         var actualScore = BanditEvaluator.ScoreNumericAttributes(numCoeffs, subjectAttributes);
-        Assert.That(actualScore, Is.EqualTo(expectedScore));
+        That(actualScore, Is.EqualTo(expectedScore));
     }
 
     [Test]
@@ -57,7 +59,7 @@ public class BanditEvaluatorTest
         };
         var expectedScore = 30 * 2.0 + 0.3; // 0.3 is missing value for height.
         var actualScore = BanditEvaluator.ScoreNumericAttributes(numCoeffs, subjectAttributes);
-        Assert.That(actualScore, Is.EqualTo(expectedScore));
+        That(actualScore, Is.EqualTo(expectedScore));
     }
 
     [Test]
@@ -68,7 +70,7 @@ public class BanditEvaluatorTest
         };
         var expectedScore = 0.5 + 0.3;
         var actualScore = BanditEvaluator.ScoreNumericAttributes(numCoeffs, subjectAttributes);
-        Assert.That(actualScore, Is.EqualTo(expectedScore));
+        That(actualScore, Is.EqualTo(expectedScore));
     }
 
     [Test]
@@ -82,7 +84,7 @@ public class BanditEvaluatorTest
         var expectedScore = 0.0; // No coefficients to apply
 
         var actualScore = BanditEvaluator.ScoreNumericAttributes(new List<NumericAttributeCoefficient>(), subjectAttributes);
-        Assert.That(actualScore, Is.EqualTo(expectedScore));
+        That(actualScore, Is.EqualTo(expectedScore));
     }
     [Test]
     public void ShouldScoreNumericAttributeNegativeCoefficients()
@@ -95,7 +97,7 @@ public class BanditEvaluatorTest
         var expectedScore = 30 * -2.0 + 170 * -1.5;
 
         var actualScore = BanditEvaluator.ScoreNumericAttributes(negativeNumCoeffs, subjectAttributes);
-        Assert.That(actualScore, Is.EqualTo(expectedScore));
+        That(actualScore, Is.EqualTo(expectedScore));
     }
 
     [Test]
@@ -109,7 +111,7 @@ public class BanditEvaluatorTest
         var expectedScore = 1.0 + 2.0;
 
         var actualScore = BanditEvaluator.ScoreCategoricalAttributes(catCoeffs, subjectAttributes);
-        Assert.That(actualScore, Is.EqualTo(expectedScore));
+        That(actualScore, Is.EqualTo(expectedScore));
     }
 
     [Test]
@@ -122,7 +124,7 @@ public class BanditEvaluatorTest
         var expectedScore = 1.0 + 0.3;
 
         var actualScore = BanditEvaluator.ScoreCategoricalAttributes(catCoeffs, subjectAttributes);
-        Assert.That(actualScore, Is.EqualTo(expectedScore));
+        That(actualScore, Is.EqualTo(expectedScore));
     }
 
     [Test]
@@ -134,7 +136,7 @@ public class BanditEvaluatorTest
         var expectedScore = 0.2 + 0.3;
 
         var actualScore = BanditEvaluator.ScoreCategoricalAttributes(catCoeffs, subjectAttributes);
-        Assert.That(actualScore, Is.EqualTo(expectedScore));
+        That(actualScore, Is.EqualTo(expectedScore));
     }
 
     [Test]
@@ -148,7 +150,7 @@ public class BanditEvaluatorTest
         var expectedScore = 0;
 
         var actualScore = BanditEvaluator.ScoreCategoricalAttributes(new List<CategoricalAttributeCoefficient>(), subjectAttributes);
-        Assert.That(actualScore, Is.EqualTo(expectedScore));
+        That(actualScore, Is.EqualTo(expectedScore));
     }
     [Test]
     public void ShouldScoreCategoricalAttributesNegativeCoefficients()
@@ -161,7 +163,7 @@ public class BanditEvaluatorTest
         var expectedScore = -1.0 + -2.0;
 
         var actualScore = BanditEvaluator.ScoreCategoricalAttributes(negativeCatCoeffs, subjectAttributes);
-        Assert.That(actualScore, Is.EqualTo(expectedScore));
+        That(actualScore, Is.EqualTo(expectedScore));
     }
 
     [Test]
@@ -173,7 +175,7 @@ public class BanditEvaluatorTest
         var expectedWeights = new List<ActionScore> {
            new("action", 1.0)
         };
-        Assert.That(banditEvaluator.WeighActions(scores, 10 /* Gamma */, 0.1 /* min probability */), Is.EquivalentTo(expectedWeights));
+        That(banditEvaluator.WeighActions(scores, 10 /* Gamma */, 0.1 /* min probability */), Is.EquivalentTo(expectedWeights));
     }
 
     [Test]
@@ -227,10 +229,10 @@ public class BanditEvaluatorTest
 
         // The actual weights are kind of hand-wavy and black box if they're just pulled from the underlying calculation
         // What matters is that the weights add up to 1 and (for this dataset) that the action weights are in the same ranking as their scores.
-        Assert.Multiple(() =>
+        Multiple(() =>
         {
-            Assert.That(weights.Select(aScore => aScore.Value).Sum(), Is.EqualTo(1));
-            Assert.That(weights.OrderBy(w => w.Value).Select(w => w.Key), Is.EquivalentTo(
+            That(weights.Select(aScore => aScore.Value).Sum(), Is.EqualTo(1));
+            That(weights.OrderBy(w => w.Value).Select(w => w.Key), Is.EquivalentTo(
                 new List<string>
                     {
                     "Gretzky",
@@ -257,15 +259,15 @@ public class BanditEvaluatorTest
 
         var smallGammaWeights = banditEvaluator.WeighActions(scores, smallGamma, minProbability);
         var largeGammaWeights = banditEvaluator.WeighActions(scores, largeGamma, minProbability);
-        Assert.Multiple(() =>
+        Multiple(() =>
         {
             // Winner shares more of their score with a smaller gamma
-            Assert.That(
+            That(
                 smallGammaWeights.Find(w => w.Key == "action").Value,
                 Is.LessThan(largeGammaWeights.Find(w => w.Key == "action").Value));
 
             // Non-winners get bigger share of weight with a smaller gamma
-            Assert.That(
+            That(
                 smallGammaWeights.Find(w => w.Key == "action2").Value,
                 Is.GreaterThan(largeGammaWeights.Find(w => w.Key == "action2").Value));
         });
@@ -318,18 +320,30 @@ public class BanditEvaluatorTest
                 "action1", new ActionCoefficients("action1", 0.5)
                 {
                     SubjectNumericCoefficients = new List<NumericAttributeCoefficient>() { new("age", 0.1, 0.0) },
-                    SubjectCategoricalCoefficients = new List<CategoricalAttributeCoefficient>() { new( "location",  0.0, new DoubleDictionary() { { "US", 0.2 } } )},
+                    SubjectCategoricalCoefficients = new List<CategoricalAttributeCoefficient>() 
+                    {
+                        new( "location",  0.0, new DoubleDictionary() { { "US", 0.2 } } )
+                    },
                     ActionNumericCoefficients = new List<NumericAttributeCoefficient>() { new( "price", 0.05,  0.0 )},
-                    ActionCategoricalCoefficients = new List<CategoricalAttributeCoefficient>() { new( "category",  0.0, new DoubleDictionary(){ { "A", 0.3 } } )}
+                    ActionCategoricalCoefficients = new List<CategoricalAttributeCoefficient>() 
+                    {
+                        new( "category",  0.0, new DoubleDictionary(){ { "A", 0.3 } } )
+                    }
                 }
             },
             {
                 "action2", new ActionCoefficients("action2", 0.3)
                 {
                     SubjectNumericCoefficients = new List<NumericAttributeCoefficient>() { new("age", 0.1, 0.0) },
-                    SubjectCategoricalCoefficients = new List<CategoricalAttributeCoefficient>() { new( "location",  0.0, new DoubleDictionary() { { "US", 0.2 } } )},
+                    SubjectCategoricalCoefficients = new List<CategoricalAttributeCoefficient>()
+                    {
+                        new( "location",  0.0, new DoubleDictionary() { { "US", 0.2 } } )
+                    },
                     ActionNumericCoefficients = new List<NumericAttributeCoefficient>() { new( "price", 0.05,  0.0 )},
-                    ActionCategoricalCoefficients = new List<CategoricalAttributeCoefficient>() { new( "category",  0.0, new DoubleDictionary(){ { "A", 0.3 } } )}
+                    ActionCategoricalCoefficients = new List<CategoricalAttributeCoefficient>() 
+                    {
+                        new( "category",  0.0, new DoubleDictionary(){ { "A", 0.3 } } )
+                    }
                 }
             }
         };
@@ -346,37 +360,37 @@ public class BanditEvaluatorTest
 
         // Evaluate bandit
         var evaluation = evaluator.EvaluateBandit(flagKey, subjectAttributes, actionContexts.ToDictionary(i => i.Key), banditModel);
-        Assert.Multiple(() =>
+        Multiple(() =>
         {
-            Assert.That(evaluation, Is.Not.Null);
-            // Assertions
-            Assert.That(evaluation!.FlagKey, Is.EqualTo(flagKey));
-            Assert.That(evaluation.SubjectKey, Is.EqualTo(subjectKey));
-            Assert.That(evaluation.SubjectAttributes.NumericAttributes, Is.EquivalentTo(subjectAttributes.AsAttributeSet().NumericAttributes));
-            Assert.That(evaluation.SubjectAttributes.CategoricalAttributes, Is.EquivalentTo(subjectAttributes.AsAttributeSet().CategoricalAttributes));
+            That(evaluation, Is.Not.Null);
+            
+            That(evaluation!.FlagKey, Is.EqualTo(flagKey));
+            That(evaluation.SubjectKey, Is.EqualTo(subjectKey));
+            That(evaluation.SubjectAttributes.NumericAttributes, Is.EquivalentTo(subjectAttributes.AsAttributeSet().NumericAttributes));
+            That(evaluation.SubjectAttributes.CategoricalAttributes, Is.EquivalentTo(subjectAttributes.AsAttributeSet().CategoricalAttributes));
 
             // Note: The test result here is different than in the python SDK for the same inputs because of the 
             // mechanism used to shuffle the actions. Here, we use the same sharder as we would for non-test environments.
             // In Python, a pass-thru sharder is used, so the actions are shuffled into a differtent order.
-            Assert.That(evaluation.ActionKey, Is.EqualTo("action2"));
-            Assert.That(evaluation.Gamma, Is.EqualTo(banditModel.Gamma));
-            Assert.That(evaluation.ActionScore, Is.EqualTo(4.0));
-            Assert.That(Math.Round(evaluation.ActionWeight, 4), Is.EqualTo(0.4926).Within(4)); // Adjust precision for floating-point comparison
+            That(evaluation.ActionKey, Is.EqualTo("action2"));
+            That(evaluation.Gamma, Is.EqualTo(banditModel.Gamma));
+            That(evaluation.ActionScore, Is.EqualTo(4.0));
+            That(Math.Round(evaluation.ActionWeight, 4), Is.EqualTo(0.4926).Within(4)); // Adjust precision for floating-point comparison
         });
     }
 
     private static void AssertActionScoreListsMatch(List<ActionScore> actual, List<ActionScore> expected, bool ignoreOrder = true)
     {
-        Assert.That(actual.Count, Is.EqualTo(expected.Count));
+        That(actual.Count, Is.EqualTo(expected.Count));
         if (ignoreOrder)
         {
             var expectedWeightsDict = new Dictionary<string, ActionScore>(expected.Select(aScore => KeyValuePair.Create(aScore.Key, aScore)));
             var actualWeightsDict = new Dictionary<string, ActionScore>(actual.Select(aScore => KeyValuePair.Create(aScore.Key, aScore)));
-            Assert.That(actualWeightsDict, Is.EquivalentTo(expectedWeightsDict));
+            That(actualWeightsDict, Is.EquivalentTo(expectedWeightsDict));
         }
         else
         {
-            Assert.That(actual, Is.EquivalentTo(expected));
+            That(actual, Is.EquivalentTo(expected));
         }
     }
 }

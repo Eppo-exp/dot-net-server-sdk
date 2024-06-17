@@ -183,8 +183,6 @@ public class BanditClientTest
             That(banditLog.actionCategoricalAttributes, Is.Not.Null);
             AssertDictsEquivalent(banditLog.actionNumericAttributes!, chosenAction.GetNumeric().AsReadOnly());
             AssertDictsEquivalent(banditLog.actionCategoricalAttributes!, chosenAction.GetCategorical().AsReadOnly());
-
-
         });
     }
 
@@ -209,7 +207,9 @@ public class BanditClientTest
         {
             var expected = subject.Assignment;
             Dictionary<string, ContextAttributes> actions =
-                subject.Actions.ToDictionary(atr => atr.ActionKey, atr => ContextAttributes.FromNullableAttributes(atr.ActionKey, atr.CategoricalAttributes, atr.NumericAttributes));
+                subject.Actions.ToDictionary(
+                    atr => atr.ActionKey,
+                    atr => ContextAttributes.FromNullableAttributes(atr.ActionKey, atr.CategoricalAttributes, atr.NumericAttributes));
 
 
             var result = client.GetBanditAction(
@@ -249,7 +249,6 @@ public record BanditTestCase(string Flag,
                              List<BanditSubjectTestRecord> Subjects)
 {
     public string? TestCaseFile;
-
 }
 public record BanditSubjectTestRecord(string SubjectKey,
                                       SubjectAttributeSet SubjectAttributes,
@@ -278,8 +277,6 @@ public record ActionTestRecord(string ActionKey,
         return combinedDictionary;
     }
 }
-
-
 
 public record SubjectAttributeSet
 {

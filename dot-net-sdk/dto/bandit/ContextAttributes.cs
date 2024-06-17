@@ -76,23 +76,23 @@ public class ContextAttributes : IContextAttributes
         }
     }
 
-    public IDictionary<string, object> AsDict() => _internalDictionary;
+    public IDictionary<string, object> AsDict() => _internalDictionary.ToDictionary(kvp=>kvp.Key, kvp=>kvp.Value);
 
     /// Gets only the numeric attributes.
     public IDictionary<string, double> GetNumeric()
     {
-        var nums = this.Where(kvp => kvp.Value != null && IsNumeric(kvp.Value));
+        var nums = this.Where(kvp => IsNumeric(kvp.Value));
         return nums.ToDictionary(kvp => kvp.Key, kvp => Convert.ToDouble(kvp.Value));
     }
 
     /// Gets only the string attributes.
     public IDictionary<string, string> GetCategorical()
     {
-        var cats = this.Where(kvp => kvp.Value != null && (kvp.Value is string || kvp.Value is bool));
+        var cats = this.Where(kvp => kvp.Value is string || kvp.Value is bool);
         return cats.ToDictionary(kvp => kvp.Key, kvp => Compare.ToString(kvp.Value));
     }
 
-    public AttributeSet AsAttributeSet() => new AttributeSet(GetCategorical(), GetNumeric());
+    public AttributeSet AsAttributeSet() => new(GetCategorical(), GetNumeric());
 
     public static bool IsNumeric(object v) => v is double || v is int || v is long || v is float;
 

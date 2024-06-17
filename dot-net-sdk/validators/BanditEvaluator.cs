@@ -126,8 +126,6 @@ public class BanditEvaluator
         return weights;
     }
 
-
-
     private string SelectAction(string flagKey,
                                 string subjectKey,
                                 List<ActionScore> actionWeights)
@@ -153,7 +151,6 @@ public class BanditEvaluator
 
         throw new BanditEvaluationException($"[Eppo SDK] No action selected for {flagKey} {subjectKey}");
     }
-
 
     public static double ScoreNumericAttributes(IReadOnlyList<NumericAttributeCoefficient> coefficients,
                                                 IDictionary<string, double> attributes)
@@ -181,7 +178,6 @@ public class BanditEvaluator
         {
             if (attributes.TryGetValue(coefficient.AttributeKey, out var value) && coefficient.ValueCoefficients.TryGetValue(value, out var coeff))
             {
-
                 score += coeff;
             }
             else
