@@ -1,6 +1,4 @@
-﻿using System.Linq.Expressions;
-using System.Reflection.Metadata;
-using eppo_sdk.constants;
+﻿using eppo_sdk.constants;
 using eppo_sdk.dto;
 using eppo_sdk.dto.bandit;
 using eppo_sdk.exception;
@@ -9,7 +7,6 @@ using eppo_sdk.http;
 using eppo_sdk.store;
 using eppo_sdk.tasks;
 using eppo_sdk.validators;
-using Moq;
 using Newtonsoft.Json.Linq;
 using NLog;
 
