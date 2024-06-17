@@ -1,6 +1,12 @@
 using System.Net;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography.X509Certificates;
 using eppo_sdk;
 using eppo_sdk.dto.bandit;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel;
+using Newtonsoft.Json;
+using NUnit.Framework.Constraints;
+using RandomDataGenerator.CreditCardValidator;
 using WireMock.Matchers;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
@@ -16,7 +22,6 @@ public class BanditClientTest
 
     private const string BANDIT_CONFIG_FILE = "files/ufc/bandit-flags-v1.json";
     private const string BANDIT_MODEL_FILE = "files/ufc/bandit-models-v1.json";
-    private const string FLAG_CONFIG_FILE = "files/ufc/flags-v1.json";
     private WireMockServer? _mockServer;
     private ContextAttributes _subject = new("userID")
     {
@@ -72,8 +77,6 @@ public class BanditClientTest
         _mockServer?.Stop();
     }
 
-    private static string GetMockFlagConfig() => GetMockConfig(FLAG_CONFIG_FILE);
-
     private static string GetMockBanditConfig() => GetMockConfig(BANDIT_CONFIG_FILE);
     private static string GetMockBanditModelConfig() => GetMockConfig(BANDIT_MODEL_FILE);
 
@@ -88,81 +91,107 @@ public class BanditClientTest
     [Test]
     public void ShouldReturnDefaultValue()
     {
-        // var client = EppoClient.GetInstance();
-        // var result = client.GetBanditAction("unknownflag", _subject, _actions, "defaultVariation");
-        // Multiple(() =>
-        // {
-        //     That(result, Is.Not.Null);
-        //     That(result.Variation, Is.EqualTo("defaultVariation"));
-        //     That(result.Action, Is.Null);
-        // });
+        var client = EppoClient.GetInstance();
+        var result = client.GetBanditAction("unknownflag", _subject, _actions, "defaultVariation");
+        Multiple(() =>
+        {
+            That(result, Is.Not.Null);
+            That(result.Variation, Is.EqualTo("defaultVariation"));
+            That(result.Action, Is.Null);
+        });
     }
 
-    // [Test, TestCaseSource(nameof(GetTestAssignmentData))]
-    //     public void ShouldValidateAssignments(AssignmentTestCase assignmentTestCase)
-    //     {
-    //         var client = EppoClient.GetInstance();
+    [Test, TestCaseSource(nameof(GetTestAssignmentData))]
+    public void ShouldAssignBandits(BanditTestCase banditTestCase)
+    {
+        var client = EppoClient.GetInstance();
+
+        foreach (var subject in banditTestCase.Subjects)
+        {
+            var expected = subject.Assignment;
+            Dictionary<string, ContextAttributes> actions =
+                subject.Actions.ToDictionary(atr => atr.ActionKey, atr => new ContextAttributes(atr.ActionKey, atr.CategoricalAttributes, atr.NumericalAttributes));
 
 
-    //         switch (assignmentTestCase.VariationType)
-    //         {
-    //             case (EppoValueType.BOOLEAN):
-    //                 var boolExpectations = assignmentTestCase.Subjects.ConvertAll(x => (bool?)x.Assignment);
-    //                 var assignments = assignmentTestCase.Subjects.ConvertAll(subject =>
-    //                     client.GetBooleanAssignment(assignmentTestCase.Flag, subject.SubjectKey, subject.SubjectAttributes, (bool)assignmentTestCase.DefaultValue));
-
-    //                 Assert.That(assignments, Is.EqualTo(boolExpectations), $"Unexpected values for test file: {assignmentTestCase.TestCaseFile}");
-    //                 break;
-    //             case (EppoValueType.INTEGER):
-    //                 var longExpectations = assignmentTestCase.Subjects.ConvertAll(x => (long?)x.Assignment);
-    //                 var longAssignments = assignmentTestCase.Subjects.ConvertAll(subject =>
-    //                     client.GetIntegerAssignment(assignmentTestCase.Flag, subject.SubjectKey, subject.SubjectAttributes, (long)assignmentTestCase.DefaultValue));
-
-    //                 Assert.That(longAssignments, Is.EqualTo(longExpectations), $"Unexpected values for test file: {assignmentTestCase.TestCaseFile}");
-    //                 break;
-    //             case (EppoValueType.JSON):
-    //                 var jsonExpectations = assignmentTestCase.Subjects.ConvertAll(x => (JObject)x.Assignment);
-    //                 var jsonAssignments = assignmentTestCase.Subjects.ConvertAll(subject =>
-    //                     client.GetJsonAssignment(assignmentTestCase.Flag, subject.SubjectKey, subject.SubjectAttributes, (JObject)assignmentTestCase.DefaultValue));
-
-    //                 Assert.That(jsonAssignments, Is.EqualTo(jsonExpectations), $"Unexpected values for test file: {assignmentTestCase.TestCaseFile}");
+            var result = client.GetBanditAction(
+                banditTestCase.Flag,
+                subject.SubjectKey,
+                subject.SubjectAttributes.AsDict(),
+                actions.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.AsDict()),
+                banditTestCase.DefaultValue
+            );
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Variation, Is.EqualTo(expected.Variation), "Unexpected assignment in " + banditTestCase.TestCaseFile);
+                Assert.That(result.Action, Is.EqualTo(expected.Action), "Unexpected assignment in " + banditTestCase.TestCaseFile);
+            });
+        }
+    }
 
 
-    //                 // Also verify that the GetJsonStringAssignment method is working.
-    //                 var jsonStringExpectations = assignmentTestCase.Subjects.ConvertAll(x => ((JObject)x.Assignment).ToString());
-    //                 var jsonStringAssignments = assignmentTestCase.Subjects.ConvertAll(subject =>
-    //                     client.GetJsonStringAssignment(assignmentTestCase.Flag, subject.SubjectKey, subject.SubjectAttributes, ((JObject)assignmentTestCase.DefaultValue).ToString()));
-
-    //                 Assert.That(jsonStringAssignments, Is.EqualTo(jsonStringExpectations), $"Unexpected values for test file: {assignmentTestCase.TestCaseFile}");
-    //                 break;
-    //             case (EppoValueType.NUMERIC):
-    //                 var numExpectations = assignmentTestCase.Subjects.ConvertAll(x => (double?)x.Assignment);
-    //                 var numAssignments = assignmentTestCase.Subjects.ConvertAll(subject =>
-    //                     client.GetNumericAssignment(assignmentTestCase.Flag, subject.SubjectKey, subject.SubjectAttributes, (double)assignmentTestCase.DefaultValue));
-
-    //                 Assert.That(numAssignments, Is.EqualTo(numExpectations), $"Unexpected values for test file: {assignmentTestCase.TestCaseFile}");
-    //                 break;
-    //             case (EppoValueType.STRING):
-    //                 var stringExpectations = assignmentTestCase.Subjects.ConvertAll(x => (string)x.Assignment);
-    //                 var stringAssignments = assignmentTestCase.Subjects.ConvertAll(subject =>
-    //                     client.GetStringAssignment(assignmentTestCase.Flag, subject.SubjectKey, subject.SubjectAttributes, (string)assignmentTestCase.DefaultValue));
-
-    //                 Assert.That(stringAssignments, Is.EqualTo(stringExpectations), $"Unexpected values for test file: {assignmentTestCase.TestCaseFile}");
-    //                 break;
-    //         }
-    //     }
+    static List<BanditTestCase> GetTestAssignmentData()
+    {
+        var dir = new DirectoryInfo(Environment.CurrentDirectory).Parent?.Parent?.Parent?.FullName;
+        var files = Directory.EnumerateFiles($"{dir}/files/ufc/bandit-tests", "*.json");
+        var testCases = new List<BanditTestCase>() { };
+        foreach (var file in files)
+        {
+            var atc = JsonConvert.DeserializeObject<BanditTestCase>(File.ReadAllText(file))!;
+            atc.TestCaseFile = file;
+            testCases.Add(atc);
+        }
+        return testCases;
+    }
+}
 
 
-    //     static List<AssignmentTestCase> GetTestAssignmentData()
-    //     {
-    //         var dir = new DirectoryInfo(Environment.CurrentDirectory).Parent?.Parent?.Parent?.FullName;
-    //         var files = Directory.EnumerateFiles($"{dir}/files/ufc/tests", "*.json");
-    //         var testCases = new List<AssignmentTestCase>(){};
-    //         foreach (var file in files) {
-    //             var atc = JsonConvert.DeserializeObject<AssignmentTestCase>(File.ReadAllText(file))!;
-    //             atc.TestCaseFile = file;
-    //             testCases.Add(atc);
-    //         }
-    //         return testCases;
-    //     }
+public record BanditTestCase(string Flag,
+                             string DefaultValue,
+                             List<BanditSubjectTestRecord> Subjects)
+{
+    public string? TestCaseFile;
+
+}
+public record BanditSubjectTestRecord(string SubjectKey,
+                                      SubjectAttributeSet SubjectAttributes,
+                                      ActionTestRecord[] Actions,
+                                      BanditResult Assignment)
+{
+}
+
+public record ActionTestRecord(string ActionKey,
+                               Dictionary<string, string?> CategoricalAttributes,
+                               Dictionary<string, double?> NumericalAttributes)
+{
+}
+
+
+
+public record SubjectAttributeSet
+{
+    [JsonProperty("numeric_attributes")]
+    public IDictionary<string, double?>? NumericAttributes = new Dictionary<string, double?>();
+    [JsonProperty("categorical_attributes")]
+    public IDictionary<string, string?>? CategoricalAttributes = new Dictionary<string, string?>();
+
+    public IDictionary<string, object?> AsDict()
+    {
+        var combinedDictionary = new Dictionary<string, object?>();
+        if (NumericAttributes != null)
+        {
+            foreach (var kvp in NumericAttributes)
+            {
+                combinedDictionary.Add(kvp.Key, kvp.Value);
+            }
+        }
+        if (CategoricalAttributes != null)
+        {
+            foreach (var kvp in CategoricalAttributes)
+            {
+                combinedDictionary.Add(kvp.Key, kvp.Value);
+            }
+        }
+        return combinedDictionary;
+    }
+
 }

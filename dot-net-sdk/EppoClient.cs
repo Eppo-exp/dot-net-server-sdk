@@ -189,7 +189,7 @@ public class EppoClient
 
     public BanditResult GetBanditAction(string flagKey,
                                         ContextAttributes subject,
-                                        Dictionary<string, ContextAttributes> actions,
+                                        IDictionary<string, ContextAttributes> actions,
                                         string defaultValue)
     {
         try
@@ -218,7 +218,7 @@ public class EppoClient
     }
 
 
-    private BanditResult _getBanditDetail(string flagKey, ContextAttributes subject, Dictionary<string, ContextAttributes> actions, string defaultValue)
+    private BanditResult _getBanditDetail(string flagKey, ContextAttributes subject, IDictionary<string, ContextAttributes> actions, string defaultValue)
     {
         // Get the user's flag assignment for the given key.
         var variation = GetStringAssignment(flagKey, subject.Key, subject, defaultValue);

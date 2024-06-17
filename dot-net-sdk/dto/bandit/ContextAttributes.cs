@@ -25,16 +25,69 @@ public class ContextAttributes : IContextAttributes
         this.Key = key;
     }
 
-    public ContextAttributes(string key, IDictionary<string, object> other) {
+    public ContextAttributes(string key, IDictionary<string, object?> other)
+    {
         Key = key;
-        foreach( var kvp in other) {
-            this[kvp.Key] = kvp.Value;
+        AddDict(other);
+    }
+
+
+    public ContextAttributes(string key,
+                             AttributeSet attributes) : this(key,
+                                                             (IDictionary<string, string?>?)attributes.CategoricalAttributes,
+                                                             (IDictionary<string, double?>?)attributes.NumericAttributes)
+    { }
+
+    public ContextAttributes(string key, IDictionary<string, string?>? categoricalAttributes, IDictionary<string, double?>? numericalAttributes)
+    {
+        Key = key;
+        AddDict(categoricalAttributes);
+        AddDict(numericalAttributes);
+    }
+
+    private void AddDict(IDictionary<string, double?>? dict)
+    {
+        if (dict == null) return;
+        foreach (var kvp in dict)
+        {
+            if (kvp.Value == null)
+            {
+                continue;
+            }
+            Add(kvp.Key, kvp.Value);
+        }
+    }
+
+    private void AddDict(IDictionary<string, string?>? dict)
+    {
+        if (dict == null) return;
+        foreach (var kvp in dict)
+        {
+            if (kvp.Value == null)
+            {
+                continue;
+            }
+            Add(kvp.Key, kvp.Value);
+        }
+    }
+
+
+    private void AddDict(IDictionary<string, object?> dict)
+    {
+        foreach (var kvp in dict)
+        {
+            if (kvp.Value == null)
+            {
+                continue;
+            }
+            Add(kvp.Key, kvp.Value);
         }
     }
 
     /// Adds a value to the subject dictionary enforcing only string, bool and numeric types.
     public void Add(string key, object value)
     {
+        if (value == null) return;
         // Implement your custom validation logic here
         if (IsNumeric(value) || IsCategorical(value))
         {
@@ -46,17 +99,19 @@ public class ContextAttributes : IContextAttributes
         }
     }
 
+    public IDictionary<string, object> AsDict() => _internalDictionary;
+
     /// Gets only the numeric attributes.
     public IDictionary<string, double> GetNumeric()
     {
-        var nums = this.Where(kvp => IsNumeric(kvp.Value));
+        var nums = this.Where(kvp => kvp.Value != null && IsNumeric(kvp.Value));
         return nums.ToDictionary(kvp => kvp.Key, kvp => Convert.ToDouble(kvp.Value));
     }
 
     /// Gets only the string attributes.
     public IDictionary<string, string> GetCategorical()
     {
-        var cats = this.Where(kvp => kvp.Value is string || kvp.Value is bool);
+        var cats = this.Where(kvp => kvp.Value != null && (kvp.Value is string || kvp.Value is bool));
         return cats.ToDictionary(kvp => kvp.Key, kvp => Compare.ToString(kvp.Value));
     }
 
@@ -69,7 +124,7 @@ public class ContextAttributes : IContextAttributes
 
     // Standard Dictionary methods are "sealed" so overriding isn't possible. Thus we delegate everything here.
 
-    public object this[string key] { get => _internalDictionary[key]; set => _internalDictionary[key] = value; }
+    public object this[string key] { get => _internalDictionary[key]; set => Add(key, value); }
 
     public ICollection<string> Keys => _internalDictionary.Keys;
 
