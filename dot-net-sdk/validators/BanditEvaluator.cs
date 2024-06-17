@@ -1,5 +1,3 @@
-using System.Diagnostics;
-using eppo_sdk.dto;
 using eppo_sdk.dto.bandit;
 using eppo_sdk.exception;
 using eppo_sdk.helpers;
@@ -33,9 +31,6 @@ public class BanditEvaluator
 
         // Score all potential actions.
         var actionScores = ScoreActions(subject.AsAttributeSet(), actionsWithContexts.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.AsAttributeSet()), banditModel);
-        var actionScoreList = String.Join("\n", actionScores.Select(score=> $"{score.Key}\\t\\t{score.Value}"));
-        Console.WriteLine(actionScoreList);
-        Trace.WriteLine(actionScoreList);
 
         // Assign action weights using FALCON.
         var actionWeights = WeighActions(actionScores, banditModel.Gamma, banditModel.ActionProbabilityFloor);

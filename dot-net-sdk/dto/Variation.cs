@@ -1,10 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace eppo_sdk.dto;
 
 public class Variation : HasEppoValue
 {
-    public string Key {get; set;}
-    public ShardRange shardRange { get; set; }
+    public required string Key {get; set;}
 
+    [SetsRequiredMembers]
     public Variation(string key, object value) {
         Key = key;
         Value = value;
