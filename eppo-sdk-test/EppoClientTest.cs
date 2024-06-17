@@ -1,6 +1,7 @@
 using System.Net;
 using eppo_sdk;
 using eppo_sdk.dto;
+using eppo_sdk.dto.bandit;
 using eppo_sdk.logger;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -25,7 +26,7 @@ public class EppoClientTest
         {
             BaseUrl = _mockServer?.Urls[0]!
         };
-        _client = EppoClient.Init(config, "EppoClientTest");
+        _client = EppoClient.Init(config);
     }
 
     private void SetupMockServer()

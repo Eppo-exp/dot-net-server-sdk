@@ -57,7 +57,7 @@ public class BanditClientTest
         {
             BaseUrl = _mockServer?.Urls[0]!
         };
-        _client = EppoClient.Init(config, "BanditClientTest");
+        _client = EppoClient.Init(config);
     }
 
     [TearDown]

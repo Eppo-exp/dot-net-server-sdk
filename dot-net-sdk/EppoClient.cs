@@ -19,7 +19,6 @@ public class EppoClient
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
     private static EppoClient? _client = null;
-    private static string? _name;
     private readonly IConfigurationStore _configurationStore;
     private readonly FetchExperimentsTask _fetchExperimentsTask;
     private readonly BanditEvaluator _banditEvaluator;
@@ -143,9 +142,8 @@ public class EppoClient
         _client = null;
     }
 
-    public static EppoClient Init(EppoClientConfig eppoClientConfig, string? name = null)
+    public static EppoClient Init(EppoClientConfig eppoClientConfig)
     {
-        _name = name;
         lock (Baton)
         {
             InputValidator.ValidateNotBlank(eppoClientConfig.ApiKey,
