@@ -156,6 +156,9 @@ public class EppoClientTest
             atc.TestCaseFile = file;
             testCases.Add(atc);
         }
+        if (testCases.Count == 0) {
+            throw new Exception("Danger Danger. No Test Cases Loaded. Do not proceed until solved");
+        }
         return testCases;
     }
 }

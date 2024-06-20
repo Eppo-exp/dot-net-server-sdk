@@ -198,6 +198,19 @@ public class BanditClientTest
         });
     }
 
+    [Test]
+    public void ShouldReturnDefaultForNoActions() {
+
+        var result = _client!.GetBanditAction("banner_bandit_flag", _subject, new Dictionary<string, ContextAttributes>(), "defaultValue");
+        Multiple(() =>
+        {
+            That(result, Is.Not.Null);
+            That(result.Variation, Is.EqualTo("defaultValue"));
+            That(result.Action, Is.Null);
+            That(_mockAssignmentLogger.Invocations, Is.Empty);
+        });
+    }
+
     [Test, TestCaseSource(nameof(GetTestAssignmentData))]
     public void ShouldAssignCorrectlyAgainstUniversalTestCases(BanditTestCase banditTestCase)
     {
@@ -238,6 +251,10 @@ public class BanditClientTest
             var atc = JsonConvert.DeserializeObject<BanditTestCase>(File.ReadAllText(file))!;
             atc.TestCaseFile = file;
             testCases.Add(atc);
+        }
+
+        if (testCases.Count == 0) {
+            throw new Exception("Danger! Danger! No Test Cases Loaded. Do not proceed until solved");
         }
         return testCases;
     }
