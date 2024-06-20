@@ -122,8 +122,9 @@ public class BanditClientTest
 
 
     [Test]
-    public void Test_GetBanditAction_WithSubjectAttributes()
+    public void ShouldEvaluateAndLogBanditAndAssignment()
     {
+        // #! testing/the/whole
         var client = _client!;
         var subjectKey = "subject_key";
         var defaultSubjectAttributes = _subject.AsDict();
@@ -215,6 +216,8 @@ public class BanditClientTest
     public void ShouldAssignCorrectlyAgainstUniversalTestCases(BanditTestCase banditTestCase)
     {
         var client = EppoClient.GetInstance();
+
+        That(banditTestCase.Subjects, Is.Not.Empty);
 
         foreach (var subject in banditTestCase.Subjects)
         {

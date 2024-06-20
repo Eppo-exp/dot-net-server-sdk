@@ -25,7 +25,7 @@ public class BanditEvaluator
     {
         if (actionsWithContexts.Count == 0)
         {
-            throw new BanditEvaluationException("No actions provided for bandit evaluation");
+            throw new ArgumentException("No actions provided for bandit evaluation");
         }
 
         // Score all potential actions.
@@ -145,6 +145,7 @@ public class BanditEvaluator
             }
         }
 
+        // Mathematically speaking, this shouldn't happen so long as the rest of the algortihm runs correctly.
         throw new BanditEvaluationException($"[Eppo SDK] No action selected for {flagKey} {subjectKey}");
     }
 
