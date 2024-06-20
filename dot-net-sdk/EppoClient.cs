@@ -34,7 +34,7 @@ public class EppoClient
         _banditEvaluator = new BanditEvaluator();
     }
 
-    private HasEppoValue _typeCheckedAssignment(string flagKey,
+    private HasEppoValue TypeCheckedAssignment(string flagKey,
                                                 string subjectKey,
                                                 IDictionary<string, object> subjectAttributes,
                                                 EppoValueType expectedValueType,
@@ -57,7 +57,7 @@ public class EppoClient
                                      IDictionary<string, object> subjectAttributes,
                                      JObject defaultValue)
     {
-        return _typeCheckedAssignment(
+        return TypeCheckedAssignment(
             flagKey,
             subjectKey,
             subjectAttributes,
@@ -70,7 +70,7 @@ public class EppoClient
                                           IDictionary<string, object> subjectAttributes,
                                           string defaultValue)
     {
-        return _typeCheckedAssignment(
+        return TypeCheckedAssignment(
             flagKey,
             subjectKey,
             subjectAttributes,
@@ -83,7 +83,7 @@ public class EppoClient
                                      IDictionary<string, object> subjectAttributes,
                                      bool defaultValue)
     {
-        return _typeCheckedAssignment(
+        return TypeCheckedAssignment(
             flagKey,
             subjectKey,
             subjectAttributes,
@@ -96,7 +96,7 @@ public class EppoClient
                                        IDictionary<string, object> subjectAttributes,
                                        double defaultValue)
     {
-        return _typeCheckedAssignment(
+        return TypeCheckedAssignment(
             flagKey,
             subjectKey,
             subjectAttributes,
@@ -109,7 +109,7 @@ public class EppoClient
                                      IDictionary<string, object> subjectAttributes,
                                      long defaultValue)
     {
-        return _typeCheckedAssignment(
+        return TypeCheckedAssignment(
             flagKey,
             subjectKey,
             subjectAttributes,
@@ -122,7 +122,7 @@ public class EppoClient
                                       IDictionary<string, object> subjectAttributes,
                                       string defaultValue)
     {
-        return _typeCheckedAssignment(
+        return TypeCheckedAssignment(
             flagKey,
             subjectKey,
             subjectAttributes,

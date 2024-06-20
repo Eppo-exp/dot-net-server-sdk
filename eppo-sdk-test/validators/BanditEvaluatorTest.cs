@@ -332,6 +332,7 @@ public class BanditEvaluatorTest
                 }
             },
             {
+                // Note: Anot
                 "action2", new ActionCoefficients("action2", 0.3)
                 {
                     SubjectNumericCoefficients = new List<NumericAttributeCoefficient>() { new("age", 0.1, 0.0) },
@@ -342,7 +343,7 @@ public class BanditEvaluatorTest
                     ActionNumericCoefficients = new List<NumericAttributeCoefficient>() { new( "price", 0.05,  0.0 )},
                     ActionCategoricalCoefficients = new List<CategoricalAttributeCoefficient>() 
                     {
-                        new( "category",  0.0, new DoubleDictionary(){ { "A", 0.3 } } )
+                        new( "category",  0.0, new DoubleDictionary(){ { "B", 0.3 } } )
                     }
                 }
             }
@@ -374,7 +375,7 @@ public class BanditEvaluatorTest
             // In Python, a pass-thru sharder is used, so the actions are shuffled into a differtent order.
             That(evaluation.ActionKey, Is.EqualTo("action2"));
             That(evaluation.Gamma, Is.EqualTo(banditModel.Gamma));
-            That(evaluation.ActionScore, Is.EqualTo(4.0));
+            That(evaluation.ActionScore, Is.EqualTo(4.3));
             That(Math.Round(evaluation.ActionWeight, 4), Is.EqualTo(0.4926).Within(4)); // Adjust precision for floating-point comparison
         });
     }
