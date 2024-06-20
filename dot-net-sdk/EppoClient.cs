@@ -25,33 +25,6 @@ public class EppoClient
     private readonly BanditEvaluator _banditEvaluator;
     private readonly EppoClientConfig _eppoClientConfig;
 
-    private EppoClient(IConfigurationStore configurationStore, EppoClientConfig eppoClientConfig,
-        FetchExperimentsTask fetchExperimentsTask)
-    {
-        _configurationStore = configurationStore;
-        _eppoClientConfig = eppoClientConfig;
-        _fetchExperimentsTask = fetchExperimentsTask;
-        _banditEvaluator = new BanditEvaluator();
-    }
-
-    private HasEppoValue TypeCheckedAssignment(string flagKey,
-                                                string subjectKey,
-                                                IDictionary<string, object> subjectAttributes,
-                                                EppoValueType expectedValueType,
-                                                object defaultValue)
-    {
-        var result = GetAssignment(flagKey, subjectKey, subjectAttributes);
-        var eppoDefaultValue = new HasEppoValue(defaultValue);
-        if (HasEppoValue.IsNullValue(result)) return eppoDefaultValue;
-        var assignment = result!;
-        if (assignment.Type != expectedValueType)
-        {
-            Logger.Warn($"[Eppo SDK] Expected type {expectedValueType} does not match parsed type {assignment.Type}");
-            return eppoDefaultValue;
-        }
-        return assignment;
-    }
-
     public JObject GetJsonAssignment(string flagKey,
                                      string subjectKey,
                                      IDictionary<string, object> subjectAttributes,
@@ -130,6 +103,33 @@ public class EppoClient
             defaultValue).StringValue();
     }
 
+
+    private EppoClient(IConfigurationStore configurationStore, EppoClientConfig eppoClientConfig,
+        FetchExperimentsTask fetchExperimentsTask)
+    {
+        _configurationStore = configurationStore;
+        _eppoClientConfig = eppoClientConfig;
+        _fetchExperimentsTask = fetchExperimentsTask;
+        _banditEvaluator = new BanditEvaluator();
+    }
+
+    private HasEppoValue TypeCheckedAssignment(string flagKey,
+                                                string subjectKey,
+                                                IDictionary<string, object> subjectAttributes,
+                                                EppoValueType expectedValueType,
+                                                object defaultValue)
+    {
+        var result = GetAssignment(flagKey, subjectKey, subjectAttributes);
+        var eppoDefaultValue = new HasEppoValue(defaultValue);
+        if (HasEppoValue.IsNullValue(result)) return eppoDefaultValue;
+        var assignment = result!;
+        if (assignment.Type != expectedValueType)
+        {
+            Logger.Warn($"[Eppo SDK] Expected type {expectedValueType} does not match parsed type {assignment.Type}");
+            return eppoDefaultValue;
+        }
+        return assignment;
+    }
 
     private HasEppoValue? GetAssignment(string flagKey,
                                         string subjectKey,
@@ -337,70 +337,6 @@ public class EppoClient
             flagKey,
             ContextAttributes.FromDict(subjectKey, subjectAttributes),
             actions.ToDictionary(kvp => kvp.Key, kvp => ContextAttributes.FromDict(kvp.Key, kvp.Value)),
-            defaultValue);
-    }
-
-
-    /// <summary>Gets the selected action, if applicable, for the given <paramref name="flagKey"/> and contexts.
-    /// <param name="flagKey">The flag or bandit key to lookup.</param>
-    /// <param name="subjectKey">The subject's identifier.</param>
-    /// <param name="subjectAttributes">The subject's attributes for consideration.</param>
-    /// <param name="actions">The actions to consider and their contextual attributes./param>
-    /// <param name="defaultValue">Default flag variation.</param>
-    /// <example>
-    /// For example:
-    /// <code>
-    /// var client = EppoClient.GetInstance();
-    /// var subjectAttributes = new AttributeSet(
-    ///     new Dictionary<string, string>(){
-    ///         ["planTier"] = "free",
-    ///         ["favouriteColour"] = "red"
-    ///     },
-    ///     new Dictionary<string, double>(){
-    ///         ["accountAge"] = 4
-    ///     }
-    /// );
-    /// var actions = new Dictionary<string, AttributeSet>() {
-    ///     ["nike"] = new AttributeSet(
-    ///         new Dictionary<string, string>(){
-    ///             ["origin"] = "usa"
-    ///         },
-    ///         new Dictionary<string, double>(){
-    ///             ["brandLoyalty"] = 0.1
-    ///         }
-    ///     ),
-    ///     ["adidas"] = new AttributeSet(
-    ///         new Dictionary<string, string>(){
-    ///             ["origin"] = "germany"
-    ///         },
-    ///         new Dictionary<string, double>(){
-    ///             ["brandLoyalty"] = 1
-    ///         }
-    ///     )};
-    ///  var result = client.GetBanditAction(
-    ///      "flagname",
-    ///      "subjectKey",
-    ///      subjectAttributes,
-    ///      actions,
-    ///      "defaultValue");
-    /// </code>
-    /// </example>
-    /// <example>
-    /// </summary>
-    public BanditResult GetBanditAction(string flagKey,
-                                        string subjectKey,
-                                        AttributeSet subjectAttributes,
-                                        IDictionary<string, AttributeSet> actions,
-                                        string defaultValue)
-    {
-
-        var contextualSubject = new ContextAttributes(subjectKey, subjectAttributes.CategoricalAttributes, subjectAttributes.NumericAttributes);
-        var actionContexts = actions.ToDictionary(kvp => kvp.Key, kvp => new ContextAttributes(kvp.Key, kvp.Value.CategoricalAttributes, kvp.Value.NumericAttributes));
-
-        return _getBanditDetail(
-            flagKey,
-            contextualSubject,
-            actionContexts,
             defaultValue);
     }
 
