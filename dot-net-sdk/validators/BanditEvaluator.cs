@@ -1,10 +1,9 @@
+using System.Collections.Specialized;
 using eppo_sdk.dto.bandit;
 using eppo_sdk.exception;
 using eppo_sdk.helpers;
 
 namespace eppo_sdk.validators;
-
-using ActionScore = KeyValuePair<string, double>;
 
 
 /// Scores and selects and action based on the supplied contexts and Bandit Model data.
@@ -48,12 +47,12 @@ public class BanditEvaluator
             actionWeights);
 
         var selectedActionContext = actionsWithContexts[selectedAction];
-        var actionScore = actionScores.Find(a => a.Key == selectedAction)!.Value;
-        var actionWeight = actionWeights.Find(a => a.Key == selectedAction)!.Value;
+        var actionScore = actionScores[selectedAction];
+        var actionWeight = actionWeights[selectedAction];
 
         // Determine optimality gap
         var max = actionScores.Max(score => score.Value);
-        var gap = max - actionScores.Find(s => s.Key == selectedAction).Value;
+        var gap = max - actionScore;
 
         return new BanditEvaluation(
             flagKey,
@@ -68,21 +67,15 @@ public class BanditEvaluator
         );
     }
 
-    public static List<ActionScore> ScoreActions(AttributeSet subjectAttributes,
+    public static IDictionary<string, double> ScoreActions(AttributeSet subjectAttributes,
                                                  IDictionary<string, AttributeSet> actionsWithContexts,
-                                                 ModelData banditModel)
-    {
-        return actionsWithContexts.Select(kvp =>
-        {
-            var actionKey = kvp.Key;
-            return new ActionScore(
-                actionKey,
-                banditModel.Coefficients.TryGetValue(actionKey, out var coefficients)
+                                                 ModelData banditModel) =>
+        actionsWithContexts.ToDictionary(
+            kvp => kvp.Key,
+            kvp => banditModel.Coefficients.TryGetValue(kvp.Key, out var coefficients)
                     ? ScoreAction(subjectAttributes, kvp.Value, coefficients)
-                    : banditModel.DefaultActionScore
-            );
-        }).ToList();
-    }
+                    : banditModel.DefaultActionScore);
+
 
     private static double ScoreAction(AttributeSet subjectAttributes,
                                       AttributeSet actionAttributes,
@@ -106,9 +99,9 @@ public class BanditEvaluator
         return score;
     }
 
-    public List<ActionScore> WeighActions(List<ActionScore> actionScores,
-                                          double gamma,
-                                          double probabilityFloor)
+    public static IDictionary<string, double> WeighActions(IDictionary<string, double> actionScores,
+                                                    double gamma,
+                                                    double probabilityFloor)
     {
         var numberOfActions = actionScores.Count;
 
@@ -116,19 +109,22 @@ public class BanditEvaluator
 
         var minProbability = probabilityFloor / numberOfActions;
 
-        var weights = actionScores.Where(t => t.Key != bestAction.Key)
-            .Select(t => new ActionScore(t.Key, Math.Max(minProbability, 1.0f / (numberOfActions + gamma * (bestAction.Value - t.Value)))))
-            .ToList();
+        var weights = actionScores
+            .Where(t => t.Key != bestAction.Key)
+            .ToDictionary(
+                kvp => kvp.Key,
+                t => Math.Max(minProbability, 1.0f / (numberOfActions + gamma * (bestAction.Value - t.Value))));
+
 
         var remainingWeight = Math.Max(0.0, 1.0 - weights.Sum(w => w.Value));
-        weights.Add(new ActionScore(bestAction.Key, remainingWeight));
+        weights[bestAction.Key] = remainingWeight;
 
         return weights;
     }
 
     private string SelectAction(string flagKey,
                                 string subjectKey,
-                                List<ActionScore> actionWeights)
+                                IDictionary<string, double> actionWeights)
     {
         // Shuffle the actions "randomly" by using the sharder to hash and bucket them
         var sortedActionWeights = actionWeights.OrderBy(t => Sharder.GetShard($"{flagKey}-{subjectKey}-{t.Key}", totalShards))

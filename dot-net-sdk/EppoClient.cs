@@ -345,6 +345,13 @@ public class EppoClient
                                         IDictionary<string, ContextAttributes> actions,
                                         string defaultValue)
     {
+        // If no actions are given - a valid use case - return the `defaultValue`.
+        if (actions.Count == 0) {
+            // If not graceful mode, raise an exception here? Maybe only raise exception if the flag key is also a bandit
+            return new(defaultValue);
+        }
+
+
         // Get the user's flag assignment for the given key.
         var variation = GetStringAssignment(
             flagKey,
@@ -370,10 +377,6 @@ public class EppoClient
                     AppDetails.GetInstance().AsDict());
                 _eppoClientConfig.AssignmentLogger.LogBanditAction(banditActionLog);
                 return new BanditResult(variation, result.ActionKey);
-            }
-            else
-            {
-                Logger.Info($"[Eppo SDK] Variation {variation} is not a valid bandit");
             }
         }
         catch (BanditEvaluationException bee)

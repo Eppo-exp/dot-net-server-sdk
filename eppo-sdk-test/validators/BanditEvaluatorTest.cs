@@ -4,7 +4,6 @@ using static NUnit.Framework.Assert;
 
 namespace eppo_sdk_test.validators;
 
-using ActionScore = KeyValuePair<string, double>;
 using StringDictionary = Dictionary<string, string>;
 using DoubleDictionary = Dictionary<string, double>;
 
@@ -169,25 +168,28 @@ public class BanditEvaluatorTest
     [Test]
     public void ShouldWeighOneAction()
     {
-        var scores = new List<ActionScore> {
-           new("action", 87.0)
+        var scores = new Dictionary<string, double>
+        {
+            ["action"] = 87.0
         };
-        var expectedWeights = new List<ActionScore> {
-           new("action", 1.0)
+        var expectedWeights = new Dictionary<string, double>
+        {
+            ["action"] = 1.0
         };
-        That(banditEvaluator.WeighActions(scores, 10 /* Gamma */, 0.1 /* min probability */), Is.EquivalentTo(expectedWeights));
+        That(BanditEvaluator.WeighActions(scores, 10 /* Gamma */, 0.1 /* min probability */), Is.EquivalentTo(expectedWeights));
     }
 
     [Test]
     public void ShouldWeighMultipleActionScoresToTheFloor()
     {
         // Large spread with a large gamma will move most actions below the min proability.
-        var scores = new List<ActionScore> {
-           new("action", 87.0),
-           new("action2", 1.0),
-           new("action3", 15.0),
-           new("action4", 2.7),
-           new("action5", 0.5),
+        var scores = new Dictionary<string, double>
+        {
+            ["action"] = 87.0,
+            ["action2"] = 1.0,
+            ["action3"] = 15.0,
+            ["action4"] = 2.7,
+            ["action5"] = 0.5,
         };
 
         var gamma = 10;
@@ -195,29 +197,31 @@ public class BanditEvaluatorTest
         var expectedFloorValue = minProbability / scores.Count; // 0.02
         var expectedWinnerWeight = 1 - (expectedFloorValue * (scores.Count - 1));
 
-        var expectedWeights = new List<ActionScore> {
-           new("action", expectedWinnerWeight),
-           new("action2", expectedFloorValue),
-           new("action3", expectedFloorValue),
-           new("action4", expectedFloorValue),
-           new("action5", expectedFloorValue)
+        var expectedWeights = new Dictionary<string, double>
+        {
+            ["action"] = expectedWinnerWeight,
+            ["action2"] = expectedFloorValue,
+            ["action3"] = expectedFloorValue,
+            ["action4"] = expectedFloorValue,
+            ["action5"] = expectedFloorValue
         };
 
-        var weights = banditEvaluator.WeighActions(scores, gamma, minProbability);
+        var weights = BanditEvaluator.WeighActions(scores, gamma, minProbability);
 
-        AssertActionScoreListsMatch(weights, expectedWeights);
+        AssertActionScoreDictsMatch(weights, expectedWeights);
 
     }
     [Test]
     public void ShouldWeighMultipleActionScores()
     {
         // Based on jersey numbers which isn't really a score value, but that's ok for our purposes.
-        var scores = new List<ActionScore> {
-           new("Ovechkin", 8.0),
-           new("Crosby", 87.0),
-           new("Lemieux", 66.0),
-           new("Gretzky", 99.0),
-           new("Lindros", 88.0)
+        var scores = new Dictionary<string, double>
+        {
+            ["Ovechkin"] = 8.0,
+            ["Crosby"] = 87.0,
+            ["Lemieux"] = 66.0,
+            ["Gretzky"] = 99.0,
+            ["Lindros"] = 88.0
         };
 
         // Low gamma to encourage small spread of weights.
@@ -225,7 +229,7 @@ public class BanditEvaluatorTest
         var minProbability = 0.1;
 
 
-        var weights = banditEvaluator.WeighActions(scores, gamma, minProbability);
+        var weights = BanditEvaluator.WeighActions(scores, gamma, minProbability);
 
         // The actual weights are kind of hand-wavy and black box if they're just pulled from the underlying calculation
         // What matters is that the weights add up to 1 and (for this dataset) that the action weights are in the same ranking as their scores.
@@ -248,28 +252,29 @@ public class BanditEvaluatorTest
     [Test]
     public void ShouldWeighWithGamma()
     {
-        var scores = new List<ActionScore> {
-           new("action", 2.0),
-           new("action2", 0.5),
+        var scores = new Dictionary<string, double>
+        {
+            ["action"] = 2.0,
+            ["action2"] = 0.5,
         };
 
         var smallGamma = 1;
         var largeGamma = 10;
         var minProbability = 0.1;
 
-        var smallGammaWeights = banditEvaluator.WeighActions(scores, smallGamma, minProbability);
-        var largeGammaWeights = banditEvaluator.WeighActions(scores, largeGamma, minProbability);
+        var smallGammaWeights = BanditEvaluator.WeighActions(scores, smallGamma, minProbability);
+        var largeGammaWeights = BanditEvaluator.WeighActions(scores, largeGamma, minProbability);
         Multiple(() =>
         {
             // Winner shares more of their score with a smaller gamma
             That(
-                smallGammaWeights.Find(w => w.Key == "action").Value,
-                Is.LessThan(largeGammaWeights.Find(w => w.Key == "action").Value));
+                smallGammaWeights["action"],
+                Is.LessThan(largeGammaWeights["action"]));
 
             // Non-winners get bigger share of weight with a smaller gamma
             That(
-                smallGammaWeights.Find(w => w.Key == "action2").Value,
-                Is.GreaterThan(largeGammaWeights.Find(w => w.Key == "action2").Value));
+                smallGammaWeights["action2"],
+                Is.GreaterThan(largeGammaWeights["action2"]));
         });
     }
 
@@ -277,23 +282,25 @@ public class BanditEvaluatorTest
     [Test]
     public void ShouldEquallyWeighEvenField()
     {
-        var scores = new List<ActionScore> {
-           new("action1", 0.5),
-           new("action2", 0.5),
-           new("action3", 0.5),
-           new("action4", 0.5),
+        var scores = new Dictionary<string, double>
+        {
+            ["action1"] = 0.5,
+            ["action2"] = 0.5,
+            ["action3"] = 0.5,
+            ["action4"] = 0.5,
         };
-        var expectedWeights = new List<ActionScore> {
-           new("action1", 1.0/4),
-           new("action2", 1.0/4),
-           new("action3", 1.0/4),
-           new("action4", 1.0/4)
+        var expectedWeights = new Dictionary<string, double>
+        {
+            ["action1"] = 1.0 / 4,
+            ["action2"] = 1.0 / 4,
+            ["action3"] = 1.0 / 4,
+            ["action4"] = 1.0 / 4
         };
         var gamma = 0.1;
         var minProbability = 0.1;
 
-        var weights = banditEvaluator.WeighActions(scores, gamma, minProbability);
-        AssertActionScoreListsMatch(weights, expectedWeights);
+        var weights = BanditEvaluator.WeighActions(scores, gamma, minProbability);
+        AssertActionScoreDictsMatch(weights, expectedWeights);
     }
 
     [Test]
@@ -320,12 +327,12 @@ public class BanditEvaluatorTest
                 "action1", new ActionCoefficients("action1", 0.5)
                 {
                     SubjectNumericCoefficients = new List<NumericAttributeCoefficient>() { new("age", 0.1, 0.0) },
-                    SubjectCategoricalCoefficients = new List<CategoricalAttributeCoefficient>() 
+                    SubjectCategoricalCoefficients = new List<CategoricalAttributeCoefficient>()
                     {
                         new( "location",  0.0, new DoubleDictionary() { { "US", 0.2 } } )
                     },
                     ActionNumericCoefficients = new List<NumericAttributeCoefficient>() { new( "price", 0.05,  0.0 )},
-                    ActionCategoricalCoefficients = new List<CategoricalAttributeCoefficient>() 
+                    ActionCategoricalCoefficients = new List<CategoricalAttributeCoefficient>()
                     {
                         new( "category",  0.0, new DoubleDictionary(){ { "A", 0.3 } } )
                     }
@@ -341,7 +348,7 @@ public class BanditEvaluatorTest
                         new( "location",  0.0, new DoubleDictionary() { { "US", 0.2 } } )
                     },
                     ActionNumericCoefficients = new List<NumericAttributeCoefficient>() { new( "price", 0.05,  0.0 )},
-                    ActionCategoricalCoefficients = new List<CategoricalAttributeCoefficient>() 
+                    ActionCategoricalCoefficients = new List<CategoricalAttributeCoefficient>()
                     {
                         new( "category",  0.0, new DoubleDictionary(){ { "B", 0.3 } } )
                     }
@@ -364,7 +371,7 @@ public class BanditEvaluatorTest
         Multiple(() =>
         {
             That(evaluation, Is.Not.Null);
-            
+
             That(evaluation!.FlagKey, Is.EqualTo(flagKey));
             That(evaluation.SubjectKey, Is.EqualTo(subjectKey));
             That(evaluation.SubjectAttributes.NumericAttributes, Is.EquivalentTo(subjectAttributes.AsAttributeSet().NumericAttributes));
@@ -380,18 +387,12 @@ public class BanditEvaluatorTest
         });
     }
 
-    private static void AssertActionScoreListsMatch(List<ActionScore> actual, List<ActionScore> expected, bool ignoreOrder = true)
+    private static void AssertActionScoreDictsMatch(IDictionary<string, double> actual, IDictionary<string, double> expected)
     {
-        That(actual.Count, Is.EqualTo(expected.Count));
-        if (ignoreOrder)
+        Multiple(() =>
         {
-            var expectedWeightsDict = new Dictionary<string, ActionScore>(expected.Select(aScore => KeyValuePair.Create(aScore.Key, aScore)));
-            var actualWeightsDict = new Dictionary<string, ActionScore>(actual.Select(aScore => KeyValuePair.Create(aScore.Key, aScore)));
-            That(actualWeightsDict, Is.EquivalentTo(expectedWeightsDict));
-        }
-        else
-        {
+            That(actual, Has.Count.EqualTo(expected.Count));
             That(actual, Is.EquivalentTo(expected));
-        }
+        });
     }
 }
