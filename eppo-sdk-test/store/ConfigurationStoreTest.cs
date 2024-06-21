@@ -38,5 +38,4 @@ public class ConfigurationStoreTest
 
         Assert.That(store.GetBanditFlags(), Is.EqualTo(banditFlags));
     }
-
 }
