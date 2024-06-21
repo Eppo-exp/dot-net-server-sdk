@@ -5,9 +5,7 @@ using eppo_sdk.helpers;
 using eppo_sdk.http;
 using eppo_sdk.store;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using Newtonsoft.Json;
 using static NUnit.Framework.Assert;
 
 namespace eppo_sdk_test.store;
