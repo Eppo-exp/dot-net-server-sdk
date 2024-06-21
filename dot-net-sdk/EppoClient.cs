@@ -158,9 +158,11 @@ public class EppoClient
             var expConfigRequester = new ConfigurationRequester(eppoHttpClient);
             var configCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
             var modelCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
+            var banditFlagCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
             var configurationStore = ConfigurationStore.GetInstance(
                 configCache,
                 modelCache,
+                banditFlagCache,
                 expConfigRequester
             );
 
