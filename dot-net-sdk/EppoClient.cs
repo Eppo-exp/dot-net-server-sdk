@@ -160,10 +160,10 @@ public class EppoClient
             var modelCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
             var banditFlagCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
             var configurationStore = ConfigurationStore.GetInstance(
+                expConfigRequester,
                 configCache,
                 modelCache,
-                banditFlagCache,
-                expConfigRequester
+                banditFlagCache
             );
 
             if (_client != null)
