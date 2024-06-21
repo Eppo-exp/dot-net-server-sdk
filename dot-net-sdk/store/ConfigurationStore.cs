@@ -101,14 +101,9 @@ public class ConfigurationStore : IConfigurationStore
 
     private void ClearCaches()
     {
-        MemoryCache[] caches = { _experimentConfigurationCache, _banditModelCache, _banditFlagCache };
-        foreach (MemoryCache c in caches)
-        {
-            if (c is MemoryCache cache)
-            {
-                cache.Clear();
-            }
-        }
+        _experimentConfigurationCache.Clear();
+        _banditModelCache.Clear();
+        _banditFlagCache.Clear();
     }
     public void FetchConfiguration()
     {
