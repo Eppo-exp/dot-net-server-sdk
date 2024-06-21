@@ -103,7 +103,7 @@ public class ConfigurationStore : IConfigurationStore
     {
         _experimentConfigurationCache.Clear();
         _banditModelCache.Clear();
-        _flagBanditCache.Clear();
+        _banditFlagCache.Clear();
         
         FlagConfigurationResponse experimentConfigurationResponse = Get();
         experimentConfigurationResponse.Flags.ToList()
