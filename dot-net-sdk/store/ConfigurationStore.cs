@@ -100,6 +100,10 @@ public class ConfigurationStore : IConfigurationStore
 
     public void FetchConfiguration()
     {
+        _experimentConfigurationCache.Clear();
+        _banditModelCache.Clear();
+        _flagBanditCache.Clear();
+        
         FlagConfigurationResponse experimentConfigurationResponse = Get();
         experimentConfigurationResponse.Flags.ToList()
             .ForEach(x => { this.SetExperimentConfiguration(x.Key, x.Value); });
