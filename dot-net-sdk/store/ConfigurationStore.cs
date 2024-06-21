@@ -1,3 +1,4 @@
+using System.Threading.Channels;
 using eppo_sdk.dto;
 using eppo_sdk.dto.bandit;
 using eppo_sdk.exception;
@@ -41,7 +42,7 @@ public class ConfigurationStore : IConfigurationStore
         }
         else
         {
-            _instance._experimentConfigurationCache.Clear();
+            _instance.ClearCaches();
         }
 
         return _instance;
@@ -99,12 +100,21 @@ public class ConfigurationStore : IConfigurationStore
         return null;
     }
 
+    private void ClearCaches()
+    {
+        MemoryCache[] caches = { _experimentConfigurationCache, _banditModelCache, _banditFlagCache };
+        foreach (MemoryCache c in caches)
+        {
+            if (c is MemoryCache cache)
+            {
+                cache.Clear();
+            }
+        }
+    }
     public void FetchConfiguration()
     {
-        _experimentConfigurationCache.Clear();
-        _banditModelCache.Clear();
-        _banditFlagCache.Clear();
-        
+        ClearCaches();
+
         FlagConfigurationResponse experimentConfigurationResponse = Get();
         experimentConfigurationResponse.Flags.ToList()
             .ForEach(x => { this.SetExperimentConfiguration(x.Key, x.Value); });
