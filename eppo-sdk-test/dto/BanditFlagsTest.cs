@@ -13,7 +13,7 @@ public class BanditFlagsTest
     {
         var banditFlags = new BanditFlags()
         {
-            ["banditKey"] = new BanditVariation("banditKey", "banditFlagKey", "variationKey", "variationValue")
+            ["banditKey"] = new BanditVariation[]{ new BanditVariation("banditKey", "banditFlagKey", "variationKey", "variationValue")}
         };
 
         Multiple(() =>
