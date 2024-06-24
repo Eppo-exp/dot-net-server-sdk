@@ -1,4 +1,5 @@
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using eppo_sdk;
 using eppo_sdk.dto;
 using eppo_sdk.dto.bandit;
@@ -16,8 +17,6 @@ namespace eppo_sdk_test;
 [TestFixture]
 public class BanditClientTest
 {
-    private EppoClient? _client;
-
     private const string BANDIT_CONFIG_FILE = "files/ufc/bandit-flags-v1.json";
     private const string BANDIT_MODEL_FILE = "files/ufc/bandit-models-v1.json";
     private WireMockServer? _mockServer;
@@ -28,7 +27,6 @@ public class BanditClientTest
         {"age", 30},
         {"country", "UK"}
     };
-    private Mock<IAssignmentLogger> _mockAssignmentLogger;
     private readonly Dictionary<string, ContextAttributes> _actions = new()
     {
         {"action1" , new("action1") {
@@ -46,18 +44,20 @@ public class BanditClientTest
     {
         SetupMockServer();
         SetupSubjectMocks();
-        _mockAssignmentLogger = new Mock<IAssignmentLogger>();
-        var config = new EppoClientConfig("mock-api-key", _mockAssignmentLogger.Object)
+    }
+
+    private EppoClient CreateClient(IAssignmentLogger? logger = null)
+    {
+        if (logger == null)
+        {
+            var mockAssignmentLogger = new Mock<IAssignmentLogger>();
+            logger = mockAssignmentLogger.Object;
+        }
+        var config = new EppoClientConfig("mock-api-key", logger)
         {
             BaseUrl = _mockServer?.Urls[0]!
         };
-        _client = EppoClient.Init(config);
-    }
-
-    [TearDown]
-    public void TeardownEach()
-    {
-        _mockAssignmentLogger.Invocations.Clear();
+        return EppoClient.Init(config);
     }
 
     private void SetupSubjectMocks()
@@ -99,7 +99,8 @@ public class BanditClientTest
     [Test]
     public void ShouldReturnDefaultForNonBandit()
     {
-        var result = _client!.GetBanditAction("unknownflag", _subject, _actions, "defaultVariation");
+        var client = CreateClient();
+        var result = client.GetBanditAction("unknownflag", _subject, _actions, "defaultVariation");
         Multiple(() =>
         {
             That(result, Is.Not.Null);
@@ -111,7 +112,8 @@ public class BanditClientTest
     [Test]
     public void ShouldReturnDefaultForNonBanditFlag()
     {
-        var result = _client!.GetBanditAction("a_flag", _subject, new Dictionary<string, ContextAttributes>(), "default_variation");
+        var client = CreateClient();
+        var result = client.GetBanditAction("a_flag", _subject, new Dictionary<string, ContextAttributes>(), "default_variation");
         Multiple(() =>
         {
             That(result, Is.Not.Null);
@@ -125,7 +127,21 @@ public class BanditClientTest
     public void ShouldEvaluateAndLogBanditAndAssignment()
     {
         // #! testing/the/whole
-        var client = _client!;
+
+        var mockLogger = new Mock<IAssignmentLogger>();
+
+        List<AssignmentLogData> assignmentLogs = new() { };
+        List<BanditLogEvent> banditActionsLogs = new() { };
+
+
+        mockLogger.Setup(mock => mock.LogAssignment(It.IsAny<AssignmentLogData>()))
+            .Callback<AssignmentLogData>(log => assignmentLogs.Add(log));
+
+        mockLogger.Setup(mock => mock.LogBanditAction(It.IsAny<BanditLogEvent>()))
+            .Callback<BanditLogEvent>(log => banditActionsLogs.Add(log));
+
+        var client = CreateClient(mockLogger.Object);
+
         var subjectKey = "subject_key";
         var defaultSubjectAttributes = _subject.AsDict();
         var actions = new Dictionary<string, ContextAttributes>()
@@ -157,7 +173,10 @@ public class BanditClientTest
             That(result.Action == "adidas" || result.Action == "nike", Is.True);
 
             // Assert - Assignment logger verification
-            var assignmentLogStatement = _mockAssignmentLogger.Invocations.First().Arguments[0] as AssignmentLogData;
+            mockLogger.Verify(logger => logger.LogAssignment(It.IsAny<AssignmentLogData>()), Times.Once());
+            That(assignmentLogs, Has.Count.EqualTo(1));
+
+            var assignmentLogStatement = assignmentLogs[0];
             That(assignmentLogStatement, Is.Not.Null);
             var logEvent = assignmentLogStatement!;
 
@@ -166,7 +185,10 @@ public class BanditClientTest
             That(logEvent.Subject, Is.EqualTo(subjectKey));
 
             // Assert - Bandit logger verification
-            var banditLogStatement = _mockAssignmentLogger.Invocations.Last().Arguments[0] as BanditLogEvent;
+            mockLogger.Verify(logger => logger.LogBanditAction(It.IsAny<BanditLogEvent>()), Times.Once());
+            That(banditActionsLogs, Has.Count.EqualTo(1));
+
+            var banditLogStatement = banditActionsLogs[0];
 
             That(banditLogStatement, Is.Not.Null);
             var banditLog = banditLogStatement!;
@@ -200,22 +222,44 @@ public class BanditClientTest
     }
 
     [Test]
-    public void ShouldReturnDefaultForNoActions() {
+    public void ShouldReturnDefaultForNoActions()
+    {
 
-        var result = _client!.GetBanditAction("banner_bandit_flag", _subject, new Dictionary<string, ContextAttributes>(), "defaultValue");
+        var mockLogger = new Mock<IAssignmentLogger>();
+        var client = CreateClient(mockLogger.Object);
+
+        var result = client.GetBanditAction("banner_bandit_flag", _subject, new Dictionary<string, ContextAttributes>(), "defaultValue");
         Multiple(() =>
         {
             That(result, Is.Not.Null);
             That(result.Variation, Is.EqualTo("defaultValue"));
             That(result.Action, Is.Null);
-            That(_mockAssignmentLogger.Invocations, Is.Empty);
+            That(mockLogger.Invocations, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void ShouldReturnVariationForNonBandit()
+    {
+        var mockLogger = new Mock<IAssignmentLogger>();
+        mockLogger.Setup(mock => mock.LogAssignment(It.IsAny<AssignmentLogData>()));
+        var client = CreateClient(mockLogger.Object);
+
+        var result = client.GetBanditAction("non_bandit_flag", _subject, new Dictionary<string, ContextAttributes>(), "defaultValue");
+
+        Multiple(() =>
+        {
+            That(result, Is.Not.Null);
+            That(result.Variation, Is.EqualTo("control"));
+            That(result.Action, Is.Null);
+            mockLogger.VerifyAll();
         });
     }
 
     [Test, TestCaseSource(nameof(GetTestAssignmentData))]
     public void ShouldAssignCorrectlyAgainstUniversalTestCases(BanditTestCase banditTestCase)
     {
-        var client = EppoClient.GetInstance();
+        var client = CreateClient();
 
         That(banditTestCase.Subjects, Is.Not.Empty);
 
@@ -256,7 +300,8 @@ public class BanditClientTest
             testCases.Add(atc);
         }
 
-        if (testCases.Count == 0) {
+        if (testCases.Count == 0)
+        {
             throw new Exception("Danger! Danger! No Test Cases Loaded. Do not proceed until solved");
         }
         return testCases;

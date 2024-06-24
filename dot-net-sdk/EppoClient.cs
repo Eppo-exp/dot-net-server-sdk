@@ -278,7 +278,7 @@ public class EppoClient
     {
         try
         {
-            return _getBanditDetail(flagKey, subject, actions, defaultValue);
+            return GetBanditDetail(flagKey, subject, actions, defaultValue);
         }
         catch (Exception e)
         {
@@ -335,21 +335,24 @@ public class EppoClient
                                         IDictionary<string, IDictionary<string, object?>> actions,
                                         string defaultValue)
     {
-        return _getBanditDetail(
+        return GetBanditDetail(
             flagKey,
             ContextAttributes.FromDict(subjectKey, subjectAttributes),
             actions.ToDictionary(kvp => kvp.Key, kvp => ContextAttributes.FromDict(kvp.Key, kvp.Value)),
             defaultValue);
     }
 
-    private BanditResult _getBanditDetail(string flagKey,
+    private BanditResult GetBanditDetail(string flagKey,
                                         ContextAttributes subject,
                                         IDictionary<string, ContextAttributes> actions,
                                         string defaultValue)
     {
         // If no actions are given - a valid use case - return the `defaultValue`.
-        if (actions.Count == 0) {
-            // If not graceful mode, raise an exception here? Maybe only raise exception if the flag key is also a bandit
+        bool isBanditFlag = _configurationStore.GetBanditFlags().IsBanditFlag(flagKey);
+
+        if (actions.Count == 0 && isBanditFlag)
+        {
+            // If not graceful mode, raise an exception here?
             return new(defaultValue);
         }
 
@@ -361,6 +364,12 @@ public class EppoClient
             subject,
             defaultValue);
 
+        // If not a bandit, return the computed String assignment
+        if (!isBanditFlag)
+        {
+            Logger.Warn($"[Eppo SDK] Flag \"{flagKey}\" does not contain a Bandit");
+            return new(variation);
+        }
 
         try
         {
