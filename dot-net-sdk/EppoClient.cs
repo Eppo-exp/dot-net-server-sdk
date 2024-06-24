@@ -347,6 +347,8 @@ public class EppoClient
                                         IDictionary<string, ContextAttributes> actions,
                                         string defaultValue)
     {
+        InputValidator.ValidateNotBlank(flagKey, "Invalid argument: flagKey cannot be blank");
+
         // If no actions are given - a valid use case - return the `defaultValue`.
         bool isBanditFlag = _configurationStore.GetBanditFlags().IsBanditFlag(flagKey);
 
