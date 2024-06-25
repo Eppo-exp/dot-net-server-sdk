@@ -4,7 +4,6 @@ using eppo_sdk.dto.bandit;
 using eppo_sdk.helpers;
 using eppo_sdk.http;
 using eppo_sdk.store;
-using Microsoft.Extensions.Caching.Memory;
 using Moq;
 using static NUnit.Framework.Assert;
 
@@ -119,8 +118,6 @@ public class ConfigurationStoreTest
         AssertHasFlag(store, "flag1");
         AssertHasFlag(store, "flag3");
         AssertHasFlag(store, "flag2", false);
-
-
     }
 
     private static void AssertHasFlag(ConfigurationStore store, string flagKey, bool hasFlag = true)

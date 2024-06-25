@@ -16,7 +16,6 @@ public class ConfigurationStore : IConfigurationStore
 
     private static readonly object Baton = new();
 
-
     public ConfigurationStore(IConfigurationRequester requester,
                               MemoryCache flagConfigurationCache,
                               MemoryCache banditModelCache,
