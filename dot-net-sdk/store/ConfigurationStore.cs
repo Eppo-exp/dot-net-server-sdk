@@ -9,23 +9,35 @@ namespace eppo_sdk.store;
 public class ConfigurationStore : IConfigurationStore
 {
     private readonly MemoryCache _experimentConfigurationCache;
+    private readonly MemoryCache _banditFlagCache;
     private readonly MemoryCache _banditModelCache;
-    private readonly ConfigurationRequester _requester;
+    private readonly IConfigurationRequester _requester;
     private static ConfigurationStore? _instance;
+    private const string BANDIT_FLAGS_KEY = "bandit_flags";
 
-    public ConfigurationStore(ConfigurationRequester requester, MemoryCache flagConfigurationCache, MemoryCache banditModelCache)
+    public ConfigurationStore(IConfigurationRequester requester,
+                              MemoryCache flagConfigurationCache,
+                              MemoryCache banditModelCache,
+                              MemoryCache banditFlagCache)
     {
         _requester = requester;
         _experimentConfigurationCache = flagConfigurationCache;
         _banditModelCache = banditModelCache;
+        _banditFlagCache = banditFlagCache;
     }
 
-    public static ConfigurationStore GetInstance(MemoryCache flagConfigurationCache, MemoryCache banditModelCache,
-        ConfigurationRequester requester)
+    public static ConfigurationStore GetInstance(IConfigurationRequester requester,
+                                                 MemoryCache flagConfigurationCache,
+                                                 MemoryCache banditModelCache,
+                                                 MemoryCache banditFlagCache)
     {
         if (_instance == null)
         {
-            _instance = new ConfigurationStore(requester, flagConfigurationCache, banditModelCache);
+            _instance = new ConfigurationStore(
+                requester,
+                flagConfigurationCache,
+                banditModelCache,
+                banditFlagCache);
         }
         else
         {
@@ -43,6 +55,20 @@ public class ConfigurationStore : IConfigurationStore
     public void SetBanditModel(Bandit banditModel)
     {
         _banditModelCache.Set(banditModel.BanditKey, banditModel, new MemoryCacheEntryOptions().SetSize(1));
+    }
+
+    public void SetBanditFlags(BanditFlags banditFlags)
+    {
+        _banditFlagCache.Set(BANDIT_FLAGS_KEY, banditFlags, new MemoryCacheEntryOptions().SetSize(1));
+    }
+
+    public BanditFlags GetBanditFlags()
+    {
+        if (_banditFlagCache.TryGetValue(BANDIT_FLAGS_KEY, out BanditFlags? banditFlags) && banditFlags != null)
+        {
+            return banditFlags;
+        }
+        throw new SystemException("Bandit Flag mapping could not be loaded from the cache");
     }
 
     public Flag? GetExperimentConfiguration(string key)
@@ -78,6 +104,11 @@ public class ConfigurationStore : IConfigurationStore
         FlagConfigurationResponse experimentConfigurationResponse = Get();
         experimentConfigurationResponse.Flags.ToList()
             .ForEach(x => { this.SetExperimentConfiguration(x.Key, x.Value); });
+
+        if (experimentConfigurationResponse.Bandits != null)
+        {
+            this.SetBanditFlags(experimentConfigurationResponse.Bandits);
+        }
 
         BanditModelResponse banditModels = GetBandits();
         banditModels.Bandits?.ToList()

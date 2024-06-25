@@ -10,4 +10,7 @@ public interface IConfigurationStore
     void SetExperimentConfiguration(string key, Flag experimentConfiguration);
     Bandit? GetBanditModel(string key);
     void SetBanditModel(Bandit bandit);
+
+    public BanditFlags GetBanditFlags();
+    public void SetBanditFlags(BanditFlags banditFlags);
 }
