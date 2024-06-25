@@ -41,7 +41,7 @@ public class ConfigurationStoreTest
         mockRequester.Setup(m => m.FetchBanditModels()).Returns(banditResponse);
 
         var store = CreateConfigurationStore(mockRequester.Object);
-        store.FetchConfiguration();
+        store.LoadConfiguration();
 
         Assert.That(store.GetBanditFlags(), Is.EqualTo(banditFlags));
     }
@@ -76,7 +76,7 @@ public class ConfigurationStoreTest
         mockRequester.Setup(m => m.FetchBanditModels()).Returns(banditResponse);
 
         var store = CreateConfigurationStore(mockRequester.Object);
-        store.FetchConfiguration();
+        store.LoadConfiguration();
 
         Assert.That(store.GetBanditFlags().Keys, Is.EquivalentTo(new List<string> { "unchangingBandit", "departingBandit" }));
 
@@ -88,7 +88,7 @@ public class ConfigurationStoreTest
             Flags = new Dictionary<string, Flag>()
         });
 
-        store.FetchConfiguration();
+        store.LoadConfiguration();
 
         Assert.That(store.GetBanditFlags().Keys, Is.EquivalentTo(new List<string> { "unchangingBandit", "newBandit" }));
     }

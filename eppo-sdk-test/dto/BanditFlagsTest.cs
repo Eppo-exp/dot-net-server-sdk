@@ -13,13 +13,21 @@ public class BanditFlagsTest
     {
         var banditFlags = new BanditFlags()
         {
-            ["banditKey"] = new BanditVariation[]{ new BanditVariation("banditKey", "banditFlagKey", "variationKey", "variationValue")}
+            // Typical `BanditVariationDto` values where `variation` is duplicated across the VariationValue, VariationKey and BanditKey fields.
+            ["variation"] = new BanditVariation[] {new("variation", "banditFlagKey", "variation", "variation")},
+
+            ["banditKey"] = new BanditVariation[] {new("banditKey", "flagKey", "variationKey", "variationValue")}
         };
 
         Multiple(() =>
         {
             That(banditFlags.IsBanditFlag("notAFlag"), Is.False);
             That(banditFlags.IsBanditFlag("banditFlagKey"), Is.True);
+
+            That(banditFlags.IsBanditFlag("banditKey"), Is.False);
+            That(banditFlags.IsBanditFlag("variationKey"), Is.False);
+            That(banditFlags.IsBanditFlag("variationValue"), Is.False);
+            That(banditFlags.IsBanditFlag("flagKey"), Is.True);
         });
     }
 }
