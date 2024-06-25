@@ -1,7 +1,5 @@
 # Eppo .NET SDK
 
-[![Test and lint SDK](https://github.com/Eppo-exp/java-server-sdk/actions/workflows/lint-test-sdk.yml/badge.svg)](https://github.com/Eppo-exp/java-server-sdk/actions/workflows/lint-test-sdk.yml)
-
 [Eppo](https://www.geteppo.com/) is a modular flagging and experimentation analysis tool. Eppo's .NET SDK is built to make assignments in multi-user server side contexts, compatible with Dot Net 7.0 Runtime. Before proceeding you'll need an Eppo account.
 
 ## Features
@@ -45,6 +43,8 @@ var assignedVariation = eppoClient.GetStringAssignment(
 ```
 
 ### Select a Bandit Action
+This SDK supports [Multi-armed Contextual Bandits](https://docs.geteppo.com/contextual-bandits/).
+
 ```cs
 var subjectAttributes = new Dictionary<string, object?>()
  {
@@ -112,8 +112,7 @@ The `init` function accepts the following optional configuration arguments.
 
 | Option | Type | Description | Default |
 | ------ | ----- | ----- | ----- |
-| **`assignment_logger`**  | [AssignmentLogger](https://github.com/Eppo-exp/python-sdk/blob/ebc1a0b781769fe9d2e2be6fc81779eb8685a6c7/eppo_client/assignment_logger.py#L6-L10) | A callback that sends each assignment to your data warehouse. Required only for experiment analysis. See [example](#assignment-logger) below. | `None` |
-| **`is_graceful_mode`** | bool | When true, gracefully handles all exceptions within the assignment function and returns the default value. | `True` |
+| **`assignmentLogger`**  | [AssignmentLogger](https://github.com/Eppo-exp/python-sdk/blob/ebc1a0b781769fe9d2e2be6fc81779eb8685a6c7/eppo_client/assignment_logger.py#L6-L10) | A callback that sends each assignment to your data warehouse. Required only for experiment analysis. See [example](#assignment-logger) below. | `None` |
 
 
 
