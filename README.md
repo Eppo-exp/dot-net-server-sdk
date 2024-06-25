@@ -44,6 +44,45 @@ var assignedVariation = eppoClient.GetStringAssignment(
 );
 ```
 
+### Select a Bandit Action
+```cs
+var subjectAttributes = new Dictionary<string, object?>()
+ {
+     ["age"] = 30, // Gets interpreted as a Numeric Attribute
+     ["country"] = "uk", // Categorical Attribute
+     ["pricingTier"] = "1"  // NOTE: Deliberately setting to string causes this to be treated as a Categorical Attribute
+ };
+ var actions = new Dictionary<string, IDictionary<string, object?>>()
+ {
+     ["nike"] = new Dictionary<string, object?>()
+     {
+         ["brandLoyalty"] = 0.4,
+         ["from"] = "usa"
+     },
+     ["adidas"] = new Dictionary<string, object?>()
+     {
+         ["brandLoyalty"] = 2,
+         ["from"] = "germany"
+     }
+ };
+ var result = client.GetBanditAction(
+     "flagKey",
+     "subjecKey",
+     subjectAttributes,
+     actions,
+     "defaultValue");
+
+if (result.Action != null)
+{
+    // Follow the Bandit action
+    DoAction(result.Action);
+} else {
+    // User was not selected for a Bandit.
+    // A variation is still assigned.
+    DoSomething(result.Variation);
+}
+```
+
 ## Assignment functions
 
 Every Eppo flag has a return type that is set once on creation in the dashboard. Once a flag is created, assignments in code should be made using the corresponding typed function: 
@@ -78,11 +117,11 @@ The `init` function accepts the following optional configuration arguments.
 
 
 
-## Assignment logger 
+## Assignment and Bandit Action Logger 
 
-To use the Eppo SDK for experiments that require analysis, pass in a callback logging function to the `init` function on SDK initialization. The SDK invokes the callback to capture assignment data whenever a variation is assigned. **The assignment data is needed in the warehouse to perform analysis.**
+To use the Eppo SDK for experiments that require analysis, pass in a callback logging function to the `init` function on SDK initialization. The SDK invokes the callback to capture assignment data whenever a variation is assigned or a Bandit Action is selected. **The assignment data is needed in the warehouse to perform analysis.**
 
-The code below illustrates an example implementation of a logging callback using Segment. You could also use your own logging system, the only requirement is that the SDK receives a `LogAssignment` function. Here we define an implementation of the Eppo `IAssignmentLogger` interface:
+The code below illustrates an example implementation of a logging callback using Segment. You could also use your own logging system, the only requirement is that the SDK receives a `LogAssignment` and a `LogBanditAction` function. Here we define an implementation of the Eppo `IAssignmentLogger` interface:
 
 ```cs
 class SegmentLogger : IAssignmentLogger
@@ -106,7 +145,7 @@ class SegmentLogger : IAssignmentLogger
 }
 ```
 
-## Full Example
+## Full Initialization and Assignment Example
 
 ```cs
 class Program
