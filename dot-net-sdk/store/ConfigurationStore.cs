@@ -65,20 +65,31 @@ public class ConfigurationStore : IConfigurationStore
     }
     public void LoadConfiguration()
     {
-        ClearCaches();
-
         FlagConfigurationResponse flagConfigurationResponse = FetchFlags();
-        flagConfigurationResponse.Flags.ToList()
-            .ForEach(x => { this.SetFlag(x.Key, x.Value); });
-
-        if (flagConfigurationResponse.Bandits != null)
-        {
-            this.SetBanditFlags(flagConfigurationResponse.Bandits);
-        }
-
         BanditModelResponse banditModels = FetchBandits();
-        banditModels.Bandits?.ToList()
-            .ForEach(x => { SetBanditModel(x.Value); });
+        SetConfiguration(
+            flagConfigurationResponse.Flags.ToList().Select(kvp => kvp.Value),
+            flagConfigurationResponse.Bandits,
+            banditModels.Bandits?.ToList().Select(kvp => kvp.Value));
+
+    }
+    public void SetConfiguration(IEnumerable<Flag> flags, BanditFlags? banditFlags, IEnumerable<Bandit>? bandits)
+    {
+        ClearCaches();
+        foreach (var flag in flags)
+        {
+            SetFlag(flag.key, flag);
+        }
+        if (banditFlags != null) {
+            SetBanditFlags(banditFlags);
+        }
+        if (bandits != null)
+        {
+            foreach (var bandit in bandits)
+            {
+                SetBanditModel(bandit);
+            }
+        }
     }
 
     private FlagConfigurationResponse FetchFlags()
