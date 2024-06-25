@@ -98,26 +98,37 @@ public class ConfigurationStoreTest
     {
         var store = CreateConfigurationStore(new Mock<IConfigurationRequester>().Object);
 
-        var flags1 = new Flag[] {
-             new("flag1", true,new(), EppoValueType.NUMERIC, new(), 10000),
-             new("flag2", true,new(), EppoValueType.NUMERIC, new(), 10000),
-             };
+        var flag1 = new Flag("flag1", true, new(), EppoValueType.NUMERIC, new(), 10000);
+        var flag2 = new Flag("flag2", true, new(), EppoValueType.NUMERIC, new(), 10000);
+        var flag3 = new Flag("flag3", true, new(), EppoValueType.NUMERIC, new(), 10000);
 
-        var flags2 = new Flag[] {
-             new("flag1", true,new(), EppoValueType.NUMERIC, new(), 10000),
-             new("flag3", true,new(), EppoValueType.NUMERIC, new(), 10000),
-             };
+        var flags1 = new Flag[] {
+            flag1,flag2
+         };
+
+        var flags2 = new Flag[]
+        {
+            flag1, flag3
+        };
 
         store.SetConfiguration(flags1, null, null);
 
         AssertHasFlag(store, "flag1");
         AssertHasFlag(store, "flag2");
+        AssertHasFlag(store, "flag3", false);
 
         store.SetConfiguration(flags2, null, null);
 
         AssertHasFlag(store, "flag1");
         AssertHasFlag(store, "flag3");
         AssertHasFlag(store, "flag2", false);
+    
+
+        store.SetConfiguration(Array.Empty<Flag>(), null, null);
+
+        AssertHasFlag(store, "flag1", false);
+        AssertHasFlag(store, "flag2", false);
+        AssertHasFlag(store, "flag3", false);
     }
 
     private static void AssertHasFlag(ConfigurationStore store, string flagKey, bool hasFlag = true)
