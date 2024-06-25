@@ -1,5 +1,4 @@
 using System.Net;
-using System.Security.Cryptography.X509Certificates;
 using eppo_sdk;
 using eppo_sdk.dto;
 using eppo_sdk.dto.bandit;
