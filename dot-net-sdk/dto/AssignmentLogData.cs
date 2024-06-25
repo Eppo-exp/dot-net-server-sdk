@@ -1,8 +1,9 @@
 using System.Reflection.Metadata.Ecma335;
+using System.Runtime.Serialization;
 
 namespace eppo_sdk.dto;
 
-public record AssignmentLogData
+public record AssignmentLogData : ISerializable
 {
     public string Experiment;
     public string FeatureFlag;
@@ -22,7 +23,7 @@ public record AssignmentLogData
                              IReadOnlyDictionary<string, object> subjectAttributes,
                              IReadOnlyDictionary<string, string> metaData,
                              IReadOnlyDictionary<string, string> extraLoggging
-                             
+
                              )
     {
         this.Experiment = featureFlag + "-" + allocation;
@@ -34,5 +35,18 @@ public record AssignmentLogData
         this.SubjectAttributes = subjectAttributes;
         MetaData = metaData;
         ExtraLogging = extraLoggging;
+    }
+
+    public void GetObjectData(SerializationInfo info, StreamingContext context)
+    {
+        info.AddValue(nameof(Experiment), Experiment);
+        info.AddValue(nameof(FeatureFlag), FeatureFlag);
+        info.AddValue(nameof(Allocation), Allocation);
+        info.AddValue(nameof(Variation), Variation);
+        info.AddValue(nameof(Timestamp), Timestamp);
+        info.AddValue(nameof(Subject), Subject);
+        info.AddValue(nameof(SubjectAttributes), SubjectAttributes, typeof(IReadOnlyDictionary<string, object>));
+        info.AddValue(nameof(MetaData), MetaData, typeof(IReadOnlyDictionary<string, string>));
+        info.AddValue(nameof(ExtraLogging), ExtraLogging, typeof(IReadOnlyDictionary<string, string>));
     }
 }

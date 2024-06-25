@@ -1,3 +1,5 @@
+using System.Runtime.Serialization;
+
 namespace eppo_sdk.dto.bandit;
 
 public record BanditLogEvent(string FlagKay,
@@ -8,11 +10,11 @@ public record BanditLogEvent(string FlagKay,
                              double? OptimalityGap,
                              string? ModelVersion,
                              DateTime Timestamp,
-                             IReadOnlyDictionary<string, double>? subjectNumericAttributes,
-                             IReadOnlyDictionary<string, string>? subjectCategoricalAttributes,
-                             IReadOnlyDictionary<string, double>? actionNumericAttributes,
-                             IReadOnlyDictionary<string, string>? actionCategoricalAttributes,
-                             IReadOnlyDictionary<string, string> metaData)
+                             IReadOnlyDictionary<string, double>? SubjectNumericAttributes,
+                             IReadOnlyDictionary<string, string>? SubjectCategoricalAttributes,
+                             IReadOnlyDictionary<string, double>? ActionNumericAttributes,
+                             IReadOnlyDictionary<string, string>? ActionCategoricalAttributes,
+                             IReadOnlyDictionary<string, string> MetaData) : ISerializable
 {
 
     public BanditLogEvent(
@@ -35,4 +37,22 @@ public record BanditLogEvent(string FlagKay,
             metaData
     )
     { }
+
+
+    public void GetObjectData(SerializationInfo info, StreamingContext context)
+    {
+        info.AddValue(nameof(FlagKay), FlagKay);
+        info.AddValue(nameof(BanditKey), BanditKey);
+        info.AddValue(nameof(SubjectKey), SubjectKey);
+        info.AddValue(nameof(Action), Action);
+        info.AddValue(nameof(ActionProbability), ActionProbability);
+        info.AddValue(nameof(OptimalityGap), OptimalityGap);
+        info.AddValue(nameof(ModelVersion), ModelVersion);
+        info.AddValue(nameof(Timestamp), Timestamp);
+        info.AddValue(nameof(SubjectNumericAttributes), SubjectNumericAttributes, typeof(IReadOnlyDictionary<string, double>));
+        info.AddValue(nameof(SubjectCategoricalAttributes), SubjectCategoricalAttributes, typeof(IReadOnlyDictionary<string, string>));
+        info.AddValue(nameof(ActionNumericAttributes), ActionNumericAttributes, typeof(IReadOnlyDictionary<string, double>));
+        info.AddValue(nameof(ActionCategoricalAttributes), ActionCategoricalAttributes, typeof(IReadOnlyDictionary<string, string>));
+        info.AddValue(nameof(MetaData), MetaData, typeof(IReadOnlyDictionary<string, string>));
+    }
 }
