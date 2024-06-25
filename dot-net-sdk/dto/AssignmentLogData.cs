@@ -36,6 +36,7 @@ public record AssignmentLogData : ISerializable
         MetaData = metaData;
         ExtraLogging = extraLoggging;
     }
+
     public void GetObjectData(SerializationInfo info, StreamingContext context)
     {
         info.AddValue(nameof(Experiment), Experiment);
