@@ -12,8 +12,10 @@ public class ConfigurationStore : IConfigurationStore
     private readonly MemoryCache _banditFlagCache;
     private readonly MemoryCache _banditModelCache;
     private readonly IConfigurationRequester _requester;
-    private static ConfigurationStore? _instance;
     private const string BANDIT_FLAGS_KEY = "bandit_flags";
+
+    private static readonly object Baton = new();
+
 
     public ConfigurationStore(IConfigurationRequester requester,
                               MemoryCache flagConfigurationCache,
@@ -26,12 +28,12 @@ public class ConfigurationStore : IConfigurationStore
         _banditFlagCache = banditFlagCache;
     }
 
-    public void SetFlag(string key, Flag flag)
+    private void SetFlag(string key, Flag flag)
     {
         _flagConfigurationCache.Set(key, flag, new MemoryCacheEntryOptions().SetSize(1));
     }
 
-    public void SetBanditModel(Bandit banditModel)
+    private void SetBanditModel(Bandit banditModel)
     {
         _banditModelCache.Set(
             banditModel.BanditKey,
@@ -39,23 +41,38 @@ public class ConfigurationStore : IConfigurationStore
             new MemoryCacheEntryOptions().SetSize(1));
     }
 
-    public void SetBanditFlags(BanditFlags banditFlags)
+    private void SetBanditFlags(BanditFlags banditFlags)
     {
         _banditFlagCache.Set(BANDIT_FLAGS_KEY, banditFlags, new MemoryCacheEntryOptions().SetSize(1));
     }
 
     public BanditFlags GetBanditFlags()
     {
-        if (_banditFlagCache.TryGetValue(BANDIT_FLAGS_KEY, out BanditFlags? banditFlags) && banditFlags != null)
+        lock (Baton)
         {
-            return banditFlags;
+            if (_banditFlagCache.TryGetValue(BANDIT_FLAGS_KEY, out BanditFlags? banditFlags) && banditFlags != null)
+            {
+                return banditFlags;
+            }
         }
         throw new SystemException("Bandit Flag mapping could not be loaded from the cache");
     }
 
-    public bool TryGetFlag(string key, out Flag? result) => _flagConfigurationCache.TryGetValue(key, out result);
+    public bool TryGetFlag(string key, out Flag? result)
+    {
+        lock (Baton)
+        {
+            return _flagConfigurationCache.TryGetValue(key, out result);
+        }
+    }
 
-    public bool TryGetBandit(string key, out Bandit? bandit) => _banditModelCache.TryGetValue(key, out bandit);
+    public bool TryGetBandit(string key, out Bandit? bandit)
+    {
+        lock (Baton)
+        {
+            return _banditModelCache.TryGetValue(key, out bandit);
+        }
+    }
 
     private void ClearCaches()
     {
@@ -75,19 +92,23 @@ public class ConfigurationStore : IConfigurationStore
     }
     public void SetConfiguration(IEnumerable<Flag> flags, BanditFlags? banditFlags, IEnumerable<Bandit>? bandits)
     {
-        ClearCaches();
-        foreach (var flag in flags)
+        lock (Baton)
         {
-            SetFlag(flag.key, flag);
-        }
-        if (banditFlags != null) {
-            SetBanditFlags(banditFlags);
-        }
-        if (bandits != null)
-        {
-            foreach (var bandit in bandits)
+            ClearCaches();
+            foreach (var flag in flags)
             {
-                SetBanditModel(bandit);
+                SetFlag(flag.key, flag);
+            }
+            if (banditFlags != null)
+            {
+                SetBanditFlags(banditFlags);
+            }
+            if (bandits != null)
+            {
+                foreach (var bandit in bandits)
+                {
+                    SetBanditModel(bandit);
+                }
             }
         }
     }
