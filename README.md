@@ -17,7 +17,7 @@
 
 In your .NET application, add the Eppo.Sdk Package from Nuget.
 
-```
+```sh
 dotnet add package Eppo.Sdk
 ```
 
@@ -27,7 +27,7 @@ Begin by initializing a singleton instance of Eppo's client. Once initialized, t
 
 #### Initialize once
 
-```go
+```cs
 var eppoClientConfig = new EppoClientConfig('SDK-KEY-FROM-DASHBOARD');
 var eppoClient = EppoClient.Init(eppoClientConfig);
 ```
@@ -35,7 +35,7 @@ var eppoClient = EppoClient.Init(eppoClientConfig);
 
 #### Assign anywhere
 
-```
+```cs
 var assignedVariation = eppoClient.GetStringAssignment(
     'new-user-onboarding', 
     user.id, 
@@ -48,7 +48,7 @@ var assignedVariation = eppoClient.GetStringAssignment(
 
 Every Eppo flag has a return type that is set once on creation in the dashboard. Once a flag is created, assignments in code should be made using the corresponding typed function: 
 
-```go
+```cs
 GetBooleanAssignment(...)
 GetNumericAssignment(...)
 GetIntegerAssignment(...)
@@ -58,7 +58,7 @@ GetJSONAssignment(...)
 
 Each function has the same signature, but returns the type in the function name. For booleans use `getBooleanAssignment`, which has the following signature:
 
-```
+```cs
 public bool GetBooleanAssignment(
     string flagKey, 
     string subjectKey, 
@@ -67,25 +67,114 @@ public bool GetBooleanAssignment(
 )
 ```
 
+## Initialization options
+
+The `init` function accepts the following optional configuration arguments.
+
+| Option | Type | Description | Default |
+| ------ | ----- | ----- | ----- |
+| **`assignment_logger`**  | [AssignmentLogger](https://github.com/Eppo-exp/python-sdk/blob/ebc1a0b781769fe9d2e2be6fc81779eb8685a6c7/eppo_client/assignment_logger.py#L6-L10) | A callback that sends each assignment to your data warehouse. Required only for experiment analysis. See [example](#assignment-logger) below. | `None` |
+| **`is_graceful_mode`** | bool | When true, gracefully handles all exceptions within the assignment function and returns the default value. | `True` |
+
+
+
 ## Assignment logger 
 
-If you are using the Eppo SDK for experiment assignment (i.e randomization), pass in a callback logging function on SDK initialization. The SDK invokes the callback to capture assignment data whenever a variation is assigned.
+To use the Eppo SDK for experiments that require analysis, pass in a callback logging function to the `init` function on SDK initialization. The SDK invokes the callback to capture assignment data whenever a variation is assigned. **The assignment data is needed in the warehouse to perform analysis.**
 
-The code below illustrates an example implementation of a logging callback using Segment. You could also use your own logging system, the only requirement is that the SDK receives a `LogAssignment` function. Here we define an implementation of the Eppo `IAssignmentLogger` interface containing a single function named `LogAssignment`:
+The code below illustrates an example implementation of a logging callback using Segment. You could also use your own logging system, the only requirement is that the SDK receives a `LogAssignment` function. Here we define an implementation of the Eppo `IAssignmentLogger` interface:
 
-
-```
-using eppo_sdk.dto;
-using eppo_sdk.logger;
-
-internal class AssignmentLogger : IAssignmentLogger
+```cs
+class SegmentLogger : IAssignmentLogger
 {
+    private readonly Analytics analytics;
+
+    public SegmentLogger(Analytics analytics)
+    {
+        this.analytics = analytics;
+    }
+
     public void LogAssignment(AssignmentLogData assignmentLogData)
     {
-        Console.WriteLine(assignmentLogData);
+        analytics.Track("Eppo Randomization Assignment", assignmentLogData);
+    }
+
+    public void LogBanditAction(BanditLogEvent banditLogEvent)
+    {
+        analytics.Track("Eppo Bandit Action", banditLogEvent);
     }
 }
 ```
+
+## Full Example
+
+```cs
+class Program
+{
+    public void main()
+    {
+
+        // Initialize Segment and Eppo clients.
+        var segmentConfig = new Configuration(
+                    "<YOUR WRITE KEY>",
+                    flushAt: 20,
+                    flushInterval: 30);
+        var analytics = new Analytics(segmentConfig);
+
+        // Create a logger to send data back to the Segment data warehouse
+        var logger = new SegmentLogger(analytics);
+
+        // Initialize the Eppo Client
+        var eppoClientConfig = new EppoClientConfig("EPPO-SDK-KEY-FROM-DASHBOARD", logger);
+        var eppoClient = EppoClient.Init(eppoClientConfig);
+
+        // Elsewhere in your code, typically just after the user logs in.
+        var subjectTraits = new JsonObject()
+        {
+            ["email"] = "janedoe@liamg.com",
+            ["age"] = 35,
+            ["accountAge"] = 2,
+            ["tier"] = "gold"
+        }; // User properties will come from your database/login service etc.
+        var userID = "user-123";
+
+        // Identify the user in Segment Analytics.
+        analytics.Identify(userID, subjectTraits);
+
+
+        // Need to reformat user attributes a bit; EppoClient requires `IDictionary<string, object?>`
+        var subjectAttributes = subjectTraits.Keys.ToDictionary(key => key, key => (object)subjectTraits[key]);
+        // Get an assignment for the user
+        var assignedVariation = eppoClient.GetStringAssignment(
+            "new-user-onboarding",
+            userID,
+            subjectAttributes,
+            "control"
+        );
+    }
+}
+
+class SegmentLogger : IAssignmentLogger
+{
+    private readonly Analytics analytics;
+
+    public SegmentLogger(Analytics analytics)
+    {
+        this.analytics = analytics;
+    }
+
+    public void LogAssignment(AssignmentLogData assignmentLogData)
+    {
+        analytics.Track("Eppo Randomization Assignment", assignmentLogData);
+    }
+
+    public void LogBanditAction(BanditLogEvent banditLogEvent)
+    {
+        analytics.Track("Eppo Bandit Action", banditLogEvent);
+    }
+}
+```
+
 
 ## Philosophy
 
@@ -98,7 +187,7 @@ Eppo's SDKs are built for simplicity, speed and reliability. Flag configurations
 
 Expected environment:
 
-```
+```sh
 ✗ dotnet --list-sdks
 7.0.406
 ✗ dotnet --list-runtimes
