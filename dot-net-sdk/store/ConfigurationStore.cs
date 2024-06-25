@@ -8,7 +8,7 @@ namespace eppo_sdk.store;
 
 public class ConfigurationStore : IConfigurationStore
 {
-    private readonly MemoryCache _experimentConfigurationCache;
+    private readonly MemoryCache _flagConfigurationCache;
     private readonly MemoryCache _banditFlagCache;
     private readonly MemoryCache _banditModelCache;
     private readonly IConfigurationRequester _requester;
@@ -21,40 +21,22 @@ public class ConfigurationStore : IConfigurationStore
                               MemoryCache banditFlagCache)
     {
         _requester = requester;
-        _experimentConfigurationCache = flagConfigurationCache;
+        _flagConfigurationCache = flagConfigurationCache;
         _banditModelCache = banditModelCache;
         _banditFlagCache = banditFlagCache;
     }
 
-    public static ConfigurationStore GetInstance(IConfigurationRequester requester,
-                                                 MemoryCache flagConfigurationCache,
-                                                 MemoryCache banditModelCache,
-                                                 MemoryCache banditFlagCache)
+    public void SetFlag(string key, Flag flag)
     {
-        if (_instance == null)
-        {
-            _instance = new ConfigurationStore(
-                requester,
-                flagConfigurationCache,
-                banditModelCache,
-                banditFlagCache);
-        }
-        else
-        {
-            _instance.ClearCaches();
-        }
-
-        return _instance;
-    }
-
-    public void SetExperimentConfiguration(string key, Flag experimentConfiguration)
-    {
-        _experimentConfigurationCache.Set(key, experimentConfiguration, new MemoryCacheEntryOptions().SetSize(1));
+        _flagConfigurationCache.Set(key, flag, new MemoryCacheEntryOptions().SetSize(1));
     }
 
     public void SetBanditModel(Bandit banditModel)
     {
-        _banditModelCache.Set(banditModel.BanditKey, banditModel, new MemoryCacheEntryOptions().SetSize(1));
+        _banditModelCache.Set(
+            banditModel.BanditKey,
+            banditModel,
+            new MemoryCacheEntryOptions().SetSize(1));
     }
 
     public void SetBanditFlags(BanditFlags banditFlags)
@@ -71,59 +53,35 @@ public class ConfigurationStore : IConfigurationStore
         throw new SystemException("Bandit Flag mapping could not be loaded from the cache");
     }
 
-    public Flag? GetExperimentConfiguration(string key)
-    {
-        try
-        {
-            if (_experimentConfigurationCache.TryGetValue(key, out Flag? result))
-            {
-                return result;
-            }
-        }
-        catch (Exception)
-        {
-            throw new ExperimentConfigurationNotFound($"[Eppo SDK] Experiment configuration for key: {key} not found.");
-        }
+    public bool TryGetFlag(string key, out Flag? result) => _flagConfigurationCache.TryGetValue(key, out result);
 
-        return null;
-    }
-
-
-    public Bandit? GetBanditModel(string key)
-    {
-        if (_banditModelCache.TryGetValue(key, out Bandit? result))
-        {
-            return result;
-        }
-
-        return null;
-    }
+    public bool TryGetBandit(string key, out Bandit? bandit) => _banditModelCache.TryGetValue(key, out bandit);
 
     private void ClearCaches()
     {
-        _experimentConfigurationCache.Clear();
+        _flagConfigurationCache.Clear();
         _banditModelCache.Clear();
         _banditFlagCache.Clear();
     }
-    public void FetchConfiguration()
+    public void LoadConfiguration()
     {
         ClearCaches();
 
-        FlagConfigurationResponse experimentConfigurationResponse = Get();
-        experimentConfigurationResponse.Flags.ToList()
-            .ForEach(x => { this.SetExperimentConfiguration(x.Key, x.Value); });
+        FlagConfigurationResponse flagConfigurationResponse = FetchFlags();
+        flagConfigurationResponse.Flags.ToList()
+            .ForEach(x => { this.SetFlag(x.Key, x.Value); });
 
-        if (experimentConfigurationResponse.Bandits != null)
+        if (flagConfigurationResponse.Bandits != null)
         {
-            this.SetBanditFlags(experimentConfigurationResponse.Bandits);
+            this.SetBanditFlags(flagConfigurationResponse.Bandits);
         }
 
-        BanditModelResponse banditModels = GetBandits();
+        BanditModelResponse banditModels = FetchBandits();
         banditModels.Bandits?.ToList()
-            .ForEach(x => { this.SetBanditModel(x.Value); });
+            .ForEach(x => { SetBanditModel(x.Value); });
     }
 
-    private FlagConfigurationResponse Get()
+    private FlagConfigurationResponse FetchFlags()
     {
         FlagConfigurationResponse? response = this._requester.FetchFlagConfiguration();
         if (response != null)
@@ -131,9 +89,9 @@ public class ConfigurationStore : IConfigurationStore
             return response;
         }
 
-        throw new SystemException("Unable to fetch experiment configuration");
+        throw new SystemException("Unable to fetch flag configuration");
     }
-    private BanditModelResponse GetBandits()
+    private BanditModelResponse FetchBandits()
     {
         BanditModelResponse? response = this._requester.FetchBanditModels();
         if (response != null)

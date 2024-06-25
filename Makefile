@@ -31,5 +31,5 @@ build:
 
 
 .PHONY: test
-test:
+test: test-data
 	dotnet test --verbosity normal
