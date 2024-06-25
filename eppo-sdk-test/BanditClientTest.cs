@@ -201,10 +201,10 @@ public class BanditClientTest
             That(result.Action, Is.Not.Null);
             var chosenAction = actions[result.Action!];
 
-            That(banditLog.actionNumericAttributes, Is.Not.Null);
-            That(banditLog.actionCategoricalAttributes, Is.Not.Null);
-            AssertDictsEquivalent(banditLog.actionNumericAttributes!, chosenAction.GetNumeric().AsReadOnly());
-            AssertDictsEquivalent(banditLog.actionCategoricalAttributes!, chosenAction.GetCategorical().AsReadOnly());
+            That(banditLog.ActionNumericAttributes, Is.Not.Null);
+            That(banditLog.ActionCategoricalAttributes, Is.Not.Null);
+            AssertDictsEquivalent(banditLog.ActionNumericAttributes!, chosenAction.GetNumeric().AsReadOnly());
+            AssertDictsEquivalent(banditLog.ActionCategoricalAttributes!, chosenAction.GetCategorical().AsReadOnly());
         });
     }
 
