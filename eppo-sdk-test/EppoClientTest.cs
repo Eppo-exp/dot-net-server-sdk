@@ -128,9 +128,9 @@ public class EppoClientTest
                 Assert.That(jsonStringAssignments, Is.EqualTo(jsonStringExpectations), $"Unexpected values for test file: {assignmentTestCase.TestCaseFile}");
                 break;
             case (EppoValueType.NUMERIC):
-                var numExpectations = assignmentTestCase.Subjects.ConvertAll(x => (double?)x.Assignment);
+                var numExpectations = assignmentTestCase.Subjects.ConvertAll(x => Convert.ToDouble(x.Assignment));
                 var numAssignments = assignmentTestCase.Subjects.ConvertAll(subject =>
-                    client.GetNumericAssignment(assignmentTestCase.Flag, subject.SubjectKey, subject.SubjectAttributes, (double)assignmentTestCase.DefaultValue));
+                    client.GetNumericAssignment(assignmentTestCase.Flag, subject.SubjectKey, subject.SubjectAttributes, Convert.ToDouble(assignmentTestCase.DefaultValue)));
 
                 Assert.That(numAssignments, Is.EqualTo(numExpectations), $"Unexpected values for test file: {assignmentTestCase.TestCaseFile}");
                 break;
