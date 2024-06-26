@@ -15,6 +15,7 @@ public class ConfigurationStore : IConfigurationStore
     private const string BANDIT_FLAGS_KEY = "bandit_flags";
 
     private static readonly object Baton = new();
+    private readonly ReaderWriterLockSlim cacheLock = new();
 
     public ConfigurationStore(IConfigurationRequester requester,
                               MemoryCache flagConfigurationCache,
@@ -47,29 +48,45 @@ public class ConfigurationStore : IConfigurationStore
 
     public BanditFlags GetBanditFlags()
     {
-        lock (Baton)
+        cacheLock.EnterReadLock();
+        try
         {
             if (_banditFlagCache.TryGetValue(BANDIT_FLAGS_KEY, out BanditFlags? banditFlags) && banditFlags != null)
             {
                 return banditFlags;
             }
         }
+        finally
+        {
+            cacheLock.ExitReadLock();
+        }
         throw new SystemException("Bandit Flag mapping could not be loaded from the cache");
     }
 
+
     public bool TryGetFlag(string key, out Flag? result)
     {
-        lock (Baton)
+        cacheLock.EnterReadLock();
+        try
         {
             return _flagConfigurationCache.TryGetValue(key, out result);
+        }
+        finally
+        {
+            cacheLock.ExitReadLock();
         }
     }
 
     public bool TryGetBandit(string key, out Bandit? bandit)
     {
-        lock (Baton)
+        cacheLock.EnterReadLock();
+        try
         {
             return _banditModelCache.TryGetValue(key, out bandit);
+        }
+        finally
+        {
+            cacheLock.ExitReadLock();
         }
     }
 
@@ -91,7 +108,8 @@ public class ConfigurationStore : IConfigurationStore
     }
     public void SetConfiguration(IEnumerable<Flag> flags, BanditFlags? banditFlags, IEnumerable<Bandit>? bandits)
     {
-        lock (Baton)
+        cacheLock.EnterWriteLock();
+        try
         {
             ClearCaches();
             foreach (var flag in flags)
@@ -109,6 +127,10 @@ public class ConfigurationStore : IConfigurationStore
                     SetBanditModel(bandit);
                 }
             }
+        }
+        finally
+        {
+            cacheLock.ExitWriteLock();
         }
     }
 
