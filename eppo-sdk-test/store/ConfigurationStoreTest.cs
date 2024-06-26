@@ -5,6 +5,8 @@ using eppo_sdk.helpers;
 using eppo_sdk.http;
 using eppo_sdk.store;
 using Moq;
+using static NUnit.Framework.Assert;
+
 
 namespace eppo_sdk_test.store;
 
@@ -17,9 +19,7 @@ public class ConfigurationStoreTest
         var modelCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
         var banditFlagCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
 
-
         return new ConfigurationStore(requester, configCache, modelCache, banditFlagCache);
-
     }
 
     [Test]
@@ -91,5 +91,65 @@ public class ConfigurationStoreTest
         store.LoadConfiguration();
 
         Assert.That(store.GetBanditFlags().Keys, Is.EquivalentTo(new List<string> { "unchangingBandit", "newBandit" }));
+    }
+
+    [Test]
+    public void ShouldClearOldValuesOnSet()
+    {
+        var store = CreateConfigurationStore(new Mock<IConfigurationRequester>().Object);
+
+        var flag1 = new Flag("flag1", true, new(), EppoValueType.NUMERIC, new(), 10000);
+        var flag2 = new Flag("flag2", true, new(), EppoValueType.NUMERIC, new(), 10000);
+        var flag3 = new Flag("flag3", true, new(), EppoValueType.NUMERIC, new(), 10000);
+
+        var flags1 = new Flag[] {
+            flag1,flag2
+         };
+
+        var flags2 = new Flag[]
+        {
+            flag1, flag3
+        };
+
+        store.SetConfiguration(flags1, null, null);
+
+        AssertHasFlag(store, "flag1");
+        AssertHasFlag(store, "flag2");
+        AssertHasFlag(store, "flag3", false);
+
+        store.SetConfiguration(flags2, null, null);
+
+        AssertHasFlag(store, "flag1");
+        AssertHasFlag(store, "flag3");
+        AssertHasFlag(store, "flag2", false);
+    
+
+        store.SetConfiguration(Array.Empty<Flag>(), null, null);
+
+        AssertHasFlag(store, "flag1", false);
+        AssertHasFlag(store, "flag2", false);
+        AssertHasFlag(store, "flag3", false);
+    }
+
+    private static void AssertHasFlag(ConfigurationStore store, string flagKey, bool hasFlag = true)
+    {
+        if (hasFlag)
+        {
+            Multiple(() =>
+            {
+                That(store.TryGetFlag(flagKey, out Flag? flag), Is.True);
+                That(flag, Is.Not.Null);
+                That(flag!.key, Is.EqualTo(flagKey));
+            });
+
+        }
+        else
+        {
+            Multiple(() =>
+            {
+                That(store.TryGetFlag(flagKey, out Flag? flag), Is.False);
+                That(flag, Is.Null);
+            });
+        }
     }
 }
