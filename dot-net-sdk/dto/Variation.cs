@@ -2,8 +2,7 @@ namespace eppo_sdk.dto;
 
 public class Variation : HasEppoValue
 {
-    public string Key {get; set;}
-    public ShardRange shardRange { get; set; }
+    public string Key {get; init;}
 
     public Variation(string key, object value) {
         Key = key;

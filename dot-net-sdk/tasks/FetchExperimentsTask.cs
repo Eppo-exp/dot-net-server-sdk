@@ -24,7 +24,7 @@ public class FetchExperimentsTask : IDisposable
         var nextTick = TimeIntervalInMillis -
                        rnd.Next(1, unchecked((int)JitterTimeIntervalInMillis));
         timer.Change(nextTick, Timeout.Infinite);
-        _configurationStore.FetchConfiguration();
+        _configurationStore.LoadConfiguration();
     }
 
     public void Dispose()

@@ -1,6 +1,5 @@
-using eppo_sdk.dto;
+using eppo_sdk.dto.bandit;
 using eppo_sdk.exception;
-using eppo_sdk.helpers;
 
 namespace eppo_sdk_test.dto;
 
@@ -27,7 +26,7 @@ public class ContextAttributesTest
             {"referralUser","true"},
             {"favouriteColour","green"}
         };
-        var actual = new ContextAttributes("context", attrs);
+        var actual = ContextAttributes.FromDict("context", attrs);
         Assert.Multiple(() =>
         {
             Assert.That(actual.GetNumeric(), Is.EquivalentTo(expectedNumeric));

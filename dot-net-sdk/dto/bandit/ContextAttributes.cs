@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using eppo_sdk.exception;
 using eppo_sdk.validators;
 
-namespace eppo_sdk.dto;
+namespace eppo_sdk.dto.bandit;
 
 /// A set of attributes for a given context `Key`.
 public interface IContextAttributes : IDictionary<string, object>
@@ -25,16 +25,46 @@ public class ContextAttributes : IContextAttributes
         this.Key = key;
     }
 
-    public ContextAttributes(string key, Dictionary<string, object> other) {
+    public static ContextAttributes FromDict(string key, IDictionary<string, object?> other)
+    {
+        var obj = new ContextAttributes(key);
+        obj.AddDict(other);
+        return obj;
+    }
+
+    public static ContextAttributes FromNullableAttributes(string key, IDictionary<string, string?>? categoricalAttributes, IDictionary<string, double?>? numericAttributes)
+    {
+        var obj = new ContextAttributes(key);
+        obj.AddDict(categoricalAttributes);
+        obj.AddDict(numericAttributes);
+        return obj;
+    }
+
+
+    public ContextAttributes(string key, IDictionary<string, string>? categoricalAttributes, IDictionary<string, double>? numericAttributes)
+    {
         Key = key;
-        foreach( var kvp in other) {
-            this[kvp.Key] = kvp.Value;
+        AddDict(categoricalAttributes);
+        AddDict(numericAttributes);
+    }
+
+    private void AddDict<TV>(IDictionary<string, TV>? dict)
+    {
+        if (dict == null) return;
+        foreach (var kvp in dict)
+        {
+            if (kvp.Value == null)
+            {
+                continue;
+            }
+            Add(kvp.Key, kvp.Value);
         }
     }
 
     /// Adds a value to the subject dictionary enforcing only string, bool and numeric types.
     public void Add(string key, object value)
     {
+        if (value == null) return;
         // Implement your custom validation logic here
         if (IsNumeric(value) || IsCategorical(value))
         {
@@ -45,6 +75,8 @@ public class ContextAttributes : IContextAttributes
             throw new InvalidAttributeTypeException(key, value);
         }
     }
+
+    public IDictionary<string, object> AsDict() => _internalDictionary.ToDictionary(kvp=>kvp.Key, kvp=>kvp.Value);
 
     /// Gets only the numeric attributes.
     public IDictionary<string, double> GetNumeric()
@@ -60,6 +92,8 @@ public class ContextAttributes : IContextAttributes
         return cats.ToDictionary(kvp => kvp.Key, kvp => Compare.ToString(kvp.Value));
     }
 
+    public AttributeSet AsAttributeSet() => new(GetCategorical(), GetNumeric());
+
     public static bool IsNumeric(object v) => v is double || v is int || v is long || v is float;
 
     private static bool IsCategorical(object value) => value is string || value is bool;
@@ -67,7 +101,7 @@ public class ContextAttributes : IContextAttributes
 
     // Standard Dictionary methods are "sealed" so overriding isn't possible. Thus we delegate everything here.
 
-    public object this[string key] { get => _internalDictionary[key]; set => _internalDictionary[key] = value; }
+    public object this[string key] { get => _internalDictionary[key]; set => Add(key, value); }
 
     public ICollection<string> Keys => _internalDictionary.Keys;
 

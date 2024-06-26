@@ -4,7 +4,11 @@ using NLog;
 
 namespace eppo_sdk.http;
 
-public class ConfigurationRequester
+public interface IConfigurationRequester {
+    public FlagConfigurationResponse? FetchFlagConfiguration();
+    public BanditModelResponse? FetchBanditModels();
+}
+public class ConfigurationRequester : IConfigurationRequester
 {
     private static Logger logger = LogManager.GetCurrentClassLogger();
     private readonly EppoHttpClient eppoHttpClient;
