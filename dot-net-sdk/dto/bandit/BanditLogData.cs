@@ -2,7 +2,7 @@ using System.Runtime.Serialization;
 
 namespace eppo_sdk.dto.bandit;
 
-public record BanditLogEvent(string FlagKay,
+public record BanditLogEvent(string FlagKey,
                              string BanditKey,
                              string SubjectKey,
                              string? Action,
@@ -41,7 +41,7 @@ public record BanditLogEvent(string FlagKay,
 
     public void GetObjectData(SerializationInfo info, StreamingContext context)
     {
-        info.AddValue(nameof(FlagKay), FlagKay);
+        info.AddValue(nameof(FlagKey), FlagKey);
         info.AddValue(nameof(BanditKey), BanditKey);
         info.AddValue(nameof(SubjectKey), SubjectKey);
         info.AddValue(nameof(Action), Action);
