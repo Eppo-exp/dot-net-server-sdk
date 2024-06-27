@@ -344,9 +344,7 @@ public record ActionTestRecord(string ActionKey,
 
 public record SubjectAttributeSet
 {
-    [JsonProperty("numeric_attributes")]
     public IDictionary<string, double?>? NumericAttributes = new Dictionary<string, double?>();
-    [JsonProperty("categorical_attributes")]
     public IDictionary<string, string?>? CategoricalAttributes = new Dictionary<string, string?>();
 
     public IDictionary<string, object?> AsDict()
