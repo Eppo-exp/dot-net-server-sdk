@@ -191,7 +191,7 @@ public class BanditClientTest
 
             That(banditLogStatement, Is.Not.Null);
             var banditLog = banditLogStatement!;
-            That(banditLog.FlagKay, Is.EqualTo("banner_bandit_flag_uk_only"));
+            That(banditLog.FlagKey, Is.EqualTo("banner_bandit_flag_uk_only"));
             That(banditLog.BanditKey, Is.EqualTo("banner_bandit"));
             That(banditLog.SubjectKey, Is.EqualTo(subjectKey));
             GreaterOrEqual(banditLog.OptimalityGap, 0);
