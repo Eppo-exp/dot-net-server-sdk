@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Dynamic;
+using System.Runtime.CompilerServices;
 using eppo_sdk.constants;
 using eppo_sdk.dto;
 using eppo_sdk.dto.bandit;
@@ -15,6 +16,7 @@ namespace eppo_sdk;
 
 public class EppoClient
 {
+    private const string AssignmentDefaultValue = "__DEFAULT__";
     private static readonly object Baton = new();
 
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
@@ -400,6 +402,45 @@ public class EppoClient
         return new(variation);
 
     }
+
+    public void LogNonBanditAction(string subjectKey,
+                                   string flagKey,
+                                   Dictionary<string, object?> subjectAttributes,
+                                   string actionString,
+                                   Dictionary<string, object?> actionAttributes)
+    {
+        // Exception loggingException = null;
+
+        // Dev is allowed to pass nulls to `GetBanditAction` but not the flag assignment methods. Something to fix in the future.
+        var subjectAttributesNoNulls = subjectAttributes.Where(kvp => kvp.Value != null).ToDictionary(kvp => kvp.Key, kvp => kvp.Value!);
+        var assignmentResult = GetStringAssignment(flagKey, subjectKey, subjectAttributesNoNulls, AssignmentDefaultValue);
+
+        if (assignmentResult == AssignmentDefaultValue)
+        {
+            // No variation is assigned, neither bandit nor control.
+            return;
+        }
+
+        var subject = ContextAttributes.FromDict(subjectKey, subjectAttributes);
+        var action = ContextAttributes.FromDict(actionString, actionAttributes);
+
+        _eppoClientConfig.AssignmentLogger.LogBanditAction(
+            new BanditLogEvent(
+                flagKey,
+                "??", // Bandit Key
+                subjectKey,
+                actionString,
+                null, // Action Probability
+                null, // Optimality Gap
+                "???", // Bandit Model version
+                DateTime.Now,
+                subject.GetNumeric().AsReadOnly(),
+                subject.GetCategorical().AsReadOnly(),
+                action.GetNumeric().AsReadOnly(),
+                action.GetCategorical().AsReadOnly(),
+                AppDetails.GetInstance().AsDict()));
+    }
+
     public static EppoClient GetInstance()
     {
         if (_client == null)

@@ -27,8 +27,5 @@ jobs:
     - name: Build
       run: make build
 
-    - name: Pull test data
-      run: make test-data
-
-    - name: Test
+    - name: Pull test data and Test
       run: make test
