@@ -32,14 +32,22 @@ public class ContextAttributes : IContextAttributes
         return obj;
     }
 
-    public static ContextAttributes FromNullableAttributes(string key, IDictionary<string, string?>? categoricalAttributes, IDictionary<string, double?>? numericAttributes)
+    public static ContextAttributes FromNullableAttributes(string key, IDictionary<string, string?>? categoricalAttributes, IDictionary<string, object?>? numericAttributes)
     {
         var obj = new ContextAttributes(key);
         obj.AddDict(categoricalAttributes);
-        obj.AddDict(numericAttributes);
+        obj.AddDict(NumbersOnly(numericAttributes));
         return obj;
     }
 
+    private static IDictionary<string, double> NumbersOnly(IDictionary<string, object?>? attributes)
+    {
+        if (attributes == null || attributes.Count == 0)
+        {
+            return new Dictionary<string, double>();
+        }
+        return (IDictionary<string, double>)attributes.Where(kvp => kvp.Value != null && IsNumeric(kvp.Value)).ToDictionary(kvp => kvp.Key, kvp => Convert.ToDouble(kvp.Value));
+    }
 
     public ContextAttributes(string key, IDictionary<string, string>? categoricalAttributes, IDictionary<string, double>? numericAttributes)
     {
@@ -76,7 +84,7 @@ public class ContextAttributes : IContextAttributes
         }
     }
 
-    public IDictionary<string, object> AsDict() => _internalDictionary.ToDictionary(kvp=>kvp.Key, kvp=>kvp.Value);
+    public IDictionary<string, object> AsDict() => _internalDictionary.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
     /// Gets only the numeric attributes.
     public IDictionary<string, double> GetNumeric()

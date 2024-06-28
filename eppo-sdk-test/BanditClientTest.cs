@@ -323,7 +323,7 @@ public record BanditSubjectTestRecord(string SubjectKey,
 
 public record ActionTestRecord(string ActionKey,
                                Dictionary<string, string?> CategoricalAttributes,
-                               Dictionary<string, double?> NumericAttributes)
+                               Dictionary<string, object?> NumericAttributes)
 {
     public IDictionary<string, object?> AsDict()
     {
@@ -344,7 +344,7 @@ public record ActionTestRecord(string ActionKey,
 
 public record SubjectAttributeSet
 {
-    public IDictionary<string, double?>? NumericAttributes = new Dictionary<string, double?>();
+    public IDictionary<string, object?>? NumericAttributes = new Dictionary<string, object?>();
     public IDictionary<string, string?>? CategoricalAttributes = new Dictionary<string, string?>();
 
     public IDictionary<string, object?> AsDict()
