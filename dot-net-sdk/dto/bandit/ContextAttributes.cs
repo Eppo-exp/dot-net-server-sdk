@@ -2,6 +2,8 @@ using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using eppo_sdk.exception;
 using eppo_sdk.validators;
+using Microsoft.Extensions.Logging;
+using NLog;
 
 namespace eppo_sdk.dto.bandit;
 
@@ -14,6 +16,8 @@ public interface IContextAttributes : IDictionary<string, object>
 /// A contextual dictionary allowing only string, bool and numeric types.
 public class ContextAttributes : IContextAttributes
 {
+
+    private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
     public string Key { get; init; }
 
@@ -42,11 +46,28 @@ public class ContextAttributes : IContextAttributes
 
     private static IDictionary<string, double> NumbersOnly(IDictionary<string, object?>? attributes)
     {
+        var result = new Dictionary<string, double>(); ;
         if (attributes == null || attributes.Count == 0)
         {
-            return new Dictionary<string, double>();
+            return result;
         }
-        return (IDictionary<string, double>)attributes.Where(kvp => kvp.Value != null && IsNumeric(kvp.Value)).ToDictionary(kvp => kvp.Key, kvp => Convert.ToDouble(kvp.Value));
+        foreach (var kvp in attributes)
+        {
+            if (kvp.Value == null)
+            {
+                continue;
+
+            }
+            if (!IsNumeric(kvp.Value))
+            {
+                Logger.Warn($"[Eppo SDK] Attribute with key {kvp.Key} passed as a NumericAttribute but is not numeric");
+            }
+            else
+            {
+                result.Add(kvp.Key, Convert.ToDouble(kvp.Value));
+            }
+        }
+        return result;
     }
 
     public ContextAttributes(string key, IDictionary<string, string>? categoricalAttributes, IDictionary<string, double>? numericAttributes)
