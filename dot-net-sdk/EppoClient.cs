@@ -267,7 +267,7 @@ public class EppoClient
     {
         try
         {
-            var actionContexts = actions.Distinct().ToDictionary(action=>action, action=> new ContextAttributes(action));
+            var actionContexts = actions.Distinct().ToDictionary(action => action, action => new ContextAttributes(action));
             return GetBanditDetail(flagKey, subject, actionContexts, defaultValue);
         }
         catch (Exception e)
