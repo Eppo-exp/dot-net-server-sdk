@@ -1,4 +1,5 @@
-﻿using eppo_sdk.constants;
+﻿using System.Collections.Immutable;
+using eppo_sdk.constants;
 using eppo_sdk.dto;
 using eppo_sdk.dto.bandit;
 using eppo_sdk.exception;
@@ -230,6 +231,51 @@ public class EppoClient
         }
 
         return _client;
+    }
+
+
+    /// <summary>Selects a Bandit Action from the list of <paramref name="actions"/>, if applicable, for the given <paramref name="flagKey"/> and subject context.
+    /// <param name="flagKey">The flag or bandit key to lookup.</param>
+    /// <param name="subject">The subject's identifier and a collection of attributes.</param>
+    /// <param name="actions">A list of actions without contextual attributes.</param>
+    /// <param name="defaultValue">Default flag variation.</param>
+    /// <example>
+    /// For Example:
+    /// <code>
+    /// var client = EppoClient.GetInstance();
+    /// var subject = new ContextAttributes("subjectKey")
+    /// {
+    ///     ["age"] = 30,
+    ///     ["country"] = "uk",
+    ///     ["pricingTier"] = "1"  // NOTE: Deliberately setting to string causes this to be treated as a categorical attribute
+    /// };
+    ///
+    /// var actions = new string[] { "adidas", "nike", "Reebok" };
+    ///
+    /// var result = client.GetBanditAction(
+    ///     "flagKey",
+    ///     subject,
+    ///     actions,
+    ///     "defaultValue"
+    /// );
+    /// </code></example>
+    /// </summary>
+    public BanditResult GetBanditAction(string flagKey,
+                                        ContextAttributes subject,
+                                        string[] actions,
+                                        string defaultValue)
+    {
+        try
+        {
+            var actionContexts = actions.Distinct().ToDictionary(action => action, action => new ContextAttributes(action));
+            return GetBanditDetail(flagKey, subject, actionContexts, defaultValue);
+        }
+        catch (Exception e)
+        {
+            Logger.Error("[Eppo SDK] error getting Bandit action: " + e.Message);
+            return new BanditResult(defaultValue);
+        }
+
     }
 
 

@@ -208,6 +208,81 @@ public class BanditClientTest
         });
     }
 
+
+
+    [Test]
+    public void ShouldAcceptListOfActionsWithNoAttributes()
+    {
+        // #! testing/the/whole
+
+        var mockLogger = new Mock<IAssignmentLogger>();
+
+        List<AssignmentLogData> assignmentLogs = new() { };
+        List<BanditLogEvent> banditActionsLogs = new() { };
+
+
+        mockLogger.Setup(mock => mock.LogAssignment(It.IsAny<AssignmentLogData>()))
+            .Callback<AssignmentLogData>(log => assignmentLogs.Add(log));
+
+        mockLogger.Setup(mock => mock.LogBanditAction(It.IsAny<BanditLogEvent>()))
+            .Callback<BanditLogEvent>(log => banditActionsLogs.Add(log));
+
+        var client = CreateClient(mockLogger.Object);
+
+        var subjectKey = "subject_key";
+        var defaultSubjectAttributes = _subject.AsDict();
+        var actions = new string[] { "adidas", "nike", "Reebok" };
+
+        var defaultVariation = "default_variation";
+
+
+        // Act
+        var result = client.GetBanditAction("banner_bandit_flag_uk_only", _subject, actions, defaultVariation);
+
+        Multiple(() =>
+        {
+            // Assert - Result verification
+            That(result.Variation, Is.EqualTo("banner_bandit"));
+            That(result.Action == "adidas" || result.Action == "nike", Is.True);
+
+            // Assert - Assignment logger verification
+            mockLogger.Verify(logger => logger.LogAssignment(It.IsAny<AssignmentLogData>()), Times.Once());
+            That(assignmentLogs, Has.Count.EqualTo(1));
+
+            var assignmentLogStatement = assignmentLogs[0];
+            That(assignmentLogStatement, Is.Not.Null);
+            var logEvent = assignmentLogStatement!;
+
+            That(logEvent.FeatureFlag, Is.EqualTo("banner_bandit_flag_uk_only"));
+            That(logEvent.Variation, Is.EqualTo("banner_bandit"));
+            That(logEvent.Subject, Is.EqualTo(subjectKey));
+
+            // Assert - Bandit logger verification
+            mockLogger.Verify(logger => logger.LogBanditAction(It.IsAny<BanditLogEvent>()), Times.Once());
+            That(banditActionsLogs, Has.Count.EqualTo(1));
+
+            var banditLogStatement = banditActionsLogs[0];
+
+            That(banditLogStatement, Is.Not.Null);
+            var banditLog = banditLogStatement!;
+            That(banditLog.FlagKey, Is.EqualTo("banner_bandit_flag_uk_only"));
+            That(banditLog.BanditKey, Is.EqualTo("banner_bandit"));
+            That(banditLog.SubjectKey, Is.EqualTo(subjectKey));
+            GreaterOrEqual(banditLog.OptimalityGap, 0);
+            GreaterOrEqual(banditLog.ActionProbability, 0);
+
+
+            That(result.Action, Is.Not.Null);
+            var chosenAction = actions.Where(a=>a==result.Action);
+
+            That(banditLog.ActionNumericAttributes, Is.Not.Null);
+            That(banditLog.ActionCategoricalAttributes, Is.Not.Null);
+            AssertDictsEquivalent(banditLog.ActionNumericAttributes!, new Dictionary<string, double>().AsReadOnly());
+            AssertDictsEquivalent(banditLog.ActionCategoricalAttributes!, new Dictionary<string, string>().AsReadOnly());
+        });
+    }
+
+
     private void AssertDictsEquivalent<TKey, TValue>(IReadOnlyDictionary<TKey, TValue> a, IReadOnlyDictionary<TKey, TValue> b)
     {
         Multiple(() =>
