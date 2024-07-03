@@ -47,7 +47,7 @@ public class AppDetails
             ["sdkLanguage"] = SDK_LANG,
             ["sdkName"] = GetName(),
             ["sdkVersion"] = GetVersion(),
-            ["sdkUUID"] = _uuid
+            ["clientUID"] = _uuid
         };
     }
 }
