@@ -2,6 +2,7 @@ using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using eppo_sdk.exception;
 using eppo_sdk.validators;
+using NLog;
 
 namespace eppo_sdk.dto.bandit;
 
@@ -14,6 +15,8 @@ public interface IContextAttributes : IDictionary<string, object>
 /// A contextual dictionary allowing only string, bool and numeric types.
 public class ContextAttributes : IContextAttributes
 {
+
+    private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
     public string Key { get; init; }
 
@@ -32,14 +35,39 @@ public class ContextAttributes : IContextAttributes
         return obj;
     }
 
-    public static ContextAttributes FromNullableAttributes(string key, IDictionary<string, string?>? categoricalAttributes, IDictionary<string, double?>? numericAttributes)
+    public static ContextAttributes FromNullableAttributes(string key, IDictionary<string, string?>? categoricalAttributes, IDictionary<string, object?>? numericAttributes)
     {
         var obj = new ContextAttributes(key);
         obj.AddDict(categoricalAttributes);
-        obj.AddDict(numericAttributes);
+        obj.AddDict(NumbersOnly(numericAttributes));
         return obj;
     }
 
+    private static IDictionary<string, double> NumbersOnly(IDictionary<string, object?>? attributes)
+    {
+        var result = new Dictionary<string, double>(); ;
+        if (attributes == null || attributes.Count == 0)
+        {
+            return result;
+        }
+        foreach (var kvp in attributes)
+        {
+            if (kvp.Value == null)
+            {
+                continue;
+
+            }
+            if (!IsNumeric(kvp.Value))
+            {
+                Logger.Warn($"[Eppo SDK] Attribute with key {kvp.Key} passed as a NumericAttribute but is not numeric");
+            }
+            else
+            {
+                result.Add(kvp.Key, Convert.ToDouble(kvp.Value));
+            }
+        }
+        return result;
+    }
 
     public ContextAttributes(string key, IDictionary<string, string>? categoricalAttributes, IDictionary<string, double>? numericAttributes)
     {
@@ -76,7 +104,7 @@ public class ContextAttributes : IContextAttributes
         }
     }
 
-    public IDictionary<string, object> AsDict() => _internalDictionary.ToDictionary(kvp=>kvp.Key, kvp=>kvp.Value);
+    public IDictionary<string, object> AsDict() => _internalDictionary.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
     /// Gets only the numeric attributes.
     public IDictionary<string, double> GetNumeric()
