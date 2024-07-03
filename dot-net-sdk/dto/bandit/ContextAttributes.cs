@@ -2,7 +2,6 @@ using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using eppo_sdk.exception;
 using eppo_sdk.validators;
-using Microsoft.Extensions.Logging;
 using NLog;
 
 namespace eppo_sdk.dto.bandit;
