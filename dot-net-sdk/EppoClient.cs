@@ -205,8 +205,7 @@ public class EppoClient
             var appDetails = AppDetails.GetInstance();
             var eppoHttpClient = new EppoHttpClient(
                 eppoClientConfig.ApiKey,
-                appDetails.GetName(),
-                appDetails.GetVersion(),
+                appDetails.AsDict(),
                 eppoClientConfig.BaseUrl,
                 Constants.REQUEST_TIMEOUT_MILLIS
             );
