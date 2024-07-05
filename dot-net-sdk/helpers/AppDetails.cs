@@ -9,7 +9,6 @@ public class AppDetails
 
     private readonly string? _version;
     private readonly string? _name;
-    private readonly string _uuid;
 
     public static AppDetails GetInstance()
     {
@@ -28,7 +27,6 @@ public class AppDetails
     {
         this._version = Assembly.GetExecutingAssembly().GetName().Version?.ToString();
         this._name = Assembly.GetExecutingAssembly().GetName().Name;
-        this._uuid = System.Guid.NewGuid().ToString();
     }
 
     public string GetName()
@@ -46,8 +44,7 @@ public class AppDetails
         return new Dictionary<string, string>() {
             ["sdkLanguage"] = SDK_LANG,
             ["sdkName"] = GetName(),
-            ["sdkVersion"] = GetVersion(),
-            ["clientUID"] = _uuid
+            ["sdkVersion"] = GetVersion()
         };
     }
 }
