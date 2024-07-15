@@ -383,7 +383,7 @@ public class BanditEvaluatorTest
             That(evaluation.ActionKey, Is.EqualTo("action2"));
             That(evaluation.Gamma, Is.EqualTo(banditModel.Gamma));
             That(evaluation.ActionScore, Is.EqualTo(4.3));
-            That(Math.Round(evaluation.ActionWeight, 4), Is.EqualTo(0.4926).Within(4)); // Adjust precision for floating-point comparison
+            That(Math.Round(evaluation.ActionWeight, 4), Is.EqualTo(0.5074));
         });
     }
 
