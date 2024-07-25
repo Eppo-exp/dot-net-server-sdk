@@ -82,7 +82,12 @@ public class ConfigurationStoreTest
         var store = CreateConfigurationStore(mockRequester.Object);
         store.LoadConfiguration();
 
-        Assert.That(store.GetBanditFlags(), Is.EqualTo(banditFlags));
+        Assert.Multiple(() =>
+        {
+            Assert.That(store.GetBanditFlags(), Is.EqualTo(banditFlags));
+            Assert.That(store.TryGetBandit("banditKey", out Bandit? bandit), Is.False);
+            Assert.That(bandit, Is.Null);
+        });
         mockRequester.Verify(m => m.FetchBanditModels(), Times.Never());
     }
 
