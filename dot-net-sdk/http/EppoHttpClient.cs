@@ -7,11 +7,11 @@ namespace eppo_sdk.http;
 
 public class VersionedResource<RType>
 {
-    public readonly RType Resource;
+    public readonly RType? Resource;
     public readonly bool IsModified;
     public readonly string? ETag;
 
-    public VersionedResource(RType resource, string? eTag = null, bool isModified = true)
+    public VersionedResource(RType? resource, string? eTag = null, bool isModified = true)
     {
         Resource = resource;
         IsModified = isModified;
@@ -54,12 +54,12 @@ public class EppoHttpClient
         this._defaultParams.Add(key, value);
     }
 
-    public VersionedResource<RType>? Get<RType>(string url, string? lastVersion = null)
+    public VersionedResource<RType> Get<RType>(string url, string? lastVersion = null)
     {
         return this.Get<RType>(url, new Dictionary<string, string>(), new Dictionary<string, string>(), lastVersion);
     }
 
-    public VersionedResource<RType>? Get<RType>(
+    public VersionedResource<RType> Get<RType>(
         string url,
         Dictionary<string, string> parameters,
         Dictionary<string, string> headers,
@@ -77,7 +77,7 @@ public class EppoHttpClient
 
         if (lastVersion != null)
         {
-            headers.Add("IF-NONE-MATCHES", lastVersion);
+            headers.Add("IF-NONE-MATCH", lastVersion);
         }
         request.AddHeaders(headers);
 
@@ -98,8 +98,6 @@ public class EppoHttpClient
         {
             eTag = null;
         }
-        if (restResponse.Data == null) { return null; }
-
         return new VersionedResource<RType>(restResponse.Data, eTag, eTag == null || eTag != lastVersion);
     }
 }
