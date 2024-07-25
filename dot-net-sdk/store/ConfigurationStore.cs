@@ -158,22 +158,26 @@ public class ConfigurationStore : IConfigurationStore
 
     private VersionedResource<FlagConfigurationResponse> FetchFlags(string? lastEtag = null)
     {
-        var response = _requester.FetchFlagConfiguration(lastEtag);
-        if (response != null)
+        try
         {
-            return response;
+            return _requester.FetchFlagConfiguration(lastEtag);
         }
+        catch (Exception e)
+        {
 
-        throw new SystemException("Unable to fetch flag configuration");
+            throw new SystemException("Unable to fetch flag configuration" + e.Message);
+        }
     }
     private VersionedResource<BanditModelResponse> FetchBandits()
     {
-        var response = _requester.FetchBanditModels();
-        if (response != null)
+        try
         {
-            return response;
+            return _requester.FetchBanditModels();
         }
+        catch (Exception e)
+        {
 
-        throw new SystemException("Unable to fetch bandit models");
+            throw new SystemException("Unable to fetch bandit configuration" + e.Message);
+        }
     }
 }
