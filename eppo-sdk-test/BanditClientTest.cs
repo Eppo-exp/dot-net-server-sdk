@@ -26,6 +26,13 @@ public class BanditClientTest
         {"age", 30},
         {"country", "UK"}
     };
+    private ContextAttributes _AmerSubject = new("subject_key")
+    {
+        {"account_age", 3},
+        {"favourite_colour", "red"},
+        {"age", 30},
+        {"country", "USA"}
+    };
     private readonly Dictionary<string, ContextAttributes> _actions = new()
     {
         {"action1" , new("action1") {
@@ -96,7 +103,7 @@ public class BanditClientTest
     }
 
     [Test]
-    public void ShouldReturnDefaultForNonBandit()
+    public void ShouldReturnDefaultForUnknownFlag()
     {
         var client = CreateClient();
         var result = client.GetBanditAction("unknownflag", _subject, _actions, "defaultVariation");
@@ -109,14 +116,14 @@ public class BanditClientTest
     }
 
     [Test]
-    public void ShouldReturnDefaultForNonBanditFlag()
+    public void ShouldReturnVariationForNonBanditFlag()
     {
         var client = CreateClient();
-        var result = client.GetBanditAction("a_flag", _subject, new Dictionary<string, ContextAttributes>(), "default_variation");
+        var result = client.GetBanditAction("non_bandit_flag", _subject, new Dictionary<string, ContextAttributes>(), "defaultVariation");
         Multiple(() =>
         {
             That(result, Is.Not.Null);
-            That(result.Variation, Is.EqualTo("default_variation"));
+            That(result.Variation, Is.EqualTo("control"));
             That(result.Action, Is.Null);
         });
     }
@@ -159,7 +166,7 @@ public class BanditClientTest
             }
         };
 
-        var defaultVariation = "default_variation";
+        var defaultVariation = "defaultVariation";
 
 
         // Act
@@ -233,7 +240,7 @@ public class BanditClientTest
         var defaultSubjectAttributes = _subject.AsDict();
         var actions = new string[] { "adidas", "nike", "Reebok" };
 
-        var defaultVariation = "default_variation";
+        var defaultVariation = "defaultVariation";
 
 
         // Act
@@ -296,9 +303,8 @@ public class BanditClientTest
     }
 
     [Test]
-    public void ShouldReturnDefaultForNoActions()
+    public void ShouldReturnVariationForNoActions()
     {
-
         var mockLogger = new Mock<IAssignmentLogger>();
         var client = CreateClient(mockLogger.Object);
 
@@ -306,20 +312,20 @@ public class BanditClientTest
         Multiple(() =>
         {
             That(result, Is.Not.Null);
-            That(result.Variation, Is.EqualTo("defaultValue"));
+            That(result.Variation, Is.EqualTo("banner_bandit"));
             That(result.Action, Is.Null);
             That(mockLogger.Invocations, Is.Empty);
         });
     }
 
     [Test]
-    public void ShouldReturnVariationForNonBandit()
+    public void ShouldReturnNonBanditVariation()
     {
         var mockLogger = new Mock<IAssignmentLogger>();
         mockLogger.Setup(mock => mock.LogAssignment(It.IsAny<AssignmentLogData>()));
         var client = CreateClient(mockLogger.Object);
 
-        var result = client.GetBanditAction("non_bandit_flag", _subject, new Dictionary<string, ContextAttributes>(), "defaultValue");
+        var result = client.GetBanditAction("banner_bandit_flag_uk_only", _AmerSubject, new Dictionary<string, ContextAttributes>(), "defaultValue");
 
         Multiple(() =>
         {

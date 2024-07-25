@@ -339,7 +339,6 @@ public class BanditEvaluatorTest
                 }
             },
             {
-                // Note: Anot
                 "action2", new ActionCoefficients("action2", 0.3)
                 {
                     SubjectNumericCoefficients = new List<NumericAttributeCoefficient>() { new("age", 0.1, 0.0) },

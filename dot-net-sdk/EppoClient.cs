@@ -394,16 +394,6 @@ public class EppoClient
     {
         InputValidator.ValidateNotBlank(flagKey, "Invalid argument: flagKey cannot be blank");
 
-        // If no actions are given - a valid use case - return the `defaultValue`.
-        bool isBanditFlag = _configurationStore.GetBanditFlags().IsBanditFlag(flagKey);
-
-        if (actions.Count == 0 && isBanditFlag)
-        {
-            // If not graceful mode, raise an exception here?
-            return new(defaultValue);
-        }
-
-
         // Get the user's flag assignment for the given key.
         var variation = GetStringAssignment(
             flagKey,
@@ -411,35 +401,43 @@ public class EppoClient
             subject,
             defaultValue);
 
-        // If not a bandit, return the computed String assignment
-        if (!isBanditFlag)
+        // Only proceed to computing a bandit if there are actions provided.
+        if (actions.Count > 0)
         {
-            Logger.Warn($"[Eppo SDK] Flag \"{flagKey}\" does not contain a Bandit");
-            return new(variation);
-        }
-
-        try
-        {
-            if (_configurationStore.TryGetBandit(variation, out Bandit? bandit) && bandit != null)
+            // Check to see if this flag+variation maps to a bandit.
+            if (_configurationStore.GetBanditFlags().TryGetBanditKey(flagKey, variation, out string? banditKey) && banditKey != null)
             {
-                var result = _banditEvaluator.EvaluateBandit(
-                    flagKey,
-                    subject,
-                    actions,
-                    bandit.ModelData);
 
-                var banditActionLog = new BanditLogEvent(
-                    variation,
-                    result,
-                    bandit,
-                    AppDetails.GetInstance().AsDict());
-                _eppoClientConfig.AssignmentLogger.LogBanditAction(banditActionLog);
-                return new BanditResult(variation, result.ActionKey);
+                try
+                {
+                    if (_configurationStore.TryGetBandit(banditKey, out Bandit? bandit) && bandit != null)
+                    {
+                        var result = _banditEvaluator.EvaluateBandit(
+                            flagKey,
+                            subject,
+                            actions,
+                            bandit.ModelData);
+
+                        var banditActionLog = new BanditLogEvent(
+                            variation,
+                            result,
+                            bandit,
+                            AppDetails.GetInstance().AsDict());
+                        _eppoClientConfig.AssignmentLogger.LogBanditAction(banditActionLog);
+                        return new BanditResult(variation, result.ActionKey);
+                    }
+                    else
+                    {
+                        // There should be a bandit matching `banditKey`, but there is not, and that's a problem.
+                        Logger.Error($"[Eppo SDK] Bandit model not found for {flagKey} {variation}");
+                    }
+                }
+                catch (BanditEvaluationException bee)
+                {
+                    Logger.Error("[Eppo SDK] Error evaluating bandit, returning variation only: " + bee.Message);
+                }
             }
-        }
-        catch (BanditEvaluationException bee)
-        {
-            Logger.Error("[Eppo SDK] Error evaluating bandit, returning variation only: " + bee.Message);
+
         }
 
         return new(variation);
