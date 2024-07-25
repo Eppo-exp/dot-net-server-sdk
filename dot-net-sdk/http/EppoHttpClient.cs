@@ -1,9 +1,23 @@
 using System.Net;
-using eppo_sdk.dto;
 using RestSharp;
 using RestSharp.Serializers.NewtonsoftJson;
 
 namespace eppo_sdk.http;
+
+
+public class VersionedResource<RType>
+{
+    public readonly RType Resource;
+    public readonly bool IsModified;
+    public readonly string? ETag;
+
+    public VersionedResource(RType resource, string? eTag = null, bool isModified = true)
+    {
+        Resource = resource;
+        IsModified = isModified;
+        ETag = eTag;
+    }
+}
 
 public class EppoHttpClient
 {
@@ -40,15 +54,16 @@ public class EppoHttpClient
         this._defaultParams.Add(key, value);
     }
 
-    public RType? Get<RType>(string url)
+    public VersionedResource<RType>? Get<RType>(string url, string? lastVersion = null)
     {
-        return this.Get<RType>(url, new Dictionary<string, string>(), new Dictionary<string, string>());
+        return this.Get<RType>(url, new Dictionary<string, string>(), new Dictionary<string, string>(), lastVersion);
     }
 
-    public RType? Get<RType>(
+    public VersionedResource<RType>? Get<RType>(
         string url,
         Dictionary<string, string> parameters,
-        Dictionary<string, string> headers
+        Dictionary<string, string> headers,
+        string? lastVersion = null
     )
     {
         _defaultParams.ToList().ForEach(x => parameters.Add(x.Key, x.Value));
@@ -59,6 +74,11 @@ public class EppoHttpClient
         };
 
         parameters.ToList().ForEach(x => request.AddParameter(new QueryParameter(x.Key, x.Value)));
+
+        if (lastVersion != null)
+        {
+            headers.Add("IF-NONE-MATCHES", lastVersion);
+        }
         request.AddHeaders(headers);
 
         var client = new RestClient(_baseUrl + url, configureSerialization: s => s.UseNewtonsoftJson());
@@ -69,6 +89,17 @@ public class EppoHttpClient
             throw new UnauthorizedAccessException("Invalid Eppo API Key");
         }
 
-        return restResponse.Data;
+        string? eTag;
+        try
+        {
+            eTag = restResponse.Headers?.ToList()?.Find(x => x.Name == "ETag").Value?.ToString() ?? null;
+        }
+        catch (Exception)
+        {
+            eTag = null;
+        }
+        if (restResponse.Data == null) { return null; }
+
+        return new VersionedResource<RType>(restResponse.Data, eTag, eTag == null || eTag != lastVersion);
     }
 }

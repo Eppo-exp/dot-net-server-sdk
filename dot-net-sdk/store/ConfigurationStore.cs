@@ -9,10 +9,11 @@ namespace eppo_sdk.store;
 public class ConfigurationStore : IConfigurationStore
 {
     private readonly MemoryCache _flagConfigurationCache;
-    private readonly MemoryCache _banditFlagCache;
+    private readonly MemoryCache _metadataCache;
     private readonly MemoryCache _banditModelCache;
     private readonly IConfigurationRequester _requester;
     private const string BANDIT_FLAGS_KEY = "bandit_flags";
+    private const string FLAG_RESOURCE_ETAG = "ufc_etag";
 
     private static readonly object Baton = new();
     private readonly ReaderWriterLockSlim cacheLock = new();
@@ -20,12 +21,12 @@ public class ConfigurationStore : IConfigurationStore
     public ConfigurationStore(IConfigurationRequester requester,
                               MemoryCache flagConfigurationCache,
                               MemoryCache banditModelCache,
-                              MemoryCache banditFlagCache)
+                              MemoryCache metadataCache)
     {
         _requester = requester;
         _flagConfigurationCache = flagConfigurationCache;
         _banditModelCache = banditModelCache;
-        _banditFlagCache = banditFlagCache;
+        _metadataCache = metadataCache;
     }
 
     private void SetFlag(string key, Flag flag)
@@ -43,7 +44,7 @@ public class ConfigurationStore : IConfigurationStore
 
     private void SetBanditFlags(BanditFlags banditFlags)
     {
-        _banditFlagCache.Set(BANDIT_FLAGS_KEY, banditFlags, new MemoryCacheEntryOptions().SetSize(1));
+        _metadataCache.Set(BANDIT_FLAGS_KEY, banditFlags, new MemoryCacheEntryOptions().SetSize(1));
     }
 
     public BanditFlags GetBanditFlags()
@@ -51,7 +52,7 @@ public class ConfigurationStore : IConfigurationStore
         cacheLock.EnterReadLock();
         try
         {
-            if (_banditFlagCache.TryGetValue(BANDIT_FLAGS_KEY, out BanditFlags? banditFlags) && banditFlags != null)
+            if (_metadataCache.TryGetValue(BANDIT_FLAGS_KEY, out BanditFlags? banditFlags) && banditFlags != null)
             {
                 return banditFlags;
             }
@@ -94,19 +95,39 @@ public class ConfigurationStore : IConfigurationStore
     {
         _flagConfigurationCache.Clear();
         _banditModelCache.Clear();
-        _banditFlagCache.Clear();
+        _metadataCache.Clear();
     }
     public void LoadConfiguration()
     {
-        FlagConfigurationResponse flagConfigurationResponse = FetchFlags();
-        BanditModelResponse banditModels = FetchBandits();
-        SetConfiguration(
-            flagConfigurationResponse.Flags.ToList().Select(kvp => kvp.Value),
-            flagConfigurationResponse.Bandits,
-            banditModels.Bandits?.ToList().Select(kvp => kvp.Value));
+        // Get the last tag for flags.
+        string? etag = GetLastFlagVersion();
 
+
+        var flagConfigurationResponse = FetchFlags(etag);
+        if (!flagConfigurationResponse.IsModified)
+        {
+            return;
+        }
+
+        var flags = flagConfigurationResponse.Resource;
+        var banditModels = FetchBandits().Resource;
+
+        SetConfiguration(
+            flags.Flags.ToList().Select(kvp => kvp.Value),
+            flags.Bandits,
+            banditModels.Bandits?.ToList().Select(kvp => kvp.Value),
+            flagConfigurationResponse.ETag);
     }
-    public void SetConfiguration(IEnumerable<Flag> flags, BanditFlags? banditFlags, IEnumerable<Bandit>? bandits)
+
+    private string? GetLastFlagVersion()
+    {
+        cacheLock.EnterReadLock();
+        var eTag = _metadataCache.Get<string>(FLAG_RESOURCE_ETAG);
+        cacheLock.ExitReadLock();
+        return eTag;
+    }
+
+    public void SetConfiguration(IEnumerable<Flag> flags, BanditFlags? banditFlags, IEnumerable<Bandit>? bandits, string? eTag = null)
     {
         cacheLock.EnterWriteLock();
         try
@@ -127,6 +148,7 @@ public class ConfigurationStore : IConfigurationStore
                     SetBanditModel(bandit);
                 }
             }
+            _metadataCache.Set(FLAG_RESOURCE_ETAG, eTag, new MemoryCacheEntryOptions().SetSize(1));
         }
         finally
         {
@@ -134,9 +156,9 @@ public class ConfigurationStore : IConfigurationStore
         }
     }
 
-    private FlagConfigurationResponse FetchFlags()
+    private VersionedResource<FlagConfigurationResponse> FetchFlags(string? lastEtag = null)
     {
-        FlagConfigurationResponse? response = this._requester.FetchFlagConfiguration();
+        var response = _requester.FetchFlagConfiguration(lastEtag);
         if (response != null)
         {
             return response;
@@ -144,9 +166,9 @@ public class ConfigurationStore : IConfigurationStore
 
         throw new SystemException("Unable to fetch flag configuration");
     }
-    private BanditModelResponse FetchBandits()
+    private VersionedResource<BanditModelResponse> FetchBandits()
     {
-        BanditModelResponse? response = this._requester.FetchBanditModels();
+        var response = _requester.FetchBanditModels();
         if (response != null)
         {
             return response;

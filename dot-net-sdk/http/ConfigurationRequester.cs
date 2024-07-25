@@ -4,24 +4,26 @@ using NLog;
 
 namespace eppo_sdk.http;
 
-public interface IConfigurationRequester {
-    public FlagConfigurationResponse? FetchFlagConfiguration();
-    public BanditModelResponse? FetchBanditModels();
+public interface IConfigurationRequester
+{
+    public VersionedResource<FlagConfigurationResponse>? FetchFlagConfiguration(string? lastEtag = null);
+    public VersionedResource<BanditModelResponse>? FetchBanditModels();
 }
 public class ConfigurationRequester : IConfigurationRequester
 {
     private static Logger logger = LogManager.GetCurrentClassLogger();
     private readonly EppoHttpClient eppoHttpClient;
 
-    public ConfigurationRequester(EppoHttpClient eppoHttpClient) {
+    public ConfigurationRequester(EppoHttpClient eppoHttpClient)
+    {
         this.eppoHttpClient = eppoHttpClient;
     }
 
-    public FlagConfigurationResponse? FetchFlagConfiguration()
+    public VersionedResource<FlagConfigurationResponse>? FetchFlagConfiguration(string? lastEtag = null)
     {
         try
         {
-            return this.eppoHttpClient.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT);
+            return eppoHttpClient.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, lastEtag);
         }
         catch (Exception e)
         {
@@ -31,11 +33,11 @@ public class ConfigurationRequester : IConfigurationRequester
         return null;
     }
 
-    public BanditModelResponse? FetchBanditModels()
+    public VersionedResource<BanditModelResponse>? FetchBanditModels()
     {
         try
         {
-            return this.eppoHttpClient.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT);
+            return eppoHttpClient.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT);
         }
         catch (Exception e)
         {
