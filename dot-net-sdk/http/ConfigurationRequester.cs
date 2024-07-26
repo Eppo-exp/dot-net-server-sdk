@@ -6,8 +6,8 @@ namespace eppo_sdk.http;
 
 public interface IConfigurationRequester
 {
-    public VersionedResource<FlagConfigurationResponse>? FetchFlagConfiguration(string? lastEtag = null);
-    public VersionedResource<BanditModelResponse>? FetchBanditModels();
+    public VersionedResource<FlagConfigurationResponse> FetchFlagConfiguration(string? lastEtag = null);
+    public VersionedResource<BanditModelResponse> FetchBanditModels();
 }
 public class ConfigurationRequester : IConfigurationRequester
 {
@@ -19,31 +19,15 @@ public class ConfigurationRequester : IConfigurationRequester
         this.eppoHttpClient = eppoHttpClient;
     }
 
-    public VersionedResource<FlagConfigurationResponse>? FetchFlagConfiguration(string? lastEtag = null)
+    public VersionedResource<FlagConfigurationResponse> FetchFlagConfiguration(string? lastEtag = null)
     {
-        try
-        {
-            return eppoHttpClient.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, lastEtag);
-        }
-        catch (Exception e)
-        {
-            logger.Warn($"[Eppo SDK] Unable to Fetch Flag Configuration: {e.Message}");
-        }
+        return eppoHttpClient.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, lastEtag);
 
-        return null;
     }
 
-    public VersionedResource<BanditModelResponse>? FetchBanditModels()
+    public VersionedResource<BanditModelResponse> FetchBanditModels()
     {
-        try
-        {
-            return eppoHttpClient.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT);
-        }
-        catch (Exception e)
-        {
-            logger.Warn($"[Eppo SDK] Unable to Fetch Bandit Models: {e.Message}");
-        }
+        return eppoHttpClient.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT);
 
-        return null;
     }
 }

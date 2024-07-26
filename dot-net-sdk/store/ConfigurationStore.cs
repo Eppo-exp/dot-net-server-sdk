@@ -109,8 +109,9 @@ public class ConfigurationStore : IConfigurationStore
             return;
         }
 
-        var flags = flagConfigurationResponse.Resource;
-        var banditModels = FetchBandits().Resource;
+        // Fetch methods throw if resource is null.
+        var flags = flagConfigurationResponse.Resource!;
+        var banditModels = FetchBandits().Resource!;
 
         SetConfiguration(
             flags.Flags.ToList().Select(kvp => kvp.Value),
@@ -160,11 +161,14 @@ public class ConfigurationStore : IConfigurationStore
     {
         try
         {
-            return _requester.FetchFlagConfiguration(lastEtag);
+            var response = _requester.FetchFlagConfiguration(lastEtag);
+            if (response.IsModified && response.Resource == null) {
+                  throw new SystemException("Flag configuration not present in response");
+            }
+            return response;
         }
         catch (Exception e)
         {
-
             throw new SystemException("Unable to fetch flag configuration" + e.Message);
         }
     }
@@ -172,11 +176,14 @@ public class ConfigurationStore : IConfigurationStore
     {
         try
         {
-            return _requester.FetchBanditModels();
+            var response = _requester.FetchBanditModels();
+            if (response.Resource == null) {
+                  throw new SystemException("Bandit configuration not present in response");
+            }
+            return response;
         }
         catch (Exception e)
         {
-
             throw new SystemException("Unable to fetch bandit configuration" + e.Message);
         }
     }

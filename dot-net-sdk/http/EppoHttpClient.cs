@@ -98,6 +98,7 @@ public class EppoHttpClient
         {
             eTag = null;
         }
-        return new VersionedResource<RType>(restResponse.Data, eTag, eTag == null || eTag != lastVersion);
+
+        return new VersionedResource<RType>(restResponse.Data, eTag, isModified: restResponse.StatusCode != HttpStatusCode.NotModified);
     }
 }
