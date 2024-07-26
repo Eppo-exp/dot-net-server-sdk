@@ -102,22 +102,24 @@ public class ConfigurationStore : IConfigurationStore
         // Get the last tag for flags.
         string? etag = GetLastFlagVersion();
 
-
         var flagConfigurationResponse = FetchFlags(etag);
-        if (!flagConfigurationResponse.IsModified)
+        if (flagConfigurationResponse.IsModified)
         {
-            return;
+            // Fetch methods throw if resource is null.
+            var flags = flagConfigurationResponse.Resource!;
+            var banditModels = FetchBandits().Resource!;
+
+            SetConfiguration(
+                flags.Flags.ToList().Select(kvp => kvp.Value),
+                flags.Bandits,
+                banditModels.Bandits?.ToList().Select(kvp => kvp.Value),
+                flagConfigurationResponse.ETag);
+        } else {
+            // Write the most recent ETag
+            cacheLock.EnterWriteLock();
+            _metadataCache.Set(FLAG_RESOURCE_ETAG, flagConfigurationResponse.ETag, new MemoryCacheEntryOptions().SetSize(1));
+            cacheLock.ExitWriteLock();
         }
-
-        // Fetch methods throw if resource is null.
-        var flags = flagConfigurationResponse.Resource!;
-        var banditModels = FetchBandits().Resource!;
-
-        SetConfiguration(
-            flags.Flags.ToList().Select(kvp => kvp.Value),
-            flags.Bandits,
-            banditModels.Bandits?.ToList().Select(kvp => kvp.Value),
-            flagConfigurationResponse.ETag);
     }
 
     private string? GetLastFlagVersion()
@@ -162,8 +164,9 @@ public class ConfigurationStore : IConfigurationStore
         try
         {
             var response = _requester.FetchFlagConfiguration(lastEtag);
-            if (response.IsModified && response.Resource == null) {
-                  throw new SystemException("Flag configuration not present in response");
+            if (response.IsModified && response.Resource == null)
+            {
+                throw new SystemException("Flag configuration not present in response");
             }
             return response;
         }
@@ -177,8 +180,9 @@ public class ConfigurationStore : IConfigurationStore
         try
         {
             var response = _requester.FetchBanditModels();
-            if (response.Resource == null) {
-                  throw new SystemException("Bandit configuration not present in response");
+            if (response.Resource == null)
+            {
+                throw new SystemException("Bandit configuration not present in response");
             }
             return response;
         }

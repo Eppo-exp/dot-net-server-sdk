@@ -4,8 +4,6 @@ using eppo_sdk.dto.bandit;
 using eppo_sdk.helpers;
 using eppo_sdk.http;
 using eppo_sdk.store;
-using GraphQL.Introspection;
-using Microsoft.Extensions.Caching.Memory;
 using Moq;
 using static NUnit.Framework.Assert;
 
@@ -39,7 +37,8 @@ public class ConfigurationStoreTest
         };
 
         var mockRequester = new Mock<IConfigurationRequester>();
-        mockRequester.Setup(m => m.FetchFlagConfiguration(It.IsAny<string>())).Returns(new VersionedResource<FlagConfigurationResponse>(response));
+        mockRequester.Setup(m => m.FetchFlagConfiguration(It.IsAny<string>())).Returns(
+            new VersionedResource<FlagConfigurationResponse>(response));
         mockRequester.Setup(m => m.FetchBanditModels()).Returns(new VersionedResource<BanditModelResponse>(banditResponse));
 
         var store = CreateConfigurationStore(mockRequester.Object);
@@ -49,7 +48,7 @@ public class ConfigurationStoreTest
     }
 
     [Test]
-    public void ShouldSendIfNonMatchesHeaderWithLastEtag()
+    public void ShouldSendIfNonMatchHeaderWithLastEtag()
     {
         var banditFlags = new BanditFlags();
         var response = new FlagConfigurationResponse()
@@ -145,7 +144,6 @@ public class ConfigurationStoreTest
         Assert.That(store.GetBanditFlags().Keys, Is.EquivalentTo(new List<string> { "unchangingBandit", "departingBandit" }));
 
         // Now, reload the config with new BanditFlags.
-
         mockRequester.Setup(m => m.FetchFlagConfiguration(It.IsAny<string>())).Returns(
             new VersionedResource<FlagConfigurationResponse>(
                 new FlagConfigurationResponse()
@@ -189,7 +187,6 @@ public class ConfigurationStoreTest
         AssertHasFlag(store, "flag3");
         AssertHasFlag(store, "flag2", false);
 
-
         store.SetConfiguration(Array.Empty<Flag>(), null, null);
 
         AssertHasFlag(store, "flag1", false);
@@ -207,7 +204,6 @@ public class ConfigurationStoreTest
                 That(flag, Is.Not.Null);
                 That(flag!.key, Is.EqualTo(flagKey));
             });
-
         }
         else
         {
