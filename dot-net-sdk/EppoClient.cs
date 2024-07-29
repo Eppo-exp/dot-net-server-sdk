@@ -408,14 +408,14 @@ public class EppoClient
             && _configurationStore.GetBanditFlags().TryGetBanditKey(flagKey, variation, out string? banditKey)
             && banditKey != null)
         {
-            result = EvaluateAndLogBandit(banditKey, flagKey, subject, actions, variation);
+            result = EvaluateAndLogBandit(banditKey!, flagKey, subject, actions, variation);
         }
 
         return result ?? new(variation);
 
     }
 
-    private BanditResult? EvaluateAndLogBandit(string? banditKey,
+    private BanditResult? EvaluateAndLogBandit(string banditKey,
                                                string flagKey,
                                                ContextAttributes subject,
                                                IDictionary<string, ContextAttributes> actions,
@@ -448,7 +448,7 @@ public class EppoClient
             else
             {
                 // There should be a bandit matching `banditKey`, but there is not, and that's a problem.
-                Logger.Error($"[Eppo SDK] Bandit model {banditKey} not found");
+                Logger.Error($"[Eppo SDK] Bandit model {banditKey} not found for {flagKey} {variation}");
             }
         }
         catch (BanditEvaluationException bee)
