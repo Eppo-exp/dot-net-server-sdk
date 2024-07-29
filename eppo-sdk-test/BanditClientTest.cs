@@ -18,7 +18,7 @@ public class BanditClientTest
 {
     private const string BANDIT_CONFIG_FILE = "files/ufc/bandit-flags-v1.json";
     private const string BANDIT_MODEL_FILE = "files/ufc/bandit-models-v1.json";
-    private WireMockServer? mockeServer;
+    private WireMockServer? mockServer;
     private readonly ContextAttributes subject = new("subject_key")
     {
         {"account_age", 3},
@@ -61,7 +61,7 @@ public class BanditClientTest
         }
         var config = new EppoClientConfig("mock-api-key", logger)
         {
-            BaseUrl = mockeServer?.Urls[0]!
+            BaseUrl = mockServer?.Urls[0]!
         };
         return EppoClient.Init(config);
     }
@@ -74,12 +74,12 @@ public class BanditClientTest
 
     private void SetupMockServer()
     {
-        mockeServer = WireMockServer.Start();
-        Console.WriteLine($"MockServer started at: {mockeServer.Urls[0]}");
-        this.mockeServer
+        mockServer = WireMockServer.Start();
+        Console.WriteLine($"MockServer started at: {mockServer.Urls[0]}");
+        this.mockServer
             .Given(Request.Create().UsingGet().WithPath(new RegexMatcher("flag-config/v1/config")))
             .RespondWith(Response.Create().WithStatusCode(HttpStatusCode.OK).WithBody(GetMockBanditConfig()).WithHeader("Content-Type", "application/json"));
-        this.mockeServer
+        this.mockServer
             .Given(Request.Create().UsingGet().WithPath(new RegexMatcher("flag-config/v1/bandits")))
             .RespondWith(Response.Create().WithStatusCode(HttpStatusCode.OK).WithBody(GetMockBanditModelConfig()).WithHeader("Content-Type", "application/json"));
     }
@@ -87,7 +87,7 @@ public class BanditClientTest
     [OneTimeTearDown]
     public void TearDown()
     {
-        mockeServer?.Stop();
+        mockServer?.Stop();
     }
 
     private static string GetMockBanditConfig() => GetMockConfig(BANDIT_CONFIG_FILE);
