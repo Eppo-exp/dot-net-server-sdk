@@ -18,15 +18,22 @@ public class BanditClientTest
 {
     private const string BANDIT_CONFIG_FILE = "files/ufc/bandit-flags-v1.json";
     private const string BANDIT_MODEL_FILE = "files/ufc/bandit-models-v1.json";
-    private WireMockServer? _mockServer;
-    private ContextAttributes _subject = new("subject_key")
+    private WireMockServer? mockServer;
+    private readonly ContextAttributes subject = new("subject_key")
     {
         {"account_age", 3},
         {"favourite_colour", "red"},
         {"age", 30},
         {"country", "UK"}
     };
-    private readonly Dictionary<string, ContextAttributes> _actions = new()
+    private readonly ContextAttributes americanSubject = new("subject_key")
+    {
+        {"account_age", 3},
+        {"favourite_colour", "red"},
+        {"age", 30},
+        {"country", "USA"}
+    };
+    private readonly Dictionary<string, ContextAttributes> actions = new()
     {
         {"action1" , new("action1") {
             {"foo", "bar"},
@@ -54,25 +61,25 @@ public class BanditClientTest
         }
         var config = new EppoClientConfig("mock-api-key", logger)
         {
-            BaseUrl = _mockServer?.Urls[0]!
+            BaseUrl = mockServer?.Urls[0]!
         };
         return EppoClient.Init(config);
     }
 
     private void SetupSubjectMocks()
     {
-        _subject["timeofday"] = "night";
-        _subject["loyalty_tier"] = "gold";
+        subject["timeofday"] = "night";
+        subject["loyalty_tier"] = "gold";
     }
 
     private void SetupMockServer()
     {
-        _mockServer = WireMockServer.Start();
-        Console.WriteLine($"MockServer started at: {_mockServer.Urls[0]}");
-        this._mockServer
+        mockServer = WireMockServer.Start();
+        Console.WriteLine($"MockServer started at: {mockServer.Urls[0]}");
+        this.mockServer
             .Given(Request.Create().UsingGet().WithPath(new RegexMatcher("flag-config/v1/config")))
             .RespondWith(Response.Create().WithStatusCode(HttpStatusCode.OK).WithBody(GetMockBanditConfig()).WithHeader("Content-Type", "application/json"));
-        this._mockServer
+        this.mockServer
             .Given(Request.Create().UsingGet().WithPath(new RegexMatcher("flag-config/v1/bandits")))
             .RespondWith(Response.Create().WithStatusCode(HttpStatusCode.OK).WithBody(GetMockBanditModelConfig()).WithHeader("Content-Type", "application/json"));
     }
@@ -80,7 +87,7 @@ public class BanditClientTest
     [OneTimeTearDown]
     public void TearDown()
     {
-        _mockServer?.Stop();
+        mockServer?.Stop();
     }
 
     private static string GetMockBanditConfig() => GetMockConfig(BANDIT_CONFIG_FILE);
@@ -96,10 +103,10 @@ public class BanditClientTest
     }
 
     [Test]
-    public void ShouldReturnDefaultForNonBandit()
+    public void ShouldReturnDefaultForUnknownFlag()
     {
         var client = CreateClient();
-        var result = client.GetBanditAction("unknownflag", _subject, _actions, "defaultVariation");
+        var result = client.GetBanditAction("unknownflag", subject, actions, "defaultVariation");
         Multiple(() =>
         {
             That(result, Is.Not.Null);
@@ -109,14 +116,14 @@ public class BanditClientTest
     }
 
     [Test]
-    public void ShouldReturnDefaultForNonBanditFlag()
+    public void ShouldReturnVariationForNonBanditFlag()
     {
         var client = CreateClient();
-        var result = client.GetBanditAction("a_flag", _subject, new Dictionary<string, ContextAttributes>(), "default_variation");
+        var result = client.GetBanditAction("non_bandit_flag", subject, new Dictionary<string, ContextAttributes>(), "defaultVariation");
         Multiple(() =>
         {
             That(result, Is.Not.Null);
-            That(result.Variation, Is.EqualTo("default_variation"));
+            That(result.Variation, Is.EqualTo("control"));
             That(result.Action, Is.Null);
         });
     }
@@ -142,7 +149,7 @@ public class BanditClientTest
         var client = CreateClient(mockLogger.Object);
 
         var subjectKey = "subject_key";
-        var defaultSubjectAttributes = _subject.AsDict();
+        var defaultSubjectAttributes = subject.AsDict();
         var actions = new Dictionary<string, ContextAttributes>()
         {
             ["adidas"] = new ContextAttributes(
@@ -159,11 +166,11 @@ public class BanditClientTest
             }
         };
 
-        var defaultVariation = "default_variation";
+        var defaultVariation = "defaultVariation";
 
 
         // Act
-        var result = client.GetBanditAction("banner_bandit_flag_uk_only", _subject, actions, defaultVariation);
+        var result = client.GetBanditAction("banner_bandit_flag_uk_only", subject, actions, defaultVariation);
 
         Multiple(() =>
         {
@@ -230,14 +237,14 @@ public class BanditClientTest
         var client = CreateClient(mockLogger.Object);
 
         var subjectKey = "subject_key";
-        var defaultSubjectAttributes = _subject.AsDict();
+        var defaultSubjectAttributes = subject.AsDict();
         var actions = new string[] { "adidas", "nike", "Reebok" };
 
-        var defaultVariation = "default_variation";
+        var defaultVariation = "defaultVariation";
 
 
         // Act
-        var result = client.GetBanditAction("banner_bandit_flag_uk_only", _subject, actions, defaultVariation);
+        var result = client.GetBanditAction("banner_bandit_flag_uk_only", subject, actions, defaultVariation);
 
         Multiple(() =>
         {
@@ -296,30 +303,29 @@ public class BanditClientTest
     }
 
     [Test]
-    public void ShouldReturnDefaultForNoActions()
+    public void ShouldReturnVariationForNoActions()
     {
-
         var mockLogger = new Mock<IAssignmentLogger>();
         var client = CreateClient(mockLogger.Object);
 
-        var result = client.GetBanditAction("banner_bandit_flag", _subject, new Dictionary<string, ContextAttributes>(), "defaultValue");
+        var result = client.GetBanditAction("banner_bandit_flag", subject, new Dictionary<string, ContextAttributes>(), "defaultValue");
         Multiple(() =>
         {
             That(result, Is.Not.Null);
-            That(result.Variation, Is.EqualTo("defaultValue"));
+            That(result.Variation, Is.EqualTo("banner_bandit"));
             That(result.Action, Is.Null);
             That(mockLogger.Invocations, Is.Empty);
         });
     }
 
     [Test]
-    public void ShouldReturnVariationForNonBandit()
+    public void ShouldReturnNonBanditVariation()
     {
         var mockLogger = new Mock<IAssignmentLogger>();
         mockLogger.Setup(mock => mock.LogAssignment(It.IsAny<AssignmentLogData>()));
         var client = CreateClient(mockLogger.Object);
 
-        var result = client.GetBanditAction("non_bandit_flag", _subject, new Dictionary<string, ContextAttributes>(), "defaultValue");
+        var result = client.GetBanditAction("banner_bandit_flag_uk_only", americanSubject, new Dictionary<string, ContextAttributes>(), "defaultValue");
 
         Multiple(() =>
         {
