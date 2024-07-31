@@ -1,6 +1,5 @@
 using eppo_sdk.dto;
 using eppo_sdk.dto.bandit;
-using eppo_sdk.exception;
 using eppo_sdk.http;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -99,11 +98,19 @@ public class ConfigurationStore : IConfigurationStore
     public void LoadConfiguration()
     {
         FlagConfigurationResponse flagConfigurationResponse = FetchFlags();
-        BanditModelResponse banditModels = FetchBandits();
+
+        // Only fetch bandit models if there are bandits referenced by flags.
+        IEnumerable<Bandit> banditModelList = Array.Empty<Bandit>();
+        if (flagConfigurationResponse.Bandits?.Count > 0)
+        {
+            BanditModelResponse banditModels = FetchBandits();
+            banditModelList = banditModels.Bandits?.ToList().Select(kvp => kvp.Value) ?? Array.Empty<Bandit>();
+        }
+
         SetConfiguration(
             flagConfigurationResponse.Flags.ToList().Select(kvp => kvp.Value),
             flagConfigurationResponse.Bandits,
-            banditModels.Bandits?.ToList().Select(kvp => kvp.Value));
+            banditModelList);
 
     }
     public void SetConfiguration(IEnumerable<Flag> flags, BanditFlags? banditFlags, IEnumerable<Bandit>? bandits)

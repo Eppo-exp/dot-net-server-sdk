@@ -5,6 +5,7 @@ using eppo_sdk.helpers;
 using eppo_sdk.http;
 using eppo_sdk.store;
 using Moq;
+using NUnit.Framework.Internal;
 using static NUnit.Framework.Assert;
 
 
@@ -25,6 +26,44 @@ public class ConfigurationStoreTest
     [Test]
     public void ShouldStoreAndGetBanditFlags()
     {
+        var banditFlags = new BanditFlags()
+        {
+            ["banditKey"] = new BanditVariation[] { new("banditKey", "flagKey", "variationKey", "variationValue")
+        }
+        };
+        var response = new FlagConfigurationResponse()
+        {
+            Bandits = banditFlags,
+            Flags = new Dictionary<string, Flag>()
+        };
+        var banditResponse = new BanditModelResponse()
+        {
+            Bandits = new Dictionary<string, Bandit>()
+            {
+                ["banditKey"] = new Bandit("banditKey", "falcon", DateTime.Now, "v123", new ModelData()
+                {
+                    Coefficients = new Dictionary<string, ActionCoefficients>()
+                }),
+            }
+        };
+
+        var mockRequester = new Mock<IConfigurationRequester>();
+        mockRequester.Setup(m => m.FetchFlagConfiguration()).Returns(response);
+        mockRequester.Setup(m => m.FetchBanditModels()).Returns(banditResponse);
+
+        var store = CreateConfigurationStore(mockRequester.Object);
+        store.LoadConfiguration();
+        Assert.Multiple(() =>
+        {
+            Assert.That(store.GetBanditFlags(), Is.EqualTo(banditFlags));
+            Assert.That(store.TryGetBandit("banditKey", out Bandit? bandit), Is.True);
+            Assert.That(bandit, Is.Not.Null);
+        });
+    }
+
+    [Test]
+    public void ShouldOnlyGetBanditModelsIfReferenced()
+    {
         var banditFlags = new BanditFlags();
         var response = new FlagConfigurationResponse()
         {
@@ -43,7 +82,13 @@ public class ConfigurationStoreTest
         var store = CreateConfigurationStore(mockRequester.Object);
         store.LoadConfiguration();
 
-        Assert.That(store.GetBanditFlags(), Is.EqualTo(banditFlags));
+        Assert.Multiple(() =>
+        {
+            Assert.That(store.GetBanditFlags(), Is.EqualTo(banditFlags));
+            Assert.That(store.TryGetBandit("banditKey", out Bandit? bandit), Is.False);
+            Assert.That(bandit, Is.Null);
+        });
+        mockRequester.Verify(m => m.FetchBanditModels(), Times.Never());
     }
 
     [Test]
@@ -122,7 +167,7 @@ public class ConfigurationStoreTest
         AssertHasFlag(store, "flag1");
         AssertHasFlag(store, "flag3");
         AssertHasFlag(store, "flag2", false);
-    
+
 
         store.SetConfiguration(Array.Empty<Flag>(), null, null);
 
