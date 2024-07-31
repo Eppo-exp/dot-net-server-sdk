@@ -49,8 +49,8 @@ public class ConfigurationStoreTest
 
         var mockRequester = new Mock<IConfigurationRequester>();
 
-        mockRequester.Setup(m => m.FetchFlagConfiguration(It.IsAny<string>())).Returns(new VersionedResource<FlagConfigurationResponse>(response, "ETAG"));
-        mockRequester.Setup(m => m.FetchBanditModels()).Returns(new VersionedResource<BanditModelResponse>(banditResponse));
+        mockRequester.Setup(m => m.FetchFlagConfiguration(It.IsAny<string>())).Returns(new VersionedResourceResponse<FlagConfigurationResponse>(response, "ETAG"));
+        mockRequester.Setup(m => m.FetchBanditModels()).Returns(new VersionedResourceResponse<BanditModelResponse>(banditResponse));
         
         var store = CreateConfigurationStore(mockRequester.Object);
         store.LoadConfiguration();
@@ -78,8 +78,8 @@ public class ConfigurationStoreTest
 
         var mockRequester = new Mock<IConfigurationRequester>();
         mockRequester.Setup(m => m.FetchFlagConfiguration(It.IsAny<string>())).Returns(
-            new VersionedResource<FlagConfigurationResponse>(response));
-        mockRequester.Setup(m => m.FetchBanditModels()).Returns(new VersionedResource<BanditModelResponse>(banditResponse));
+            new VersionedResourceResponse<FlagConfigurationResponse>(response));
+        mockRequester.Setup(m => m.FetchBanditModels()).Returns(new VersionedResourceResponse<BanditModelResponse>(banditResponse));
 
         var store = CreateConfigurationStore(mockRequester.Object);
         store.LoadConfiguration();
@@ -108,8 +108,8 @@ public class ConfigurationStoreTest
         };
 
         var mockRequester = new Mock<IConfigurationRequester>();
-        mockRequester.Setup(m => m.FetchFlagConfiguration(It.IsAny<string>())).Returns(new VersionedResource<FlagConfigurationResponse>(response, "ETAG"));
-        mockRequester.Setup(m => m.FetchBanditModels()).Returns(new VersionedResource<BanditModelResponse>(banditResponse));
+        mockRequester.Setup(m => m.FetchFlagConfiguration(It.IsAny<string>())).Returns(new VersionedResourceResponse<FlagConfigurationResponse>(response, "ETAG"));
+        mockRequester.Setup(m => m.FetchBanditModels()).Returns(new VersionedResourceResponse<BanditModelResponse>(banditResponse));
 
         var store = CreateConfigurationStore(mockRequester.Object);
         store.LoadConfiguration();
@@ -142,7 +142,7 @@ public class ConfigurationStoreTest
         };
 
         var mockRequester = new Mock<IConfigurationRequester>();
-        mockRequester.Setup(m => m.FetchFlagConfiguration(It.IsAny<string>())).Returns(new VersionedResource<FlagConfigurationResponse>(response, "ETAG", isModified: false));
+        mockRequester.Setup(m => m.FetchFlagConfiguration(It.IsAny<string>())).Returns(new VersionedResourceResponse<FlagConfigurationResponse>(response, "ETAG", isModified: false));
 
         var store = new ConfigurationStore(mockRequester.Object, configCache, modelCache, metadataCache);
 
@@ -181,8 +181,8 @@ public class ConfigurationStoreTest
         };
 
         var mockRequester = new Mock<IConfigurationRequester>();
-        mockRequester.Setup(m => m.FetchFlagConfiguration(It.IsAny<string>())).Returns(new VersionedResource<FlagConfigurationResponse>(response));
-        mockRequester.Setup(m => m.FetchBanditModels()).Returns(new VersionedResource<BanditModelResponse>(banditResponse));
+        mockRequester.Setup(m => m.FetchFlagConfiguration(It.IsAny<string>())).Returns(new VersionedResourceResponse<FlagConfigurationResponse>(response));
+        mockRequester.Setup(m => m.FetchBanditModels()).Returns(new VersionedResourceResponse<BanditModelResponse>(banditResponse));
 
         var store = CreateConfigurationStore(mockRequester.Object);
         store.LoadConfiguration();
@@ -191,7 +191,7 @@ public class ConfigurationStoreTest
 
         // Now, reload the config with new BanditFlags.
         mockRequester.Setup(m => m.FetchFlagConfiguration(It.IsAny<string>())).Returns(
-            new VersionedResource<FlagConfigurationResponse>(
+            new VersionedResourceResponse<FlagConfigurationResponse>(
                 new FlagConfigurationResponse()
                 {
                     Bandits = banditFlags2,

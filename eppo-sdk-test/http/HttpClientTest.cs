@@ -75,7 +75,7 @@ public class HttpClientTest
         {
             That(ufcResponse, Is.Not.Null);
             That(ufcResponse.IsModified, Is.True);
-            That(ufcResponse.ETag, Is.EqualTo("CURRENT"));
+            That(ufcResponse.VersionIdentifier, Is.EqualTo("CURRENT"));
             That(ufcResponse.Resource, Is.Not.Null);
         });
     }
@@ -86,18 +86,18 @@ public class HttpClientTest
 
         var ufcResponse = Client.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT);
 
-        var shouldBeUnmodifiedResponse = Client.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, ufcResponse.ETag);
+        var shouldBeUnmodifiedResponse = Client.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, ufcResponse.VersionIdentifier);
 
         Assert.Multiple(() =>
         {
             That(ufcResponse, Is.Not.Null);
             That(ufcResponse.IsModified, Is.True);
-            That(ufcResponse.ETag, Is.EqualTo("CURRENT"));
+            That(ufcResponse.VersionIdentifier, Is.EqualTo("CURRENT"));
             That(ufcResponse.Resource, Is.Not.Null);
     
             That(shouldBeUnmodifiedResponse, Is.Not.Null);
             That(shouldBeUnmodifiedResponse.IsModified, Is.False);
-            That(shouldBeUnmodifiedResponse.ETag, Is.EqualTo("CURRENT"));
+            That(shouldBeUnmodifiedResponse.VersionIdentifier, Is.EqualTo("CURRENT"));
             That(shouldBeUnmodifiedResponse.Resource, Is.Null);
         });
     }
