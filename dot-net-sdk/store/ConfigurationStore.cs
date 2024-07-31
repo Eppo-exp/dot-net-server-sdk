@@ -1,6 +1,5 @@
 using eppo_sdk.dto;
 using eppo_sdk.dto.bandit;
-using eppo_sdk.exception;
 using eppo_sdk.http;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -107,14 +106,21 @@ public class ConfigurationStore : IConfigurationStore
         {
             // Fetch methods throw if resource is null.
             var flags = flagConfigurationResponse.Resource!;
-            var banditModels = FetchBandits().Resource!;
+            IEnumerable<Bandit> banditModelList = Array.Empty<Bandit>();
+            if (flags.Bandits?.Count > 0)
+            {
+                BanditModelResponse banditModels = FetchBandits().Resource!;
+                banditModelList = banditModels.Bandits?.ToList().Select(kvp => kvp.Value) ?? Array.Empty<Bandit>();
+            }
 
             SetConfiguration(
                 flags.Flags.ToList().Select(kvp => kvp.Value),
                 flags.Bandits,
-                banditModels.Bandits?.ToList().Select(kvp => kvp.Value),
+                banditModelList,
                 flagConfigurationResponse.ETag);
-        } else {
+        }
+        else
+        {
             // Write the most recent ETag
             cacheLock.EnterWriteLock();
             _metadataCache.Set(FLAG_RESOURCE_ETAG, flagConfigurationResponse.ETag, new MemoryCacheEntryOptions().SetSize(1));
