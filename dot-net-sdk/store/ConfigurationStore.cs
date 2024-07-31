@@ -8,10 +8,11 @@ namespace eppo_sdk.store;
 public class ConfigurationStore : IConfigurationStore
 {
     private readonly MemoryCache _flagConfigurationCache;
-    private readonly MemoryCache _banditFlagCache;
+    private readonly MemoryCache _metadataCache;
     private readonly MemoryCache _banditModelCache;
     private readonly IConfigurationRequester _requester;
-    private const string BANDIT_FLAGS_KEY = "bandit_flags";
+    private const string BANDIT_FLAGS_KEY = "banditFlags";
+    private const string KEY_FLAG_CONFIG_VERSION = "ufcVersion";
 
     private static readonly object Baton = new();
     private readonly ReaderWriterLockSlim cacheLock = new();
@@ -19,12 +20,12 @@ public class ConfigurationStore : IConfigurationStore
     public ConfigurationStore(IConfigurationRequester requester,
                               MemoryCache flagConfigurationCache,
                               MemoryCache banditModelCache,
-                              MemoryCache banditFlagCache)
+                              MemoryCache metadataCache)
     {
         _requester = requester;
         _flagConfigurationCache = flagConfigurationCache;
         _banditModelCache = banditModelCache;
-        _banditFlagCache = banditFlagCache;
+        _metadataCache = metadataCache;
     }
 
     private void SetFlag(string key, Flag flag)
@@ -42,7 +43,7 @@ public class ConfigurationStore : IConfigurationStore
 
     private void SetBanditFlags(BanditFlags banditFlags)
     {
-        _banditFlagCache.Set(BANDIT_FLAGS_KEY, banditFlags, new MemoryCacheEntryOptions().SetSize(1));
+        _metadataCache.Set(BANDIT_FLAGS_KEY, banditFlags, new MemoryCacheEntryOptions().SetSize(1));
     }
 
     public BanditFlags GetBanditFlags()
@@ -50,7 +51,7 @@ public class ConfigurationStore : IConfigurationStore
         cacheLock.EnterReadLock();
         try
         {
-            if (_banditFlagCache.TryGetValue(BANDIT_FLAGS_KEY, out BanditFlags? banditFlags) && banditFlags != null)
+            if (_metadataCache.TryGetValue(BANDIT_FLAGS_KEY, out BanditFlags? banditFlags) && banditFlags != null)
             {
                 return banditFlags;
             }
@@ -93,27 +94,46 @@ public class ConfigurationStore : IConfigurationStore
     {
         _flagConfigurationCache.Clear();
         _banditModelCache.Clear();
-        _banditFlagCache.Clear();
+        _metadataCache.Clear();
     }
     public void LoadConfiguration()
     {
-        FlagConfigurationResponse flagConfigurationResponse = FetchFlags();
-
-        // Only fetch bandit models if there are bandits referenced by flags.
-        IEnumerable<Bandit> banditModelList = Array.Empty<Bandit>();
-        if (flagConfigurationResponse.Bandits?.Count > 0)
+        var flagConfigurationResponse = FetchFlags();
+        if (flagConfigurationResponse.IsModified)
         {
-            BanditModelResponse banditModels = FetchBandits();
-            banditModelList = banditModels.Bandits?.ToList().Select(kvp => kvp.Value) ?? Array.Empty<Bandit>();
+            // Fetch methods throw if resource is null.
+            var flags = flagConfigurationResponse.Resource!;
+            IEnumerable<Bandit> banditModelList = Array.Empty<Bandit>();
+            if (flags.Bandits?.Count > 0)
+            {
+                BanditModelResponse banditModels = FetchBandits().Resource!;
+                banditModelList = banditModels.Bandits?.ToList().Select(kvp => kvp.Value) ?? Array.Empty<Bandit>();
+            }
+
+            SetConfiguration(
+                flags.Flags.ToList().Select(kvp => kvp.Value),
+                flags.Bandits,
+                banditModelList,
+                flagConfigurationResponse.VersionIdentifier);
         }
-
-        SetConfiguration(
-            flagConfigurationResponse.Flags.ToList().Select(kvp => kvp.Value),
-            flagConfigurationResponse.Bandits,
-            banditModelList);
-
+        else
+        {
+            // Write the most recent flag config version to cache.
+            cacheLock.EnterWriteLock();
+            _metadataCache.Set(KEY_FLAG_CONFIG_VERSION, flagConfigurationResponse.VersionIdentifier, new MemoryCacheEntryOptions().SetSize(1));
+            cacheLock.ExitWriteLock();
+        }
     }
-    public void SetConfiguration(IEnumerable<Flag> flags, BanditFlags? banditFlags, IEnumerable<Bandit>? bandits)
+
+    private string? GetLastFlagVersion()
+    {
+        cacheLock.EnterReadLock();
+        var lastVersion = _metadataCache.Get<string>(KEY_FLAG_CONFIG_VERSION);
+        cacheLock.ExitReadLock();
+        return lastVersion;
+    }
+
+    public void SetConfiguration(IEnumerable<Flag> flags, BanditFlags? banditFlags, IEnumerable<Bandit>? bandits, string? lastVersion = null)
     {
         cacheLock.EnterWriteLock();
         try
@@ -134,6 +154,7 @@ public class ConfigurationStore : IConfigurationStore
                     SetBanditModel(bandit);
                 }
             }
+            _metadataCache.Set(KEY_FLAG_CONFIG_VERSION, lastVersion, new MemoryCacheEntryOptions().SetSize(1));
         }
         finally
         {
@@ -141,24 +162,40 @@ public class ConfigurationStore : IConfigurationStore
         }
     }
 
-    private FlagConfigurationResponse FetchFlags()
+    private VersionedResourceResponse<FlagConfigurationResponse> FetchFlags()
     {
-        FlagConfigurationResponse? response = this._requester.FetchFlagConfiguration();
-        if (response != null)
+        // The response from `ConfigurationRequester` is versioned so we can avoid extra work and network bytes
+        // by keeping track of the version we have loaded.
+        string? lastConfigVersion = GetLastFlagVersion();
+        try
         {
+            var response = _requester.FetchFlagConfiguration(lastConfigVersion);
+            if (response.IsModified && response.Resource == null)
+            {
+                // Invalid and unexpected state.
+                throw new SystemException("Flag configuration not present in response");
+            }
             return response;
         }
-
-        throw new SystemException("Unable to fetch flag configuration");
+        catch (Exception e)
+        {
+            throw new SystemException("Unable to fetch flag configuration" + e.Message);
+        }
     }
-    private BanditModelResponse FetchBandits()
+    private VersionedResourceResponse<BanditModelResponse> FetchBandits()
     {
-        BanditModelResponse? response = this._requester.FetchBanditModels();
-        if (response != null)
+        try
         {
+            var response = _requester.FetchBanditModels();
+            if (response.Resource == null)
+            {
+                throw new SystemException("Bandit configuration not present in response");
+            }
             return response;
         }
-
-        throw new SystemException("Unable to fetch bandit models");
+        catch (Exception e)
+        {
+            throw new SystemException("Unable to fetch bandit configuration" + e.Message);
+        }
     }
 }
