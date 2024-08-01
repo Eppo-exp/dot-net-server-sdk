@@ -8,7 +8,7 @@ using Moq;
 using NUnit.Framework.Internal;
 
 
-namespace eppo_sdk_test.store;
+namespace eppo_sdk_test.http;
 
 public class ConfigurationRequesterTest
 {
