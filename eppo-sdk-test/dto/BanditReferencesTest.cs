@@ -17,8 +17,9 @@ public class BanditReferencesTest
                 "v123",
                 new BanditFlagVariation[] { new("variation", "banditFlagKey", "allocationKey", "variation", "variation") }),
             ["banditKey"] = new BanditReference(
-                "v123",
+                "v456",
                 new BanditFlagVariation[] { new("banditKey", "flagKey", "allocationKey", "variationKey", "variationValue") }),
+            ["banditWithNoVariations"] = new BanditReference( "v999", Array.Empty<BanditFlagVariation>())
         };
     }
     [Test]
@@ -61,5 +62,17 @@ public class BanditReferencesTest
             That(banditRefs.TryGetBanditKey("banditFlagKey", "variation", out string? key2), Is.True);
             That(key2, Is.EqualTo("variation"));
         });
+    }
+
+
+    [Test]
+    public void ShouldParseActiveReferencedModels()
+    {
+        var expected = new Dictionary<string, string> {
+            ["variation"] = "v123",
+            ["banditKey"] = "v456"
+        };
+        var actual = banditRefs.GetBanditModelVersions();
+        Assert.That(actual, Is.EquivalentTo(expected));
     }
 }
