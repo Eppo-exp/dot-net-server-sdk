@@ -53,27 +53,27 @@ public class ConfigurationStoreTest
         var initialBandits = new Bandit[] { bandit1, bandit2 };
         var newBandits = new Bandit[] { bandit1, bandit3 };
 
-        var initialBanditFlags = new BanditFlags()
+        var initialDataDictionary = new Dictionary<string, string>
         {
-            ["bandit1"] = new BanditVariation[] { new("bandit1", "flag1", "bandit1", "bandit1") },
-            ["bandit2"] = new BanditVariation[] { new("bandit2", "flag2", "bandit2", "bandit2") }
+            ["foo"] = "bar",
+            ["bar"] = "baz"
         };
-        var newBanditFlags = new BanditFlags()
+        var newDataDictionary = new Dictionary<string, string>
         {
-            ["bandit1"] = new BanditVariation[] { new("bandit1", "flag1", "bandit1", "bandit1") },
-            ["bandit3"] = new BanditVariation[] { new("bandit3", "flag3", "bandit3", "bandit3") }
+            ["bandit1"] = "true",
+            ["bandit3"] = "false"
         };
 
         var initialMetadata = new Dictionary<string, object>()
         {
             ["UFC_VERSION"] = "UFCVersion1",
-            ["BANDIT_VARIATIONS"] = initialBanditFlags
+            ["DICT_OBJECT"] = initialDataDictionary
         };
 
         var newlMetadata = new Dictionary<string, object>()
         {
             ["UFC_VERSION"] = "UFCVersion2",
-            ["BANDIT_VARIATIONS"] = newBanditFlags
+            ["DICT_OBJECT"] = newDataDictionary
         };
 
         store.SetConfiguration(initialFlags, initialBandits, initialMetadata);
@@ -90,12 +90,12 @@ public class ConfigurationStoreTest
             Assert.That(store.TryGetMetadata("UFC_VERSION", out string? data), Is.True);
             Assert.That(data, Is.EqualTo("UFCVersion1"));
 
-            Assert.That(store.TryGetMetadata("BANDIT_VARIATIONS", out BanditFlags? banditFlags), Is.True);
-            Assert.That(banditFlags, Is.Not.Null);
-            Assert.That(banditFlags?["bandit1"], Is.Not.Null);
-            Assert.That(banditFlags?["bandit1"], Has.Length.EqualTo(1));
-            Assert.That(banditFlags?["bandit2"], Is.Not.Null);
-            Assert.That(banditFlags?["bandit2"], Has.Length.EqualTo(1));
+            Assert.That(store.TryGetMetadata("DICT_OBJECT", out Dictionary<string, string>? storedDict), Is.True);
+            Assert.That(storedDict, Is.Not.Null);
+            Assert.That(storedDict?["foo"], Is.Not.Null);
+            Assert.That(storedDict?["foo"], Is.EqualTo("bar"));
+            Assert.That(storedDict?["bar"], Is.Not.Null);
+            Assert.That(storedDict?["bar"], Is.EqualTo("baz"));
         });
 
         store.SetConfiguration(newFlags, newBandits, newlMetadata);
@@ -112,12 +112,12 @@ public class ConfigurationStoreTest
             Assert.That(store.TryGetMetadata("UFC_VERSION", out string? data), Is.True);
             Assert.That(data, Is.EqualTo("UFCVersion2"));
 
-            Assert.That(store.TryGetMetadata("BANDIT_VARIATIONS", out BanditFlags? banditFlags), Is.True);
-            Assert.That(banditFlags, Is.Not.Null);
-            Assert.That(banditFlags?["bandit1"], Is.Not.Null);
-            Assert.That(banditFlags?["bandit1"], Has.Length.EqualTo(1));
-            Assert.That(banditFlags?["bandit3"], Is.Not.Null);
-            Assert.That(banditFlags?["bandit3"], Has.Length.EqualTo(1));
+            Assert.That(store.TryGetMetadata("DICT_OBJECT", out Dictionary<string, string>? storedDict), Is.True);
+            Assert.That(storedDict, Is.Not.Null);
+            Assert.That(storedDict?["bandit1"], Is.Not.Null);
+            Assert.That(storedDict?["bandit1"], Is.EqualTo("true"));
+            Assert.That(storedDict?["bandit3"], Is.Not.Null);
+            Assert.That(storedDict?["bandit3"], Is.EqualTo("false"));
         });
 
         store.SetConfiguration(Array.Empty<Flag>(), Array.Empty<Bandit>(), new Dictionary<string, object>());
@@ -132,8 +132,8 @@ public class ConfigurationStoreTest
         Assert.Multiple(()=> {
             Assert.That(store.TryGetMetadata("UFC_VERSION", out string? data), Is.False);
             Assert.That(data, Is.Null);
-            Assert.That(store.TryGetMetadata("BANDIT_VARIATIONS", out string? banditFlags), Is.False);
-            Assert.That(banditFlags, Is.Null);
+            Assert.That(store.TryGetMetadata("DICT_OBJECT", out string? storedDict), Is.False);
+            Assert.That(storedDict, Is.Null);
         });
         
     }

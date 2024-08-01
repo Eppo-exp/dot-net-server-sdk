@@ -85,7 +85,7 @@ public class ConfigurationRequesterTest
         };
         var response = new FlagConfigurationResponse()
         {
-            Bandits = null,
+            BanditReferences = null,
             Flags = flags
         };
 
@@ -164,7 +164,7 @@ public class ConfigurationRequesterTest
 
         var response = new FlagConfigurationResponse()
         {
-            Bandits = null,
+            BanditReferences = null,
             Flags = new()
         };
 
@@ -192,14 +192,14 @@ public class ConfigurationRequesterTest
         // Response with 3 flags
         var response = new FlagConfigurationResponse()
         {
-            Bandits = null,
+            BanditReferences = null,
             Flags = BasicFlags(flagKeys)
         };
 
         // Response with 0 flags
         var emptyResponse = new FlagConfigurationResponse()
         {
-            Bandits = null,
+            BanditReferences = null,
             Flags = new Dictionary<string, Flag> { }
         };
 

@@ -11,7 +11,6 @@ public interface IConfigurationRequester
     void LoadConfiguration();
     bool TryGetBandit(string key, out Bandit? bandit);
     bool TryGetFlag(string key, out Flag? flag);
-    public BanditFlags GetBanditFlags();
     public BanditReferences GetBanditReferences();
 }
 
@@ -33,11 +32,6 @@ public class ConfigurationRequester : IConfigurationRequester
     public bool TryGetBandit(string key, out Bandit? bandit) => configurationStore.TryGetBandit(key, out bandit);
 
     public bool TryGetFlag(string key, out Flag? flag) => configurationStore.TryGetFlag(key, out flag);
-
-    public BanditFlags GetBanditFlags()
-    {
-        throw new InvalidOperationException("Unimplemented");
-    }
 
     public BanditReferences GetBanditReferences()
     {
