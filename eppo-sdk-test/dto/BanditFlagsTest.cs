@@ -1,8 +1,5 @@
-
 using eppo_sdk.dto;
 using eppo_sdk.dto.bandit;
-using GraphQL.Introspection;
-using NLog.Targets.Wrappers;
 using static NUnit.Framework.Assert;
 
 namespace eppo_sdk_test.dto;

@@ -9,7 +9,7 @@ namespace eppo_sdk.dto;
 public interface IBanditRefenceIndexer
 {
     public bool TryGetBanditKey(string flagKey, string variationValue, out string? banditKey);
-    public bool HasBandits();
+    public bool HasBanditReferences();
     public IDictionary<string, string> GetBanditModelVersions();
 }
 
@@ -33,7 +33,7 @@ public class BanditReferences : Dictionary<string, BanditReference>, IBanditRefe
         return false;
     }
 
-    public bool HasBandits()
+    public bool HasBanditReferences()
     {
         return this.Any(BanditHasVariations);
     }
