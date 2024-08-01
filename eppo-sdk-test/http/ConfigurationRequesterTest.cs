@@ -67,8 +67,10 @@ public class ConfigurationRequesterTest
 
         var mockAPI = new Mock<EppoHttpClient>("apiKey", "sdkName", "sdkVersion", "baseUrl");
 
-        mockAPI.Setup(m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>())).Returns(new VersionedResourceResponse<FlagConfigurationResponse>(response, "ETAG"));
-        mockAPI.Setup(m => m.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT, It.IsAny<string>())).Returns(new VersionedResourceResponse<BanditModelResponse>(banditResponse, "ETAG"));
+        mockAPI.Setup(m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>()))
+            .Returns(new VersionedResourceResponse<FlagConfigurationResponse>(response, "ETAG"));
+        mockAPI.Setup(m => m.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT, It.IsAny<string>()))
+            .Returns(new VersionedResourceResponse<BanditModelResponse>(banditResponse, "ETAG"));
 
         return mockAPI;
     }
@@ -95,8 +97,10 @@ public class ConfigurationRequesterTest
 
         var mockAPI = new Mock<EppoHttpClient>("apiKey", "sdkName", "sdkVersion", "baseUrl");
 
-        mockAPI.Setup(m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>())).Returns(new VersionedResourceResponse<FlagConfigurationResponse>(response, lastVersion));
-        mockAPI.Setup(m => m.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT, It.IsAny<string>())).Returns(new VersionedResourceResponse<BanditModelResponse>(banditResponse, lastVersion));
+        mockAPI.Setup(m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>()))
+            .Returns(new VersionedResourceResponse<FlagConfigurationResponse>(response, lastVersion));
+        mockAPI.Setup(m => m.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT, It.IsAny<string>()))
+            .Returns(new VersionedResourceResponse<BanditModelResponse>(banditResponse, lastVersion));
 
         return mockAPI;
     }
@@ -197,14 +201,12 @@ public class ConfigurationRequesterTest
             Flags = new Dictionary<string, Flag> { }
         };
 
-        mockAPI.Setup(
-            m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsNotIn<string>(new string[] { "version1" })))
+        mockAPI.Setup(m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsNotIn<string>(new string[] { "version1" })))
             .Returns(new VersionedResourceResponse<FlagConfigurationResponse>(response, "version1"));
 
         // Return an empty response with `isModified` = false. If the `ConfigurationRequester` does not heed `isModified`, 
         // the flags in `flagKeys` will be not present.
-        mockAPI.Setup(
-            m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, "version1"))
+        mockAPI.Setup(m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, "version1"))
             .Returns(new VersionedResourceResponse<FlagConfigurationResponse>(emptyResponse, "version1", isModified: false));
 
         var store = CreateConfigurationStore();
@@ -293,15 +295,15 @@ public class ConfigurationRequesterTest
 
         var banditResponse1 = new BanditModelResponse()
         {
-            Bandits = bandits1.ToDictionary(b=>b, b=> BasicBandit(b))
+            Bandits = bandits1.ToDictionary(b => b, b => BasicBandit(b))
         };
         var banditResponse2 = new BanditModelResponse()
         {
-            Bandits = bandits2.ToDictionary(b=>b, b=> BasicBandit(b))
+            Bandits = bandits2.ToDictionary(b => b, b => BasicBandit(b))
         };
         var banditResponse3 = new BanditModelResponse()
         {
-            Bandits = bandits3.ToDictionary(b=>b, b=> BasicBandit(b))
+            Bandits = bandits3.ToDictionary(b => b, b => BasicBandit(b))
         };
 
 
@@ -315,18 +317,18 @@ public class ConfigurationRequesterTest
             .Returns(new VersionedResourceResponse<BanditModelResponse>(banditResponse1, "version1"))
             .Returns(new VersionedResourceResponse<BanditModelResponse>(banditResponse2, "version2"))
             .Returns(new VersionedResourceResponse<BanditModelResponse>(banditResponse3, "version3"));
-            
+
         var store = CreateConfigurationStore();
         var requester = new ConfigurationRequester(mockAPI.Object, store);
 
         // First load = config sets #1
         requester.LoadConfiguration();
         AssertHasConfig(requester, flags1, banditFlags1, bandits1);
-        
+
         // second load = config sets #2
         requester.LoadConfiguration();
         AssertHasConfig(requester, flags2, banditFlags2, bandits2);
-        
+
         // third load = config sets #3
         requester.LoadConfiguration();
         AssertHasConfig(requester, flags3, banditFlags3, bandits3);
