@@ -45,15 +45,17 @@ public class ConfigurationRequesterTest
         {
             ["flag1"] = BasicFlag("flag1", new string[] { "control", "bandit1" })
         };
-        var banditFlags = new BanditFlags()
+        var banditReferences = new BanditReferences()
         {
-            ["bandit1"] = new BanditVariation[] {
-                 new("bandit1", "flag1", "bandit1", "bandit1")
-            }
+            ["bandit1"] = new BanditReference("v123",
+                new BanditFlagVariation[] {
+                    new("bandit1", "flag1", "allocation", "bandit1", "bandit1")
+                }
+            )
         };
         var response = new FlagConfigurationResponse()
         {
-            Bandits = banditFlags,
+            BanditReferences = banditReferences,
             Flags = flags
         };
 
@@ -116,9 +118,9 @@ public class ConfigurationRequesterTest
 
         Assert.Multiple(() =>
         {
-            Assert.That(requester.GetBanditFlags(), Is.Not.Null);
-            Assert.That(requester.GetBanditFlags(), Has.Count.EqualTo(1));
-            Assert.That(requester.GetBanditFlags().TryGetBanditKey("flag1", "bandit1", out string? banditKey), Is.True);
+            Assert.That(requester.GetBanditReferences(), Is.Not.Null);
+            Assert.That(requester.GetBanditReferences(), Has.Count.EqualTo(1));
+            Assert.That(requester.GetBanditReferences().TryGetBanditKey("flag1", "bandit1", out string? banditKey), Is.True);
             Assert.That(banditKey, Is.EqualTo("bandit1"));
 
             Assert.That(requester.TryGetFlag("flag1", out Flag? flag), Is.True);
@@ -141,8 +143,8 @@ public class ConfigurationRequesterTest
 
         Assert.Multiple(() =>
         {
-            Assert.That(requester.GetBanditFlags(), Is.Not.Null);
-            Assert.That(requester.GetBanditFlags(), Has.Count.EqualTo(0));
+            Assert.That(requester.GetBanditReferences(), Is.Not.Null);
+            Assert.That(requester.GetBanditReferences(), Has.Count.EqualTo(0));
 
             Assert.That(requester.TryGetFlag("flag1", out Flag? flag), Is.True);
             Assert.That(flag, Is.Not.Null);
@@ -256,6 +258,11 @@ public class ConfigurationRequesterTest
         var flags2 = new string[] { "flag1", "flag3", "flag4" };
         var flags3 = new string[] { "flag5", "flag6" };
 
+        var unchangingBanditVariation = new BanditFlagVariation("unchangingBandit", "flag1", "allocation", "unchangingBandit", "unchangingBandit");
+        var departingBanditVariation = new BanditFlagVariation("departingBandit", "flag2", "allocation", "departingBandit", "departingBandit");
+        var newBanditVariation = new BanditFlagVariation("newBandit", "flag4", "allocation", "newBandit", "newBandit");
+        var newBandit2Variation = new BanditFlagVariation("newBandit2", "flag6", "allocation", "newBandit2", "newBandit2");
+
         var banditFlags1 = new BanditFlags()
         {
             ["unchangingBandit"] = new BanditVariation[] { new("unchangingBandit", "flag1", "unchangingBandit", "unchangingBandit") },
@@ -334,7 +341,7 @@ public class ConfigurationRequesterTest
         AssertHasConfig(requester, flags3, banditFlags3, bandits3);
     }
 
-    private static void AssertHasConfig(ConfigurationRequester requester, string[] flagKeys, BanditFlags banditFlags, string[] banditKeys)
+    private static void AssertHasConfig(ConfigurationRequester requester, string[] flagKeys, BanditReferences banditReferences, string[] banditKeys)
     {
         Assert.Multiple(() =>
         {
@@ -344,7 +351,7 @@ public class ConfigurationRequesterTest
                 Assert.That(flag, Is.Not.Null);
                 Assert.That(flag!.Key, Is.EqualTo(flagKey));
             }
-            Assert.That(requester.GetBanditFlags(), Is.EqualTo(banditFlags));
+            Assert.That(requester.GetBanditReferences(), Is.EqualTo(banditReferences));
             foreach (var banditKey in banditKeys)
             {
                 Assert.That(requester.TryGetBandit(banditKey, out Bandit? bandit), Is.True);
