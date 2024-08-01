@@ -8,7 +8,7 @@ using Moq;
 using NUnit.Framework.Internal;
 
 
-namespace eppo_sdk_test.store;
+namespace eppo_sdk_test.http;
 
 public class ConfigurationRequesterTest
 {
@@ -258,25 +258,37 @@ public class ConfigurationRequesterTest
         var flags2 = new string[] { "flag1", "flag3", "flag4" };
         var flags3 = new string[] { "flag5", "flag6" };
 
-        var unchangingBanditVariation = new BanditVariation("unchangingBandit", "flag1", "unchangingBandit", "unchangingBandit");
-        var departingBanditVariation = new BanditVariation("departingBandit", "flag2", "departingBandit", "departingBandit");
-        var newBanditVariation = new BanditVariation("newBandit", "flag4", "newBandit", "newBandit");
-        var newBandit2Variation = new BanditVariation("newBandit2", "flag6", "newBandit2", "newBandit2");
+        var unchangingBanditVariation = new BanditFlagVariation("unchangingBandit", "flag1", "allocation", "unchangingBandit", "unchangingBandit");
+        var departingBanditVariation = new BanditFlagVariation("departingBandit", "flag2", "allocation", "departingBandit", "departingBandit");
+        var newBanditVariation = new BanditFlagVariation("newBandit", "flag4", "allocation", "newBandit", "newBandit");
+        var newBandit2Variation = new BanditFlagVariation("newBandit2", "flag6", "allocation", "newBandit2", "newBandit2");
 
-        var banditFlags1 = new BanditFlags()
+        var banditRefs1 = new BanditReferences()
         {
-            ["unchangingBandit"] = new BanditVariation[] { unchangingBanditVariation },
-            ["departingBandit"] = new BanditVariation[] { departingBanditVariation },
+            ["unchangingBandit"] = new BanditReference(
+                "v123", 
+                new BanditFlagVariation[] { unchangingBanditVariation }),
+            ["departingBandit"] = new BanditReference(
+                "v321", 
+                new BanditFlagVariation[] { departingBanditVariation })
         };
-        var banditFlags2 = new BanditFlags()
+        var banditRefs2 = new BanditReferences()
         {
-            ["unchangingBandit"] = new BanditVariation[] { unchangingBanditVariation },
-            ["newBandit"] = new BanditVariation[] { newBanditVariation },
+            ["unchangingBandit"] = new BanditReference(
+                "v123", 
+                new BanditFlagVariation[] { unchangingBanditVariation }),
+            ["newBandit"] = new BanditReference(
+                "v456", 
+                new BanditFlagVariation[] { newBanditVariation })
         };
-        var banditFlags3 = new BanditFlags()
+        var banditRefs3 = new BanditReferences()
         {
-            ["unchangingBandit"] = new BanditVariation[] { unchangingBanditVariation },
-            ["newBandit2"] = new BanditVariation[] { newBandit2Variation },
+            ["unchangingBandit"] = new BanditReference(
+                "v123", 
+                new BanditFlagVariation[] { unchangingBanditVariation }),
+            ["newBandit2"] = new BanditReference(
+                "v789", 
+                new BanditFlagVariation[] { newBandit2Variation })
         };
 
         var bandits1 = new string[] { "unchangingBandit", "departingBandit" };
@@ -286,17 +298,17 @@ public class ConfigurationRequesterTest
 
         var response1 = new FlagConfigurationResponse()
         {
-            Bandits = banditFlags1,
+            BanditReferences = banditRefs1,
             Flags = BasicFlags(flags1)
         };
         var response2 = new FlagConfigurationResponse()
         {
-            Bandits = banditFlags2,
+            BanditReferences = banditRefs2,
             Flags = BasicFlags(flags2)
         };
         var response3 = new FlagConfigurationResponse()
         {
-            Bandits = banditFlags3,
+            BanditReferences = banditRefs3,
             Flags = BasicFlags(flags3)
         };
 
@@ -330,15 +342,15 @@ public class ConfigurationRequesterTest
 
         // First load = config sets #1
         requester.LoadConfiguration();
-        AssertHasConfig(requester, flags1, banditFlags1, bandits1);
+        AssertHasConfig(requester, flags1, banditRefs1, bandits1);
 
         // second load = config sets #2
         requester.LoadConfiguration();
-        AssertHasConfig(requester, flags2, banditFlags2, bandits2);
+        AssertHasConfig(requester, flags2, banditRefs2, bandits2);
 
         // third load = config sets #3
         requester.LoadConfiguration();
-        AssertHasConfig(requester, flags3, banditFlags3, bandits3);
+        AssertHasConfig(requester, flags3, banditRefs3, bandits3);
     }
 
     private static void AssertHasConfig(ConfigurationRequester requester, string[] flagKeys, BanditReferences banditReferences, string[] banditKeys)
