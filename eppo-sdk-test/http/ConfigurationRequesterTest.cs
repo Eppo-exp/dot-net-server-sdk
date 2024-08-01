@@ -258,25 +258,25 @@ public class ConfigurationRequesterTest
         var flags2 = new string[] { "flag1", "flag3", "flag4" };
         var flags3 = new string[] { "flag5", "flag6" };
 
-        var unchangingBanditVariation = new BanditFlagVariation("unchangingBandit", "flag1", "allocation", "unchangingBandit", "unchangingBandit");
-        var departingBanditVariation = new BanditFlagVariation("departingBandit", "flag2", "allocation", "departingBandit", "departingBandit");
-        var newBanditVariation = new BanditFlagVariation("newBandit", "flag4", "allocation", "newBandit", "newBandit");
-        var newBandit2Variation = new BanditFlagVariation("newBandit2", "flag6", "allocation", "newBandit2", "newBandit2");
+        var unchangingBanditVariation = new BanditVariation("unchangingBandit", "flag1", "unchangingBandit", "unchangingBandit");
+        var departingBanditVariation = new BanditVariation("departingBandit", "flag2", "departingBandit", "departingBandit");
+        var newBanditVariation = new BanditVariation("newBandit", "flag4", "newBandit", "newBandit");
+        var newBandit2Variation = new BanditVariation("newBandit2", "flag6", "newBandit2", "newBandit2");
 
         var banditFlags1 = new BanditFlags()
         {
-            ["unchangingBandit"] = new BanditVariation[] { new("unchangingBandit", "flag1", "unchangingBandit", "unchangingBandit") },
-            ["departingBandit"] = new BanditVariation[] { new("departingBandit", "flag2", "departingBandit", "departingBandit") },
+            ["unchangingBandit"] = new BanditVariation[] { unchangingBanditVariation },
+            ["departingBandit"] = new BanditVariation[] { departingBanditVariation },
         };
         var banditFlags2 = new BanditFlags()
         {
-            ["unchangingBandit"] = new BanditVariation[] { new("unchangingBandit", "flag1", "unchangingBandit", "unchangingBandit") },
-            ["newBandit"] = new BanditVariation[] { new("newBandit", "newBanditFlagKey", "flag4", "newBandit") },
+            ["unchangingBandit"] = new BanditVariation[] { unchangingBanditVariation },
+            ["newBandit"] = new BanditVariation[] { newBanditVariation },
         };
         var banditFlags3 = new BanditFlags()
         {
-            ["unchangingBandit"] = new BanditVariation[] { new("unchangingBandit", "flag5", "unchangingBandit", "unchangingBandit") },
-            ["newBandit2"] = new BanditVariation[] { new("newBandit2", "flag6", "newBandit", "newBandit") },
+            ["unchangingBandit"] = new BanditVariation[] { unchangingBanditVariation },
+            ["newBandit2"] = new BanditVariation[] { newBandit2Variation },
         };
 
         var bandits1 = new string[] { "unchangingBandit", "departingBandit" };
