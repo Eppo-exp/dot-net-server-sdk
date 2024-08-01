@@ -6,7 +6,6 @@ using eppo_sdk.http;
 using eppo_sdk.store;
 using Moq;
 using NUnit.Framework.Internal;
-using static NUnit.Framework.Assert;
 
 
 namespace eppo_sdk_test.store;
