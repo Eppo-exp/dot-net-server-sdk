@@ -1,11 +1,11 @@
 namespace eppo_sdk.dto;
 
 public record Flag(
-    string key,
-    bool enabled,
+    string Key,
+    bool Enabled,
     List<Allocation> Allocations,
-    EppoValueType variationType,
-    Dictionary<string, Variation> variations,
-    int totalShards)
+    EppoValueType VariationType,
+    Dictionary<string, Variation> Variations,
+    int TotalShards)
 {
 }

@@ -80,7 +80,7 @@ public class EppoHttpClient
     /// <param name="url"></param>
     /// <param name="lastVersion"></param> If provided, attempts to optimize network usage and response processing.
     /// <returns></returns>
-    public VersionedResourceResponse<RType> Get<RType>(string url, string? lastVersion = null)
+    public virtual VersionedResourceResponse<RType> Get<RType>(string url, string? lastVersion = null)
     {
         return this.Get<RType>(url, new Dictionary<string, string>(), new Dictionary<string, string>(), lastVersion);
     }
