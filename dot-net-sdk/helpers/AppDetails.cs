@@ -4,45 +4,49 @@ namespace eppo_sdk.helpers;
 
 public class AppDetails
 {
-    private const string SDK_LANG = "c#";
-    static AppDetails? _instance;
+    static AppDetails? instance;
 
-    private readonly string? _version;
-    private readonly string? _name;
+    private readonly string? version;
+    private readonly string? name;
 
     public static AppDetails GetInstance()
     {
-        if (_instance != null) return _instance;
+        if (instance != null) return instance;
 
-        _instance = new AppDetails();
-        if (_instance._name == null || _instance._version == null)
+        instance = new AppDetails();
+        if (instance.name == null || instance.version == null)
         {
             throw new SystemException("Unable to find the version and app name details");
         }
 
-        return _instance;
+        return instance;
     }
 
     private AppDetails()
     {
-        this._version = Assembly.GetExecutingAssembly().GetName().Version?.ToString();
-        this._name = Assembly.GetExecutingAssembly().GetName().Name;
+        // .net returns a 4-segmented version string (MAJOR.MINOR.BUILD.REVISION) here but we want to stick to semver standards (3-segment).
+        // We use a convention of Major.Minor.Patch when setting the package version; dotnet parses this to Major.Minor.Build and apprends
+        // the `.0` for Revision automatically. We can safely ignore it.
+        var fullVersion = Assembly.GetExecutingAssembly().GetName().Version!;
+        version = $"{fullVersion.Major}.{fullVersion.Minor}.{fullVersion.Build}";
+        
+        // Hardcoded for now; update soon with client/server split.
+        name = "dotnet-server";
     }
 
     public string GetName()
     {
-        return this._name!;
+        return this.name!;
     }
 
     public string GetVersion()
     {
-        return this._version!;
+        return this.version!;
     }
 
     public IReadOnlyDictionary<string, string> AsDict()
     {
         return new Dictionary<string, string>() {
-            ["sdkLanguage"] = SDK_LANG,
             ["sdkName"] = GetName(),
             ["sdkVersion"] = GetVersion()
         };
