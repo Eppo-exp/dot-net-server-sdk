@@ -1,11 +1,5 @@
 using System.Text.RegularExpressions;
-using eppo_sdk.constants;
-using eppo_sdk.dto;
-using eppo_sdk.dto.bandit;
 using eppo_sdk.helpers;
-using eppo_sdk.http;
-using eppo_sdk.store;
-using Moq;
 using NUnit.Framework.Internal;
 using static NUnit.Framework.Assert;
 
