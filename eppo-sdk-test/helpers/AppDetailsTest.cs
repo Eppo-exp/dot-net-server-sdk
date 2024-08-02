@@ -49,8 +49,8 @@ public partial class AppDetailsTest
 
         Multiple(() =>
         {
-            Assert.That(name, Is.Not.Null);
-            Assert.That(name, Is.EqualTo("dotnet-server"));
+            That(name, Is.Not.Null);
+            That(name, Is.EqualTo("dotnet-server"));
         });
     }
 }
