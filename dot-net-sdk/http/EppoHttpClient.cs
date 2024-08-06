@@ -8,14 +8,14 @@ namespace eppo_sdk.http;
 /// <summary>
 /// Wraps the structured response from the API server with version information. 
 /// </summary>
-/// <typeparam name="RType"></typeparam>
-public class VersionedResourceResponse<RType>
+/// <typeparam name="TResource"></typeparam>
+public class VersionedResourceResponse<TResource>
 {
-    public readonly RType? Resource;
+    public readonly TResource? Resource;
     public readonly bool IsModified;
     public readonly string? VersionIdentifier;
 
-    public VersionedResourceResponse(RType? resource,
+    public VersionedResourceResponse(TResource? resource,
                                      string? versionIdentifier = null,
                                      bool isModified = true)
     {
@@ -40,9 +40,9 @@ public class VersionedResourceResponse<RType>
 /// </summary>
 public class EppoHttpClient
 {
-    private readonly Dictionary<string, string> defaultParams = new();
-    private readonly string baseUrl;
-    private readonly int requestTimeoutMillis;
+    private readonly Dictionary<string, string> _defaultParams = new();
+    private readonly string _baseUrl;
+    private readonly int _requestTimeoutMillis;
 
     public EppoHttpClient(
         string apikey, IReadOnlyDictionary<string, string> additionalParams,
@@ -50,46 +50,46 @@ public class EppoHttpClient
         int requestTimeOutMillis = 3000
     )
     {
-        defaultParams.Add("apiKey", apikey);
+        _defaultParams.Add("apiKey", apikey);
 
         foreach (KeyValuePair<string, string> datum in additionalParams)
         {
-            defaultParams.Add(datum.Key, datum.Value);
+            _defaultParams.Add(datum.Key, datum.Value);
         }
 
-        this.baseUrl = baseUrl;
-        requestTimeoutMillis = requestTimeOutMillis;
+        _baseUrl = baseUrl;
+        _requestTimeoutMillis = requestTimeOutMillis;
     }
 
     // If any additional query params are needed.
     public void AddDefaultParam(string key, string value)
     {
-        defaultParams.Add(key, value);
+        _defaultParams.Add(key, value);
     }
 
     /// <summary>
     /// Gets the resource at the given `url`
     /// </summary>
-    /// <typeparam name="RType"></typeparam>
+    /// <typeparam name="TResource"></typeparam>
     /// <param name="url"></param>
     /// <param name="lastVersion"></param> If provided, attempts to optimize network usage and response processing.
     /// <returns></returns>
-    public VersionedResourceResponse<RType> Get<RType>(string url, string? lastVersion = null)
+    public VersionedResourceResponse<TResource> Get<TResource>(string url, string? lastVersion = null)
     {
-        return Get<RType>(url, new Dictionary<string, string>(), new Dictionary<string, string>(), lastVersion);
+        return Get<TResource>(url, new Dictionary<string, string>(), new Dictionary<string, string>(), lastVersion);
     }
 
     /// <summary>
     /// Gets the resource at the given `url`
     /// </summary>
-    /// <typeparam name="RType"></typeparam>
+    /// <typeparam name="TResource"></typeparam>
     /// <param name="url"></param>
     /// <param name="parameters"></param>
     /// <param name="headers"></param>
     /// <param name="lastVersion"></param> If provided, attempts to optimize network usage and response processing.
     /// <returns></returns>
     /// <exception cref="UnauthorizedAccessException"></exception>
-    public VersionedResourceResponse<RType> Get<RType>(
+    public VersionedResourceResponse<TResource> Get<TResource>(
         string url,
         Dictionary<string, string> parameters,
         Dictionary<string, string> headers,
@@ -99,11 +99,11 @@ public class EppoHttpClient
         // Prepare request.
         var request = new RestRequest
         {
-            Timeout = requestTimeoutMillis
+            Timeout = _requestTimeoutMillis
         };
 
         // Add query parameters.        
-        defaultParams.ToList().ForEach(x => parameters.Add(x.Key, x.Value));
+        _defaultParams.ToList().ForEach(x => parameters.Add(x.Key, x.Value));
         parameters.ToList().ForEach(x => request.AddParameter(new QueryParameter(x.Key, x.Value)));
 
         // `lastVersion` is the version identifier from the last time the caller requested this resource.
@@ -116,8 +116,8 @@ public class EppoHttpClient
         }
         request.AddHeaders(headers);
 
-        var client = new RestClient(baseUrl + url, configureSerialization: s => s.UseNewtonsoftJson());
-        var restResponse = client.Execute<RType>(request);
+        var client = new RestClient(_baseUrl + url, configureSerialization: s => s.UseNewtonsoftJson());
+        var restResponse = client.Execute<TResource>(request);
 
         if (restResponse.StatusCode == HttpStatusCode.Unauthorized)
         {
@@ -135,6 +135,6 @@ public class EppoHttpClient
             eTag = null;
         }
 
-        return new VersionedResourceResponse<RType>(restResponse.Data, eTag, isModified: restResponse.StatusCode != HttpStatusCode.NotModified);
+        return new VersionedResourceResponse<TResource>(restResponse.Data, eTag, isModified: restResponse.StatusCode != HttpStatusCode.NotModified);
     }
 }

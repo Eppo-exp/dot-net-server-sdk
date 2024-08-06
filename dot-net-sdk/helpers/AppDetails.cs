@@ -4,22 +4,22 @@ namespace eppo_sdk.helpers;
 
 public class AppDetails
 {
-    static AppDetails? instance;
+    private static AppDetails? _instance;
 
-    private readonly string? version;
-    private readonly string? name;
+    private readonly string? _version;
+    private readonly string? _name;
 
     public static AppDetails GetInstance()
     {
-        if (instance != null) return instance;
+        if (_instance != null) return _instance;
 
-        instance = new AppDetails();
-        if (instance.name == null || instance.version == null)
+        _instance = new AppDetails();
+        if (_instance._name == null || _instance._version == null)
         {
             throw new SystemException("Unable to find the version and app name details");
         }
 
-        return instance;
+        return _instance;
     }
 
     private AppDetails()
@@ -28,20 +28,20 @@ public class AppDetails
         // We use a convention of Major.Minor.Patch when setting the package version; dotnet parses this to Major.Minor.Build and apprends
         // the `.0` for Revision automatically. We can safely ignore it.
         var fullVersion = Assembly.GetExecutingAssembly().GetName().Version!;
-        version = $"{fullVersion.Major}.{fullVersion.Minor}.{fullVersion.Build}";
+        _version = $"{fullVersion.Major}.{fullVersion.Minor}.{fullVersion.Build}";
         
         // Hardcoded for now; update soon with client/server split.
-        name = "dotnet-server";
+        _name = "dotnet-server";
     }
 
     public string GetName()
     {
-        return this.name!;
+        return this._name!;
     }
 
     public string GetVersion()
     {
-        return this.version!;
+        return this._version!;
     }
 
     public IReadOnlyDictionary<string, string> AsDict()
