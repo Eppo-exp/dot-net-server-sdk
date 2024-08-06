@@ -4,22 +4,15 @@ namespace eppo_sdk.helpers;
 
 public class AppDetails
 {
-    private static AppDetails? _instance;
+    private static AppDetails? s_instance;
 
-    private readonly string? _version;
-    private readonly string? _name;
+    private readonly string _version;
+    private readonly string _name = "dotnet-server";
 
     public static AppDetails GetInstance()
     {
-        if (_instance != null) return _instance;
-
-        _instance = new AppDetails();
-        if (_instance._name == null || _instance._version == null)
-        {
-            throw new SystemException("Unable to find the version and app name details");
-        }
-
-        return _instance;
+        s_instance ??= new AppDetails();
+        return s_instance;
     }
 
     private AppDetails()
@@ -34,9 +27,9 @@ public class AppDetails
         _name = "dotnet-server";
     }
 
-    public string Name => _name!;
+    public string Name => _name;
 
-    public string Version => _version!;
+    public string Version => _version;
 
     public IReadOnlyDictionary<string, string> AsDict()
     {

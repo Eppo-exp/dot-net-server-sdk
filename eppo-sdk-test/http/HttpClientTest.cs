@@ -9,10 +9,8 @@ using WireMock.ResponseBuilders;
 using WireMock.Server;
 using FluentAssertions;
 using WireMock.FluentAssertions;
-using WireMock.Settings;
 
 using static NUnit.Framework.Assert;
-using GraphQL.Types;
 
 namespace eppo_sdk_test.http;
 
