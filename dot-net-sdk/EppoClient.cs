@@ -15,11 +15,11 @@ namespace eppo_sdk;
 
 public class EppoClient
 {
-    private static readonly object Baton = new();
+    private static readonly object s_baton = new();
 
-    private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+    private static readonly Logger s_logger = LogManager.GetCurrentClassLogger();
 
-    private static EppoClient? _client = null;
+    private static EppoClient? s_client = null;
     private readonly IConfigurationStore _configurationStore;
     private readonly FetchExperimentsTask _fetchExperimentsTask;
     private readonly BanditEvaluator _banditEvaluator;
@@ -125,7 +125,7 @@ public class EppoClient
         var assignment = result!;
         if (assignment.Type != expectedValueType)
         {
-            Logger.Warn($"[Eppo SDK] Expected type {expectedValueType} does not match parsed type {assignment.Type}");
+            s_logger.Warn($"[Eppo SDK] Expected type {expectedValueType} does not match parsed type {assignment.Type}");
             return eppoDefaultValue;
         }
         return assignment;
@@ -140,13 +140,13 @@ public class EppoClient
 
         if (!_configurationStore.TryGetFlag(flagKey, out Flag? configuration) || configuration == null)
         {
-            Logger.Warn($"[Eppo SDK] No configuration found for key: {flagKey}");
+            s_logger.Warn($"[Eppo SDK] No configuration found for key: {flagKey}");
             return null;
         }
 
         if (!configuration.enabled)
         {
-            Logger.Info(
+            s_logger.Info(
                 $"[Eppo SDK] No assigned variation because the experiment or feature flag {flagKey} is disabled");
             return null;
         }
@@ -154,7 +154,7 @@ public class EppoClient
         var result = RuleValidator.EvaluateFlag(configuration, subjectKey, subjectAttributes);
         if (result == null)
         {
-            Logger.Info("[Eppo SDK] No assigned variation. The subject attributes did not match any targeting rules");
+            s_logger.Info("[Eppo SDK] No assigned variation. The subject attributes did not match any targeting rules");
             return null;
         }
 
@@ -162,7 +162,7 @@ public class EppoClient
 
         if (HasEppoValue.IsNullValue(assignment))
         {
-            Logger.Warn("[Eppo SDK] Assigned varition is null");
+            s_logger.Warn("[Eppo SDK] Assigned varition is null");
             return null;
         }
 
@@ -193,7 +193,7 @@ public class EppoClient
 
     public static EppoClient Init(EppoClientConfig eppoClientConfig)
     {
-        lock (Baton)
+        lock (s_baton)
         {
             InputValidator.ValidateNotBlank(eppoClientConfig.ApiKey,
                 "An API key is required");
@@ -205,8 +205,8 @@ public class EppoClient
             var appDetails = AppDetails.GetInstance();
             var eppoHttpClient = new EppoHttpClient(
                 eppoClientConfig.ApiKey,
-                appDetails.GetName(),
-                appDetails.GetVersion(),
+                appDetails.Name,
+                appDetails.Version,
                 eppoClientConfig.BaseUrl,
                 Constants.REQUEST_TIMEOUT_MILLIS
             );
@@ -222,15 +222,15 @@ public class EppoClient
                 banditFlagCache
             );
 
-            _client?._fetchExperimentsTask.Dispose();
+            s_client?._fetchExperimentsTask.Dispose();
 
             var fetchExperimentsTask = new FetchExperimentsTask(configurationStore, Constants.TIME_INTERVAL_IN_MILLIS,
                 Constants.JITTER_INTERVAL_IN_MILLIS);
             fetchExperimentsTask.Run();
-            _client = new EppoClient(configurationStore, eppoClientConfig, fetchExperimentsTask);
+            s_client = new EppoClient(configurationStore, eppoClientConfig, fetchExperimentsTask);
         }
 
-        return _client;
+        return s_client;
     }
 
 
@@ -272,7 +272,7 @@ public class EppoClient
         }
         catch (Exception e)
         {
-            Logger.Error("[Eppo SDK] error getting Bandit action: " + e.Message);
+            s_logger.Error("[Eppo SDK] error getting Bandit action: " + e.Message);
             return new BanditResult(defaultValue);
         }
 
@@ -327,7 +327,7 @@ public class EppoClient
         }
         catch (Exception e)
         {
-            Logger.Error("[Eppo SDK] error getting Bandit action: " + e.Message);
+            s_logger.Error("[Eppo SDK] error getting Bandit action: " + e.Message);
             return new BanditResult(defaultValue);
         }
 
@@ -448,23 +448,23 @@ public class EppoClient
             else
             {
                 // There should be a bandit matching `banditKey`, but there is not, and that's a problem.
-                Logger.Error($"[Eppo SDK] Bandit model {banditKey} not found for {flagKey} {variation}");
+                s_logger.Error($"[Eppo SDK] Bandit model {banditKey} not found for {flagKey} {variation}");
             }
         }
         catch (BanditEvaluationException bee)
         {
-            Logger.Error("[Eppo SDK] Error evaluating bandit, returning variation only: " + bee.Message);
+            s_logger.Error("[Eppo SDK] Error evaluating bandit, returning variation only: " + bee.Message);
         }
         return null;
     }
 
     public static EppoClient GetInstance()
     {
-        if (_client == null)
+        if (s_client == null)
         {
             throw new EppoClientIsNotInitializedException("Eppo client is not initialized");
         }
 
-        return _client;
+        return s_client;
     }
 }
