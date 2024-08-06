@@ -4,47 +4,39 @@ namespace eppo_sdk.helpers;
 
 public class AppDetails
 {
-    private const string SDK_LANG = "c#";
-    static AppDetails? _instance;
+    private static AppDetails? s_instance;
 
-    private readonly string? _version;
-    private readonly string? _name;
+    private readonly string _version;
+    private readonly string _name = "dotnet-server";
 
     public static AppDetails GetInstance()
     {
-        if (_instance != null) return _instance;
-
-        _instance = new AppDetails();
-        if (_instance._name == null || _instance._version == null)
-        {
-            throw new SystemException("Unable to find the version and app name details");
-        }
-
-        return _instance;
+        s_instance ??= new AppDetails();
+        return s_instance;
     }
 
     private AppDetails()
     {
-        this._version = Assembly.GetExecutingAssembly().GetName().Version?.ToString();
-        this._name = Assembly.GetExecutingAssembly().GetName().Name;
+        // .net returns a 4-segmented version string (MAJOR.MINOR.BUILD.REVISION) here but we want to stick to semver standards (3-segment).
+        // We use a convention of Major.Minor.Patch when setting the package version; dotnet parses this to Major.Minor.Build and apprends
+        // the `.0` for Revision automatically. We can safely ignore it.
+        var fullVersion = Assembly.GetExecutingAssembly().GetName().Version!;
+        _version = $"{fullVersion.Major}.{fullVersion.Minor}.{fullVersion.Build}";
+
+        // Hardcoded for now; update soon with client/server split.
+        _name = "dotnet-server";
     }
 
-    public string GetName()
-    {
-        return this._name!;
-    }
+    public string Name => _name;
 
-    public string GetVersion()
-    {
-        return this._version!;
-    }
+    public string Version => _version;
 
     public IReadOnlyDictionary<string, string> AsDict()
     {
-        return new Dictionary<string, string>() {
-            ["sdkLanguage"] = SDK_LANG,
-            ["sdkName"] = GetName(),
-            ["sdkVersion"] = GetVersion()
+        return new Dictionary<string, string>()
+        {
+            ["sdkName"] = Name,
+            ["sdkVersion"] = Version
         };
     }
 }
