@@ -1,5 +1,4 @@
-﻿using System.Collections.Immutable;
-using eppo_sdk.constants;
+﻿using eppo_sdk.constants;
 using eppo_sdk.dto;
 using eppo_sdk.dto.bandit;
 using eppo_sdk.exception;
@@ -20,7 +19,7 @@ public class EppoClient
     private static readonly Logger s_logger = LogManager.GetCurrentClassLogger();
 
     private static EppoClient? s_client = null;
-    private readonly IConfigurationStore _configurationStore;
+    private readonly IConfigurationRequester _config;
     private readonly FetchExperimentsTask _fetchExperimentsTask;
     private readonly BanditEvaluator _banditEvaluator;
     private readonly EppoClientConfig _eppoClientConfig;
@@ -104,12 +103,13 @@ public class EppoClient
     }
 
 
-    private EppoClient(IConfigurationStore configurationStore, EppoClientConfig eppoClientConfig,
-        FetchExperimentsTask fetchExperimentsTask)
+    private EppoClient(IConfigurationRequester configurationStore,
+                       EppoClientConfig eppoClientConfig,
+                       FetchExperimentsTask fetchExperimentsTask)
     {
-        _configurationStore = configurationStore;
-        _eppoClientConfig = eppoClientConfig;
-        _fetchExperimentsTask = fetchExperimentsTask;
+        _config = configurationStore;
+        this._eppoClientConfig = eppoClientConfig;
+        this._fetchExperimentsTask = fetchExperimentsTask;
         _banditEvaluator = new BanditEvaluator();
     }
 
@@ -138,13 +138,13 @@ public class EppoClient
         InputValidator.ValidateNotBlank(subjectKey, "Invalid argument: subjectKey cannot be blank");
         InputValidator.ValidateNotBlank(flagKey, "Invalid argument: flagKey cannot be blank");
 
-        if (!_configurationStore.TryGetFlag(flagKey, out Flag? configuration) || configuration == null)
+        if (!_config.TryGetFlag(flagKey, out Flag? configuration) || configuration == null)
         {
             s_logger.Warn($"[Eppo SDK] No configuration found for key: {flagKey}");
             return null;
         }
 
-        if (!configuration.enabled)
+        if (!configuration.Enabled)
         {
             s_logger.Info(
                 $"[Eppo SDK] No assigned variation because the experiment or feature flag {flagKey} is disabled");
@@ -211,23 +211,22 @@ public class EppoClient
                 Constants.REQUEST_TIMEOUT_MILLIS
             );
 
-            var expConfigRequester = new ConfigurationRequester(eppoHttpClient);
             var configCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
             var modelCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
             var banditFlagCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
+
             var configurationStore = new ConfigurationStore(
-                expConfigRequester,
                 configCache,
                 modelCache,
-                banditFlagCache
-            );
+                banditFlagCache);
 
+            var expConfigRequester = new ConfigurationRequester(eppoHttpClient, configurationStore);
             s_client?._fetchExperimentsTask.Dispose();
 
-            var fetchExperimentsTask = new FetchExperimentsTask(configurationStore, Constants.TIME_INTERVAL_IN_MILLIS,
+            var fetchExperimentsTask = new FetchExperimentsTask(expConfigRequester, Constants.TIME_INTERVAL_IN_MILLIS,
                 Constants.JITTER_INTERVAL_IN_MILLIS);
             fetchExperimentsTask.Run();
-            s_client = new EppoClient(configurationStore, eppoClientConfig, fetchExperimentsTask);
+            s_client = new EppoClient(expConfigRequester, eppoClientConfig, fetchExperimentsTask);
         }
 
         return s_client;
@@ -405,7 +404,7 @@ public class EppoClient
 
         // Only proceed to computing a bandit if there are actions provided and the variation maps to a bandit key
         if (actions.Count > 0
-            && _configurationStore.GetBanditFlags().TryGetBanditKey(flagKey, variation, out string? banditKey)
+            && _config.GetBanditFlags().TryGetBanditKey(flagKey, variation, out string? banditKey)
             && banditKey != null)
         {
             result = EvaluateAndLogBandit(banditKey!, flagKey, subject, actions, variation);
@@ -423,7 +422,7 @@ public class EppoClient
     {
         try
         {
-            if (_configurationStore.TryGetBandit(banditKey, out Bandit? bandit) && bandit != null)
+            if (_config.TryGetBandit(banditKey, out Bandit? bandit) && bandit != null)
             {
                 var result = _banditEvaluator.EvaluateBandit(
                     flagKey,
@@ -461,10 +460,12 @@ public class EppoClient
     public static EppoClient GetInstance()
     {
         if (s_client == null)
+        if (s_client == null)
         {
             throw new EppoClientIsNotInitializedException("Eppo client is not initialized");
         }
 
+        return s_client;
         return s_client;
     }
 }

@@ -1,4 +1,6 @@
 using System.Net;
+using eppo_sdk.constants;
+using NLog;
 using RestSharp;
 using RestSharp.Serializers.NewtonsoftJson;
 
@@ -44,13 +46,11 @@ public class EppoHttpClient
     private readonly string _baseUrl;
     private readonly int _requestTimeoutMillis;
 
-    public EppoHttpClient(
-        string apikey,
-        string sdkName,
-        string sdkVersion,
-        string baseUrl,
-        int requestTimeOutMillis = 3000
-    )
+    public EppoHttpClient(string apikey,
+                          string sdkName,
+                          string sdkVersion,
+                          string baseUrl,
+                          int requestTimeOutMillis = Constants.REQUEST_TIMEOUT_MILLIS)
     {
         _defaultParams.Add("apiKey", apikey);
         _defaultParams.Add("sdkName", sdkName);
@@ -73,7 +73,8 @@ public class EppoHttpClient
     /// <param name="url"></param>
     /// <param name="lastVersion"></param> If provided, attempts to optimize network usage and response processing.
     /// <returns></returns>
-    public VersionedResourceResponse<TResource> Get<TResource>(string url, string? lastVersion = null)
+    public virtual VersionedResourceResponse<TResource> Get<TResource>(string url,
+                                                                       string? lastVersion = null)
     {
         return Get<TResource>(url, new Dictionary<string, string>(), new Dictionary<string, string>(), lastVersion);
     }
@@ -88,12 +89,10 @@ public class EppoHttpClient
     /// <param name="lastVersion"></param> If provided, attempts to optimize network usage and response processing.
     /// <returns></returns>
     /// <exception cref="UnauthorizedAccessException"></exception>
-    public VersionedResourceResponse<TResource> Get<TResource>(
-        string url,
-        Dictionary<string, string> parameters,
-        Dictionary<string, string> headers,
-        string? lastVersion = null
-    )
+    public VersionedResourceResponse<TResource> Get<TResource>(string url,
+                                                               Dictionary<string, string> parameters,
+                                                               Dictionary<string, string> headers,
+                                                               string? lastVersion = null)
     {
         // Prepare request.
         var request = new RestRequest

@@ -5,8 +5,15 @@ namespace eppo_sdk.store;
 
 public interface IConfigurationStore
 {
-    void LoadConfiguration();
+    /// <summary>
+    /// Sets all configuration values in one method to make use of read/write locks
+    /// </summary>
+    /// <param name="flags"></param>
+    /// <param name="banditFlagReferences"></param>
+    /// <param name="bandits"></param>
+    /// <param name="metadata"></param>
+    void SetConfiguration(IEnumerable<Flag> flags, IEnumerable<Bandit> bandits, IDictionary<string, object> metadata);
     bool TryGetBandit(string key, out Bandit? bandit);
     bool TryGetFlag(string key, out Flag? flag);
-    public BanditFlags GetBanditFlags();
+    bool TryGetMetadata<MType>(string key, out MType? metadata);
 }
