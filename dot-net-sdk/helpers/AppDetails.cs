@@ -29,26 +29,21 @@ public class AppDetails
         // the `.0` for Revision automatically. We can safely ignore it.
         var fullVersion = Assembly.GetExecutingAssembly().GetName().Version!;
         _version = $"{fullVersion.Major}.{fullVersion.Minor}.{fullVersion.Build}";
-        
+
         // Hardcoded for now; update soon with client/server split.
         _name = "dotnet-server";
     }
 
-    public string GetName()
-    {
-        return this._name!;
-    }
+    public string Name => _name!;
 
-    public string GetVersion()
-    {
-        return this._version!;
-    }
+    public string Version => _version!;
 
     public IReadOnlyDictionary<string, string> AsDict()
     {
-        return new Dictionary<string, string>() {
-            ["sdkName"] = GetName(),
-            ["sdkVersion"] = GetVersion()
+        return new Dictionary<string, string>()
+        {
+            ["sdkName"] = Name,
+            ["sdkVersion"] = Version
         };
     }
 }

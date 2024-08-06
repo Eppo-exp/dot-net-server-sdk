@@ -14,7 +14,7 @@ public partial class AppDetailsTest
     public void ShouldMaintainSingleton()
     {
         var appDetails = AppDetails.GetInstance();
-        var name = appDetails.GetName();
+        var name = appDetails.Name;
 
         Multiple(() =>
         {
@@ -27,7 +27,7 @@ public partial class AppDetailsTest
     public void ShouldReturnASemVer()
     {
         var appDetails = AppDetails.GetInstance();
-        var version = appDetails.GetVersion();
+        var version = appDetails.Version;
         Multiple(() =>
         {
             That(version, Is.Not.Null);
@@ -39,7 +39,7 @@ public partial class AppDetailsTest
     public void ShouldReturnRightName()
     {
         var appDetails = AppDetails.GetInstance();
-        var name = appDetails.GetName();
+        var name = appDetails.Name;
 
         Multiple(() =>
         {

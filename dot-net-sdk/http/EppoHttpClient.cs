@@ -45,17 +45,16 @@ public class EppoHttpClient
     private readonly int _requestTimeoutMillis;
 
     public EppoHttpClient(
-        string apikey, IReadOnlyDictionary<string, string> additionalParams,
+        string apikey,
+        string sdkName,
+        string sdkVersion,
         string baseUrl,
         int requestTimeOutMillis = 3000
     )
     {
         _defaultParams.Add("apiKey", apikey);
-
-        foreach (KeyValuePair<string, string> datum in additionalParams)
-        {
-            _defaultParams.Add(datum.Key, datum.Value);
-        }
+        _defaultParams.Add("sdkName", sdkName);
+        _defaultParams.Add("sdkVersion", sdkVersion);
 
         _baseUrl = baseUrl;
         _requestTimeoutMillis = requestTimeOutMillis;

@@ -12,50 +12,41 @@ using WireMock.FluentAssertions;
 using WireMock.Settings;
 
 using static NUnit.Framework.Assert;
+using GraphQL.Types;
 
 namespace eppo_sdk_test.http;
 
 [TestFixture]
 public class HttpClientTest
 {
-    private WireMockServer MockServer;
-    private EppoHttpClient? Client;
+    private WireMockServer _mockServer;
 
     private string BaseUrl;
 
-    IReadOnlyDictionary<string, string> requestParams;
-
-    public HttpClientTest()
-    {
-        MockServer = WireMockServer.Start();
-    }
+    private WireMockServer MockServer { get => _mockServer!; }
 
     [OneTimeSetUp]
     public void Setup()
     {
         SetupMockServer();
-        requestParams = new Dictionary<string, string>
-        {
-            {"sdkName", "dotnetTest"},
-            {"sdkVersion", "9.9.9"}
-        }.AsReadOnly();
     }
 
     [OneTimeTearDown]
     public void ShutdownServer()
     {
-        MockServer?.Stop();
+        MockServer.Stop();
     }
 
     private void SetupMockServer()
     {
+        _mockServer = WireMockServer.Start();
         var response = GetMockFlagConfig();
         Console.WriteLine($"MockServer started at: {MockServer.Urls.First()}");
 
         // ETags
         var currentETag = "CURRENT";
 
-        this.MockServer
+        MockServer
             .Given(Request.Create().UsingGet().WithPath(new RegexMatcher("flag-config/v1/config")))
             .RespondWith(Response.Create()
                 .WithStatusCode(HttpStatusCode.OK)
@@ -63,7 +54,7 @@ public class HttpClientTest
                 .WithHeader("Content-Type", "application/json")
                 .WithHeader("ETag", currentETag));
 
-        this.MockServer
+        MockServer
             .Given(Request.Create()
                 .UsingGet()
                 .WithHeader("IF-NONE-MATCH", currentETag)
@@ -73,7 +64,7 @@ public class HttpClientTest
                 .WithHeader("Content-Type", "application/json")
                 .WithHeader("ETag", currentETag));
 
-        BaseUrl = MockServer?.Urls.First()!;
+        BaseUrl = MockServer.Urls.First()!;
     }
 
     private static string GetMockFlagConfig()
@@ -87,7 +78,7 @@ public class HttpClientTest
     [Test]
     public void ShouldFetchAndParseConfig()
     {
-        Client = new EppoHttpClient("none", requestParams, BaseUrl);
+        var Client = CreatClient(BaseUrl);
 
         var ufcResponse = Client.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT);
 
@@ -101,14 +92,13 @@ public class HttpClientTest
     }
 
     [Test]
-    public void ShouldSendAdditionalParams()
+    public void ShouldSendSDKParams()
     {
-        Client = new EppoHttpClient("none", requestParams, BaseUrl);
+        var Client = CreatClient(BaseUrl);
 
         Client.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT);
 
-        // Query param values hardcoded in `requestParams`.
-        MockServer?.Should()
+        MockServer.Should()
             .HaveReceivedACall()
             .UsingGet()
             .And.AtUrl($"{BaseUrl}/flag-config/v1/config?apiKey=none&sdkName=dotnetTest&sdkVersion=9.9.9");
@@ -117,7 +107,7 @@ public class HttpClientTest
     [Test]
     public void ShouldIndicateConfigModified()
     {
-        Client = new EppoHttpClient("none", requestParams, BaseUrl);
+        var Client = CreatClient(BaseUrl);
 
         var ufcResponse = Client.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT);
 
@@ -137,4 +127,8 @@ public class HttpClientTest
         });
     }
 
+    private static EppoHttpClient CreatClient(String baseUrl)
+    {
+        return new EppoHttpClient("none", "dotnetTest", "9.9.9", baseUrl);
+    }
 }
