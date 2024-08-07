@@ -19,9 +19,10 @@ public class BanditReferencesTest
             ["banditKey"] = new BanditReference(
                 "v456",
                 new BanditFlagVariation[] { new("banditKey", "flagKey", "allocationKey", "variationKey", "variationValue") }),
-            ["banditWithNoVariations"] = new BanditReference( "v999", Array.Empty<BanditFlagVariation>())
+            ["banditWithNoVariations"] = new BanditReference("v999", Array.Empty<BanditFlagVariation>())
         };
     }
+
     [Test]
     public void ShouldDetermineWhetherBanditsAreReferenced()
     {
@@ -64,11 +65,11 @@ public class BanditReferencesTest
         });
     }
 
-
     [Test]
     public void ShouldParseActiveReferencedModels()
     {
-        var expected = new Dictionary<string, string> {
+        var expected = new Dictionary<string, string>
+        {
             ["variation"] = "v123",
             ["banditKey"] = "v456"
         };
