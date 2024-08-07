@@ -11,13 +11,11 @@ public interface IConfigurationRequester
     void LoadConfiguration();
     bool TryGetBandit(string key, out Bandit? bandit);
     bool TryGetFlag(string key, out Flag? flag);
-    public BanditFlags GetBanditFlags();
     public BanditReferences GetBanditReferences();
 }
 
 public class ConfigurationRequester : IConfigurationRequester
 {
-    private const string KEY_BANDIT_FLAGS = "banditFlags";
     private const string KEY_BANDIT_REFERENCES = "banditReferences";
     private const string KEY_FLAG_CONFIG_VERSION = "ufcVersion";
 
@@ -35,11 +33,11 @@ public class ConfigurationRequester : IConfigurationRequester
 
     public bool TryGetFlag(string key, out Flag? flag) => configurationStore.TryGetFlag(key, out flag);
 
-    public BanditFlags GetBanditFlags()
+    public BanditReferences GetBanditReferences()
     {
-        if (configurationStore.TryGetMetadata(KEY_BANDIT_FLAGS, out BanditFlags? banditFlags) && banditFlags != null)
+        if (configurationStore.TryGetMetadata(KEY_BANDIT_REFERENCES, out BanditReferences? banditReferences) && banditReferences != null)
         {
-            return banditFlags;
+            return banditReferences;
         }
         throw new SystemException("Bandit Flag mapping could not be loaded from the cache");
     }
@@ -54,10 +52,10 @@ public class ConfigurationRequester : IConfigurationRequester
         {
             // Fetch methods throw if resource is null.
             var flags = flagConfigurationResponse.Resource!;
-            var banditFlags = flags.Bandits ?? new BanditFlags();
+            var indexer = flags.BanditReferences ?? new BanditReferences();
 
             IEnumerable<Bandit> banditModelList = Array.Empty<Bandit>();
-            if (banditFlags.Count > 0)
+            if (indexer.HasBanditReferences())
             {
                 BanditModelResponse banditModels = FetchBandits().Resource!;
                 banditModelList = banditModels.Bandits?.ToList().Select(kvp => kvp.Value) ?? Array.Empty<Bandit>();
@@ -69,7 +67,7 @@ public class ConfigurationRequester : IConfigurationRequester
             {
                 metadata[KEY_FLAG_CONFIG_VERSION] = version;
             }
-            metadata[KEY_BANDIT_FLAGS] = banditFlags;
+            metadata[KEY_BANDIT_REFERENCES] = indexer;
 
             configurationStore.SetConfiguration(
                  flags.Flags.ToList().Select(kvp => kvp.Value),
@@ -94,15 +92,6 @@ public class ConfigurationRequester : IConfigurationRequester
         {
             throw new SystemException("Unable to fetch flag configuration" + e.Message);
         }
-    }
-
-    public BanditReferences GetBanditReferences()
-    {
-        if (configurationStore.TryGetMetadata(KEY_BANDIT_REFERENCES, out BanditReferences? banditReferences) && banditReferences != null)
-        {
-            return banditReferences;
-        }
-        throw new SystemException("Bandit Flag mapping could not be loaded from the cache");
     }
 
     private VersionedResourceResponse<BanditModelResponse> FetchBandits()

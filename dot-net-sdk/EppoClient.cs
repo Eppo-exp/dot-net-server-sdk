@@ -404,7 +404,7 @@ public class EppoClient
 
         // Only proceed to computing a bandit if there are actions provided and the variation maps to a bandit key
         if (actions.Count > 0
-            && _config.GetBanditFlags().TryGetBanditKey(flagKey, variation, out string? banditKey)
+            && _config.GetBanditReferences().TryGetBanditKey(flagKey, variation, out string? banditKey)
             && banditKey != null)
         {
             result = EvaluateAndLogBandit(banditKey!, flagKey, subject, actions, variation);
