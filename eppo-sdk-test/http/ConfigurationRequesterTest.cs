@@ -8,7 +8,7 @@ using Moq;
 using NUnit.Framework.Internal;
 
 
-namespace eppo_sdk_test.store;
+namespace eppo_sdk_test.http;
 
 public class ConfigurationRequesterTest
 {
@@ -45,17 +45,15 @@ public class ConfigurationRequesterTest
         {
             ["flag1"] = BasicFlag("flag1", new string[] { "control", "bandit1" })
         };
-        var banditReferences = new BanditReferences()
+        var banditFlags = new BanditFlags()
         {
-            ["bandit1"] = new BanditReference("v123",
-                new BanditFlagVariation[] {
-                    new("bandit1", "flag1", "allocation", "bandit1", "bandit1")
-                }
-            )
+            ["bandit1"] = new BanditVariation[] {
+                 new("bandit1", "flag1", "bandit1", "bandit1")
+            }
         };
         var response = new FlagConfigurationResponse()
         {
-            BanditReferences = banditReferences,
+            Bandits = banditFlags,
             Flags = flags
         };
 
@@ -67,7 +65,7 @@ public class ConfigurationRequesterTest
             }
         };
 
-        var mockAPI = new Mock<EppoHttpClient>("apiKey", "sdkName", "sdkVersion", "baseUrl");
+        var mockAPI = GetMockAPI();
 
         mockAPI.Setup(m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>()))
             .Returns(new VersionedResourceResponse<FlagConfigurationResponse>(response, "ETAG"));
@@ -97,7 +95,7 @@ public class ConfigurationRequesterTest
             }
         };
 
-        var mockAPI = new Mock<EppoHttpClient>("apiKey", "sdkName", "sdkVersion", "baseUrl");
+        var mockAPI = GetMockAPI();
 
         mockAPI.Setup(m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>()))
             .Returns(new VersionedResourceResponse<FlagConfigurationResponse>(response, lastVersion));
@@ -118,9 +116,9 @@ public class ConfigurationRequesterTest
 
         Assert.Multiple(() =>
         {
-            Assert.That(requester.GetBanditReferences(), Is.Not.Null);
-            Assert.That(requester.GetBanditReferences(), Has.Count.EqualTo(1));
-            Assert.That(requester.GetBanditReferences().TryGetBanditKey("flag1", "bandit1", out string? banditKey), Is.True);
+            Assert.That(requester.GetBanditFlags(), Is.Not.Null);
+            Assert.That(requester.GetBanditFlags(), Has.Count.EqualTo(1));
+            Assert.That(requester.GetBanditFlags().TryGetBanditKey("flag1", "bandit1", out string? banditKey), Is.True);
             Assert.That(banditKey, Is.EqualTo("bandit1"));
 
             Assert.That(requester.TryGetFlag("flag1", out Flag? flag), Is.True);
@@ -143,8 +141,8 @@ public class ConfigurationRequesterTest
 
         Assert.Multiple(() =>
         {
-            Assert.That(requester.GetBanditReferences(), Is.Not.Null);
-            Assert.That(requester.GetBanditReferences(), Has.Count.EqualTo(0));
+            Assert.That(requester.GetBanditFlags(), Is.Not.Null);
+            Assert.That(requester.GetBanditFlags(), Has.Count.EqualTo(0));
 
             Assert.That(requester.TryGetFlag("flag1", out Flag? flag), Is.True);
             Assert.That(flag, Is.Not.Null);
@@ -160,7 +158,7 @@ public class ConfigurationRequesterTest
     [Test]
     public void ShouldSendLastVersionString()
     {
-        var mockAPI = new Mock<EppoHttpClient>("apiKey", "sdkName", "sdkVersion", "baseUrl");
+        var mockAPI = GetMockAPI();
 
         var response = new FlagConfigurationResponse()
         {
@@ -186,7 +184,7 @@ public class ConfigurationRequesterTest
     [Test]
     public void ShouldNotSetConfigIfNotModified()
     {
-        var mockAPI = new Mock<EppoHttpClient>("apiKey", "sdkName", "sdkVersion", "baseUrl");
+        var mockAPI = GetMockAPI();
         var flagKeys = new string[] { "flag1", "flag2", "flag3" };
 
         // Response with 3 flags
@@ -315,7 +313,7 @@ public class ConfigurationRequesterTest
 
 
         // Set up the API to return the 3 responses in order.
-        var mockAPI = new Mock<EppoHttpClient>("apiKey", "sdkName", "sdkVersion", "baseUrl");
+        var mockAPI = GetMockAPI();
         mockAPI.SetupSequence(m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>()))
             .Returns(new VersionedResourceResponse<FlagConfigurationResponse>(response1, "version1"))
             .Returns(new VersionedResourceResponse<FlagConfigurationResponse>(response2, "version2"))
@@ -341,7 +339,12 @@ public class ConfigurationRequesterTest
         AssertHasConfig(requester, flags3, banditFlags3, bandits3);
     }
 
-    private static void AssertHasConfig(ConfigurationRequester requester, string[] flagKeys, BanditReferences banditReferences, string[] banditKeys)
+    private static Mock<EppoHttpClient> GetMockAPI()
+    {
+        return new Mock<EppoHttpClient>("apiKey", "sdkName", "sdkVersion", "baseUrl", 3000);
+    }
+
+    private static void AssertHasConfig(ConfigurationRequester requester, string[] flagKeys, BanditFlags banditFlags, string[] banditKeys)
     {
         Assert.Multiple(() =>
         {
@@ -351,7 +354,7 @@ public class ConfigurationRequesterTest
                 Assert.That(flag, Is.Not.Null);
                 Assert.That(flag!.Key, Is.EqualTo(flagKey));
             }
-            Assert.That(requester.GetBanditReferences(), Is.EqualTo(banditReferences));
+            Assert.That(requester.GetBanditFlags(), Is.EqualTo(banditFlags));
             foreach (var banditKey in banditKeys)
             {
                 Assert.That(requester.TryGetBandit(banditKey, out Bandit? bandit), Is.True);
