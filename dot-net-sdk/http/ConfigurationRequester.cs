@@ -2,7 +2,6 @@ using eppo_sdk.constants;
 using eppo_sdk.dto;
 using eppo_sdk.dto.bandit;
 using eppo_sdk.store;
-using NLog;
 
 namespace eppo_sdk.http;
 
@@ -19,7 +18,6 @@ public class ConfigurationRequester : IConfigurationRequester
     private const string KEY_BANDIT_REFERENCES = "banditReferences";
     private const string KEY_FLAG_CONFIG_VERSION = "ufcVersion";
 
-    private static Logger logger = LogManager.GetCurrentClassLogger();
     private readonly EppoHttpClient eppoHttpClient;
     private readonly IConfigurationStore configurationStore;
 
@@ -116,5 +114,4 @@ public class ConfigurationRequester : IConfigurationRequester
         configurationStore.TryGetMetadata<string>(KEY_FLAG_CONFIG_VERSION, out string? lastVersion);
         return lastVersion;
     }
-
 }

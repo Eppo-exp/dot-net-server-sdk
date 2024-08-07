@@ -12,10 +12,10 @@ public class BanditReferencesTest
     {
         banditRefs = new BanditReferences()
         {
-            // Typical `BanditVariationDto` values where `variation` is duplicated across the VariationValue, VariationKey and BanditKey fields.
-            ["variation"] = new BanditReference(
+            // Typical `BanditVariationDto` values where the variation value is duplicated across the VariationValue, VariationKey and BanditKey fields.
+            ["theBanditKey"] = new BanditReference(
                 "v123",
-                new BanditFlagVariation[] { new("variation", "banditFlagKey", "allocationKey", "variation", "variation") }),
+                new BanditFlagVariation[] { new("theBanditKey", "banditFlagKey", "allocationKey", "theBanditKey", "theBanditKey") }),
             ["banditKey"] = new BanditReference(
                 "v456",
                 new BanditFlagVariation[] { new("banditKey", "flagKey", "allocationKey", "variationKey", "variationValue") }),
@@ -47,8 +47,8 @@ public class BanditReferencesTest
             That(banditRefs.TryGetBanditKey("notAFlag", "notAVaration", out string? _), Is.False);
             // flag key is valid, but variation doesn't match
             That(banditRefs.TryGetBanditKey("flagKey", "notAVaration", out string? _), Is.False);
-            // variation matches a bandit but the flag does not.
-            That(banditRefs.TryGetBanditKey("notAFlag", "variation", out string? _), Is.False);
+            // theBanditKey matches a bandit but the flag does not.
+            That(banditRefs.TryGetBanditKey("notAFlag", "theBanditKey", out string? _), Is.False);
         });
     }
 
@@ -60,19 +60,15 @@ public class BanditReferencesTest
             That(banditRefs.TryGetBanditKey("flagKey", "variationValue", out string? key1), Is.True);
             That(key1, Is.EqualTo("banditKey"));
 
-            That(banditRefs.TryGetBanditKey("banditFlagKey", "variation", out string? key2), Is.True);
-            That(key2, Is.EqualTo("variation"));
+            That(banditRefs.TryGetBanditKey("banditFlagKey", "theBanditKey", out string? key2), Is.True);
+            That(key2, Is.EqualTo("theBanditKey"));
         });
     }
 
     [Test]
     public void ShouldParseActiveReferencedModels()
     {
-        var expected = new Dictionary<string, string>
-        {
-            ["variation"] = "v123",
-            ["banditKey"] = "v456"
-        };
+        var expected = new string[] { "v123", "v456" };
         var actual = banditRefs.GetBanditModelVersions();
         Assert.That(actual, Is.EquivalentTo(expected));
     }
