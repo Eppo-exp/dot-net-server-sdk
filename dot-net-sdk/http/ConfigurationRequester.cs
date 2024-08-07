@@ -2,7 +2,6 @@ using eppo_sdk.constants;
 using eppo_sdk.dto;
 using eppo_sdk.dto.bandit;
 using eppo_sdk.store;
-using NLog;
 
 namespace eppo_sdk.http;
 
@@ -11,15 +10,14 @@ public interface IConfigurationRequester
     void LoadConfiguration();
     bool TryGetBandit(string key, out Bandit? bandit);
     bool TryGetFlag(string key, out Flag? flag);
-    public BanditFlags GetBanditFlags();
+    public BanditReferences GetBanditReferences();
 }
 
 public class ConfigurationRequester : IConfigurationRequester
 {
-    private const string BANDIT_FLAGS_KEY = "banditFlags";
+    private const string KEY_BANDIT_REFERENCES = "banditReferences";
     private const string KEY_FLAG_CONFIG_VERSION = "ufcVersion";
 
-    private static Logger logger = LogManager.GetCurrentClassLogger();
     private readonly EppoHttpClient eppoHttpClient;
     private readonly IConfigurationStore configurationStore;
 
@@ -33,11 +31,11 @@ public class ConfigurationRequester : IConfigurationRequester
 
     public bool TryGetFlag(string key, out Flag? flag) => configurationStore.TryGetFlag(key, out flag);
 
-    public BanditFlags GetBanditFlags()
+    public BanditReferences GetBanditReferences()
     {
-        if (configurationStore.TryGetMetadata(BANDIT_FLAGS_KEY, out BanditFlags? banditFlags) && banditFlags != null)
+        if (configurationStore.TryGetMetadata(KEY_BANDIT_REFERENCES, out BanditReferences? banditReferences) && banditReferences != null)
         {
-            return banditFlags;
+            return banditReferences;
         }
         throw new SystemException("Bandit Flag mapping could not be loaded from the cache");
     }
@@ -52,10 +50,10 @@ public class ConfigurationRequester : IConfigurationRequester
         {
             // Fetch methods throw if resource is null.
             var flags = flagConfigurationResponse.Resource!;
-            var banditFlags = flags.Bandits ?? new BanditFlags();
+            var indexer = flags.BanditReferences ?? new BanditReferences();
 
             IEnumerable<Bandit> banditModelList = Array.Empty<Bandit>();
-            if (banditFlags.Count > 0)
+            if (indexer.HasBanditReferences())
             {
                 BanditModelResponse banditModels = FetchBandits().Resource!;
                 banditModelList = banditModels.Bandits?.ToList().Select(kvp => kvp.Value) ?? Array.Empty<Bandit>();
@@ -67,7 +65,7 @@ public class ConfigurationRequester : IConfigurationRequester
             {
                 metadata[KEY_FLAG_CONFIG_VERSION] = version;
             }
-            metadata[BANDIT_FLAGS_KEY] = banditFlags;
+            metadata[KEY_BANDIT_REFERENCES] = indexer;
 
             configurationStore.SetConfiguration(
                  flags.Flags.ToList().Select(kvp => kvp.Value),
@@ -116,5 +114,4 @@ public class ConfigurationRequester : IConfigurationRequester
         configurationStore.TryGetMetadata<string>(KEY_FLAG_CONFIG_VERSION, out string? lastVersion);
         return lastVersion;
     }
-
 }
