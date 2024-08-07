@@ -16,6 +16,7 @@ public interface IConfigurationRequester
 public class ConfigurationRequester : IConfigurationRequester
 {
     private const string KEY_BANDIT_REFERENCES = "banditReferences";
+    private const string KEY_BANDIT_VERSIONS = "banditVersions";
     private const string KEY_FLAG_CONFIG_VERSION = "ufcVersion";
 
     private readonly EppoHttpClient eppoHttpClient;
@@ -53,7 +54,10 @@ public class ConfigurationRequester : IConfigurationRequester
             var indexer = flags.BanditReferences ?? new BanditReferences();
 
             IEnumerable<Bandit> banditModelList = Array.Empty<Bandit>();
-            if (indexer.HasBanditReferences())
+
+            var loadedModels = GetLoadedModels();
+            // Only fetch bandit models if there are active references and all the referenced models are in the set of loaded models.
+            if (indexer.HasBanditReferences() && indexer.GetBanditModelVersions().All(model => loadedModels.Contains(model)))
             {
                 BanditModelResponse banditModels = FetchBandits().Resource!;
                 banditModelList = banditModels.Bandits?.ToList().Select(kvp => kvp.Value) ?? Array.Empty<Bandit>();
@@ -66,12 +70,19 @@ public class ConfigurationRequester : IConfigurationRequester
                 metadata[KEY_FLAG_CONFIG_VERSION] = version;
             }
             metadata[KEY_BANDIT_REFERENCES] = indexer;
+            metadata[KEY_BANDIT_VERSIONS] = indexer.GetBanditModelVersions();
 
             configurationStore.SetConfiguration(
                  flags.Flags.ToList().Select(kvp => kvp.Value),
                  banditModelList,
                  metadata);
         }
+    }
+
+    private IEnumerable<string> GetLoadedModels()
+    {
+        configurationStore.TryGetMetadata(KEY_BANDIT_VERSIONS, out IEnumerable<string>? models);
+        return models ?? Array.Empty<string>();
     }
 
     private VersionedResourceResponse<FlagConfigurationResponse> FetchFlags(string? lastConfigVersion)
