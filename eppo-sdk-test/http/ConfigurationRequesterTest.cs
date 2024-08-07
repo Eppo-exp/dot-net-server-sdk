@@ -39,8 +39,6 @@ public class ConfigurationRequesterTest
         });
     }
 
-    private static Mock<EppoHttpClient> CreateAPIMock() =>  new Mock<EppoHttpClient>("apiKey", "sdkName", "sdkVersion", "baseUrl", 3000);
-
     private static Mock<EppoHttpClient> MockAPIWithFlagsAndBandits()
     {
         var flags = new Dictionary<string, Flag>
@@ -69,7 +67,7 @@ public class ConfigurationRequesterTest
             }
         };
 
-        var mockAPI = CreateAPIMock();
+        var mockAPI = GetMockAPI();
 
         mockAPI.Setup(m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>()))
             .Returns(new VersionedResourceResponse<FlagConfigurationResponse>(response, "ETAG"));
@@ -99,7 +97,7 @@ public class ConfigurationRequesterTest
             }
         };
 
-        var mockAPI = CreateAPIMock();
+        var mockAPI = GetMockAPI();
 
         mockAPI.Setup(m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>()))
             .Returns(new VersionedResourceResponse<FlagConfigurationResponse>(response, lastVersion));
@@ -162,7 +160,7 @@ public class ConfigurationRequesterTest
     [Test]
     public void ShouldSendLastVersionString()
     {
-        var mockAPI = CreateAPIMock();
+        var mockAPI = GetMockAPI();
 
         var response = new FlagConfigurationResponse()
         {
@@ -188,7 +186,7 @@ public class ConfigurationRequesterTest
     [Test]
     public void ShouldNotSetConfigIfNotModified()
     {
-        var mockAPI = CreateAPIMock();
+        var mockAPI = GetMockAPI();
         var flagKeys = new string[] { "flag1", "flag2", "flag3" };
 
         // Response with 3 flags
@@ -268,28 +266,28 @@ public class ConfigurationRequesterTest
         var banditRefs1 = new BanditReferences()
         {
             ["unchangingBandit"] = new BanditReference(
-                "v123", 
+                "v123",
                 new BanditFlagVariation[] { unchangingBanditVariation }),
             ["departingBandit"] = new BanditReference(
-                "v321", 
+                "v321",
                 new BanditFlagVariation[] { departingBanditVariation })
         };
         var banditRefs2 = new BanditReferences()
         {
             ["unchangingBandit"] = new BanditReference(
-                "v123", 
+                "v123",
                 new BanditFlagVariation[] { unchangingBanditVariation }),
             ["newBandit"] = new BanditReference(
-                "v456", 
+                "v456",
                 new BanditFlagVariation[] { newBanditVariation })
         };
         var banditRefs3 = new BanditReferences()
         {
             ["unchangingBandit"] = new BanditReference(
-                "v123", 
+                "v123",
                 new BanditFlagVariation[] { unchangingBanditVariation }),
             ["newBandit2"] = new BanditReference(
-                "v789", 
+                "v789",
                 new BanditFlagVariation[] { newBandit2Variation })
         };
 
@@ -329,7 +327,7 @@ public class ConfigurationRequesterTest
 
 
         // Set up the API to return the 3 responses in order.
-        var mockAPI = CreateAPIMock();
+        var mockAPI = GetMockAPI();
         mockAPI.SetupSequence(m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>()))
             .Returns(new VersionedResourceResponse<FlagConfigurationResponse>(response1, "version1"))
             .Returns(new VersionedResourceResponse<FlagConfigurationResponse>(response2, "version2"))
@@ -353,6 +351,11 @@ public class ConfigurationRequesterTest
         // third load = config sets #3
         requester.LoadConfiguration();
         AssertHasConfig(requester, flags3, banditRefs3, bandits3);
+    }
+    
+    private static Mock<EppoHttpClient> GetMockAPI()
+    {
+        return new Mock<EppoHttpClient>("apiKey", "sdkName", "sdkVersion", "baseUrl", 3000);
     }
 
     private static void AssertHasConfig(ConfigurationRequester requester, string[] flagKeys, BanditReferences banditReferences, string[] banditKeys)
