@@ -1,6 +1,6 @@
 # Eppo .NET SDK
 
-[Eppo](https://www.geteppo.com/) is a modular flagging and experimentation analysis tool. Eppo's .NET SDK is built to make assignments in multi-user server side contexts, compatible with Dot Net 7.0 Runtime. Before proceeding you'll need an Eppo account.
+[Eppo](https://www.geteppo.com/) is a modular flagging and experimentation analysis tool. Eppo's .NET SDK is built to make assignments in multi-user server side contexts, compatible with Dot Net 8.0 Runtime. Before proceeding you'll need an Eppo account.
 
 ## Features
 
@@ -220,15 +220,15 @@ Eppo's SDKs are built for simplicity, speed and reliability. Flag configurations
 
 ### Contributing (OSX)
 
-* Download dotnet 7.0 installer to have access to the cli and runtimes
+* Download dotnet 8.0 installer to have access to the cli and runtimes
 * Download dotnet binary and copy it to your $PATH
 
 Expected environment:
 
 ```sh
 ✗ dotnet --list-sdks
-7.0.406
+8.0.303
 ✗ dotnet --list-runtimes
-Microsoft.AspNetCore.App 7.0.16
-Microsoft.NETCore.App 7.0.16
+Microsoft.AspNetCore.App 8.0.7
+Microsoft.NETCore.App 8.0.7
 ```
