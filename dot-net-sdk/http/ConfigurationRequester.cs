@@ -53,30 +53,46 @@ public class ConfigurationRequester : IConfigurationRequester
             var flags = flagConfigurationResponse.Resource!;
             var indexer = flags.BanditReferences ?? new BanditReferences();
 
-            IEnumerable<Bandit> banditModelList = Array.Empty<Bandit>();
+            var metadata = new Dictionary<string, object>();
 
-            var loadedModels = GetLoadedModels();
-            // Only fetch bandit models if there are active references and all the referenced models are in the set of loaded models.
-            if (indexer.HasBanditReferences() && indexer.GetBanditModelVersions().All(model => loadedModels.Contains(model)))
+            var banditModelList = FetchBanditsIfRequired(indexer);
+            if (banditModelList != null)
             {
-                BanditModelResponse banditModels = FetchBandits().Resource!;
-                banditModelList = banditModels.Bandits?.ToList().Select(kvp => kvp.Value) ?? Array.Empty<Bandit>();
+                // Store the bandits models that are loaded, not just those referenced.
+                metadata[KEY_BANDIT_VERSIONS] = banditModelList.Select((bandit) => bandit.ModelVersion);
             }
 
-            var metadata = new Dictionary<string, object>();
             var version = flagConfigurationResponse.VersionIdentifier;
             if (version != null)
             {
                 metadata[KEY_FLAG_CONFIG_VERSION] = version;
             }
             metadata[KEY_BANDIT_REFERENCES] = indexer;
-            metadata[KEY_BANDIT_VERSIONS] = indexer.GetBanditModelVersions();
+
 
             configurationStore.SetConfiguration(
                  flags.Flags.ToList().Select(kvp => kvp.Value),
                  banditModelList,
                  metadata);
         }
+    }
+
+    /// <summary>
+    /// Determine whether to fetch bandits.
+    /// </summary>
+    /// <param name="indexer"></param>
+    /// <returns>Fetched bandits or `null` if fetching was not required.</returns>
+    private IEnumerable<Bandit>? FetchBanditsIfRequired(BanditReferences indexer)
+    {
+        var loadedModels = GetLoadedModels();
+        // Only fetch bandit models if there are active references and not all of the referenced models are in the set of loaded models.
+        if (indexer.HasBanditReferences() && !indexer.GetBanditModelVersions().All(model => loadedModels.Contains(model)))
+        {
+            BanditModelResponse banditModels = FetchBandits().Resource!;
+            var banditModelList = banditModels.Bandits?.ToList().Select(kvp => kvp.Value) ?? Array.Empty<Bandit>();
+            return banditModelList;
+        }
+        return null;
     }
 
     private IEnumerable<string> GetLoadedModels()

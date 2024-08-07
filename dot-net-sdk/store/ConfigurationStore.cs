@@ -1,6 +1,5 @@
 using eppo_sdk.dto;
 using eppo_sdk.dto.bandit;
-using eppo_sdk.http;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace eppo_sdk.store;
@@ -27,22 +26,27 @@ public class ConfigurationStore : IConfigurationStore
         this.metadataCache = metadataCache;
     }
 
-    public void SetConfiguration(IEnumerable<Flag> flags, IEnumerable<Bandit> bandits, IDictionary<string, object> metadata)
+    public void SetConfiguration(IEnumerable<Flag> flags, IEnumerable<Bandit>? bandits, IDictionary<string, object> metadata)
     {
         cacheLock.EnterWriteLock();
         try
         {
-            ClearCaches();
+            ufcCache.Clear();
             foreach (var flag in flags)
             {
                 ufcCache.Set(flag.Key, flag, cacheOptions);
             }
 
-            foreach (var bandit in bandits)
+            if (bandits != null)
             {
-                banditCache.Set(bandit.BanditKey, bandit, cacheOptions);
+                banditCache.Clear();
+                foreach (var bandit in bandits)
+                {
+                    banditCache.Set(bandit.BanditKey, bandit, cacheOptions);
+                }
             }
 
+            metadataCache.Clear();
             foreach (KeyValuePair<string, object> kvp in metadata)
             {
                 metadataCache.Set(kvp.Key, kvp.Value, cacheOptions);
@@ -52,13 +56,6 @@ public class ConfigurationStore : IConfigurationStore
         {
             cacheLock.ExitWriteLock();
         }
-    }
-
-    private void ClearCaches()
-    {
-        ufcCache.Clear();
-        banditCache.Clear();
-        metadataCache.Clear();
     }
 
     public bool TryGetFlag(string key, out Flag? result)
