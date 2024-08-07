@@ -445,7 +445,7 @@ public class ConfigurationRequesterTest
         requester.LoadConfiguration();
         AssertHasConfig(requester, flags3, banditRefs3, bandits3);
     }
-
+    
     private static Mock<EppoHttpClient> GetMockAPI()
     {
         return new Mock<EppoHttpClient>("apiKey", "sdkName", "sdkVersion", "baseUrl", 3000);
