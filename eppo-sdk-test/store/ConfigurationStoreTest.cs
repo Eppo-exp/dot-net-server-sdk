@@ -86,7 +86,8 @@ public class ConfigurationStoreTest
         AssertHasBandit(store, "bandit2");
         AssertHasBandit(store, "bandit3", false);
 
-        Assert.Multiple(()=> {
+        Assert.Multiple(() =>
+        {
             Assert.That(store.TryGetMetadata("UFC_VERSION", out string? data), Is.True);
             Assert.That(data, Is.EqualTo("UFCVersion1"));
 
@@ -108,7 +109,8 @@ public class ConfigurationStoreTest
         AssertHasBandit(store, "bandit2", false);
         AssertHasBandit(store, "bandit3");
 
-        Assert.Multiple(()=> {
+        Assert.Multiple(() =>
+        {
             Assert.That(store.TryGetMetadata("UFC_VERSION", out string? data), Is.True);
             Assert.That(data, Is.EqualTo("UFCVersion2"));
 
@@ -129,13 +131,64 @@ public class ConfigurationStoreTest
         AssertHasBandit(store, "bandit1", false);
         AssertHasBandit(store, "bandit2", false);
         AssertHasBandit(store, "bandit3", false);
-        Assert.Multiple(()=> {
+        Assert.Multiple(() =>
+        {
             Assert.That(store.TryGetMetadata("UFC_VERSION", out string? data), Is.False);
             Assert.That(data, Is.Null);
             Assert.That(store.TryGetMetadata("DICT_OBJECT", out string? storedDict), Is.False);
             Assert.That(storedDict, Is.Null);
         });
-        
+
+    }
+
+    [Test]
+    public void ShouldUpdateConfigPreservingBandits()
+    {
+        var store = CreateConfigurationStore();
+
+        var flags = Array.Empty<Flag>();
+
+        var bandit1 = new Bandit("bandit1", "falcon", DateTime.Now, "v123", new ModelData()
+        {
+            Coefficients = new Dictionary<string, ActionCoefficients>()
+        });
+        var bandit2 = new Bandit("bandit2", "falcon", DateTime.Now, "v456", new ModelData()
+        {
+            Coefficients = new Dictionary<string, ActionCoefficients>()
+        });
+        var bandit3 = new Bandit("bandit3", "falcon", DateTime.Now, "v789", new ModelData()
+        {
+            Coefficients = new Dictionary<string, ActionCoefficients>()
+        });
+        var bandits = new Bandit[] { bandit1, bandit2 };
+
+        var dataDict = new Dictionary<string, object>
+        {
+
+        };
+
+        store.SetConfiguration(flags, bandits, dataDict);
+        AssertHasBandit(store, "bandit1");
+        AssertHasBandit(store, "bandit2");
+
+        // Existing bandits should not be overwritten
+        store.SetConfiguration(flags, dataDict);
+
+        AssertHasBandit(store, "bandit1");
+        AssertHasBandit(store, "bandit2");
+        AssertHasBandit(store, "bandit3", false);
+
+        store.SetConfiguration(flags, new Bandit[] { bandit3 }, dataDict);
+
+        AssertHasBandit(store, "bandit1", false);
+        AssertHasBandit(store, "bandit2", false);
+        AssertHasBandit(store, "bandit3");
+
+        store.SetConfiguration(flags, Array.Empty<Bandit>(), dataDict);
+
+        AssertHasBandit(store, "bandit1", false);
+        AssertHasBandit(store, "bandit2", false);
+        AssertHasBandit(store, "bandit3", false);
     }
 
     private static void AssertHasFlag(ConfigurationStore store, string flagKey, bool expectToExist = true)
