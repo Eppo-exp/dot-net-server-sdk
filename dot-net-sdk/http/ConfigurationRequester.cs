@@ -51,29 +51,33 @@ public class ConfigurationRequester : IConfigurationRequester
         {
             // Fetch methods throw if resource is null.
             var flags = flagConfigurationResponse.Resource!;
-            var indexer = flags.BanditReferences ?? new BanditReferences();
-
             var metadata = new Dictionary<string, object>();
 
-            var banditModelList = FetchBanditsIfRequired(indexer);
-            if (banditModelList != null)
-            {
-                // Store the bandits models that are loaded, not just those referenced.
-                metadata[KEY_BANDIT_VERSIONS] = banditModelList.Select((bandit) => bandit.ModelVersion);
-            }
+            var indexer = flags.BanditReferences ?? new BanditReferences();
+            metadata[KEY_BANDIT_REFERENCES] = indexer;
 
             var version = flagConfigurationResponse.VersionIdentifier;
             if (version != null)
             {
                 metadata[KEY_FLAG_CONFIG_VERSION] = version;
             }
-            metadata[KEY_BANDIT_REFERENCES] = indexer;
 
+            // Get the flags as a list instead of dict for `setConfiguration`.
+            var flagList = flags.Flags.ToList().Select(kvp => kvp.Value);
 
-            configurationStore.SetConfiguration(
-                 flags.Flags.ToList().Select(kvp => kvp.Value),
-                 banditModelList,
-                 metadata);
+            var bandits = FetchBanditsIfRequired(indexer);
+
+            if (bandits == null)
+            {
+                configurationStore.SetConfiguration(flagList, metadata);
+            }
+            else
+            {
+                // Store the bandits models that are loaded, not just those referenced.
+                metadata[KEY_BANDIT_VERSIONS] = bandits.Select((bandit) => bandit.ModelVersion);
+                configurationStore.SetConfiguration(flagList, bandits, metadata);
+            }
+
         }
     }
 
@@ -85,14 +89,15 @@ public class ConfigurationRequester : IConfigurationRequester
     private IEnumerable<Bandit>? FetchBanditsIfRequired(BanditReferences indexer)
     {
         var loadedModels = GetLoadedModels();
-        // Only fetch bandit models if there are active references and not all of the referenced models are in the set of loaded models.
-        if (indexer.HasBanditReferences() && !indexer.GetBanditModelVersions().All(model => loadedModels.Contains(model)))
+        // If all of the referenced models (including an empty set) are present, no need to fetch.
+        if (indexer.GetBanditModelVersions().All(model => loadedModels.Contains(model)))
         {
-            BanditModelResponse banditModels = FetchBandits().Resource!;
-            var banditModelList = banditModels.Bandits?.ToList().Select(kvp => kvp.Value) ?? Array.Empty<Bandit>();
-            return banditModelList;
+            return null;
         }
-        return null;
+
+        BanditModelResponse banditModels = FetchBandits().Resource!;
+        var banditModelList = banditModels.Bandits?.ToList().Select(kvp => kvp.Value) ?? Array.Empty<Bandit>();
+        return banditModelList;
     }
 
     private IEnumerable<string> GetLoadedModels()

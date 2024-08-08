@@ -142,7 +142,7 @@ public class ConfigurationStoreTest
     }
 
     [Test]
-    public void ShouldNotCleanBanditsIfNull()
+    public void ShouldUpdateConfigPreservingBandits()
     {
         var store = CreateConfigurationStore();
 
@@ -171,7 +171,8 @@ public class ConfigurationStoreTest
         AssertHasBandit(store, "bandit1");
         AssertHasBandit(store, "bandit2");
 
-        store.SetConfiguration(flags, null, dataDict);
+        // Existing bandits should not be overwritten
+        store.SetConfiguration(flags, dataDict);
 
         AssertHasBandit(store, "bandit1");
         AssertHasBandit(store, "bandit2");
