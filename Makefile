@@ -13,7 +13,7 @@ help: Makefile
 testDataDir := eppo-sdk-test/files
 tempDir := ${testDataDir}/temp
 gitDataDir := ${tempDir}/sdk-test-data
-branchName := main
+branchName := tp/fix/newflag
 githubRepoLink := https://github.com/Eppo-exp/sdk-test-data.git
 
 .PHONY: test-data
