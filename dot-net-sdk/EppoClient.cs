@@ -1,4 +1,4 @@
-﻿using System.Data;
+﻿using eppo_sdk.client;
 using eppo_sdk.constants;
 using eppo_sdk.dto;
 using eppo_sdk.dto.bandit;
@@ -109,13 +109,13 @@ public class EppoClient
     private EppoClient(IConfigurationRequester configurationStore,
                        EppoClientConfig eppoClientConfig,
                        FetchExperimentsTask? fetchExperimentsTask,
-                       AppDetails? appDetails = null)
+                       AppDetails appDetails)
     {
         _config = configurationStore;
         _eppoClientConfig = eppoClientConfig;
         _fetchExperimentsTask = fetchExperimentsTask;
         _banditEvaluator = new BanditEvaluator();
-        _appDetails = appDetails ?? AppDetails.Init();
+        _appDetails = appDetails;
     }
 
     private HasEppoValue TypeCheckedAssignment(string flagKey,
@@ -196,7 +196,8 @@ public class EppoClient
         return assignment;
     }
 
-    public static EppoClient Init(EppoClientConfig eppoClientConfig)
+    public static EppoClient Init(EppoClientConfig eppoClientConfig,
+                                  SDKDeploymentMode sdkDeployment = SDKDeploymentMode.SERVER)
     {
         lock (s_baton)
         {
@@ -208,7 +209,7 @@ public class EppoClient
             }
 
             // Initialize in either Client(Todo) or Server mode.
-            var appDetails = AppDetails.Init();
+            var appDetails = new AppDetails(sdkDeployment);
 
             var eppoHttpClient = new EppoHttpClient(
                 eppoClientConfig.ApiKey,
@@ -227,18 +228,27 @@ public class EppoClient
                 modelCache,
                 banditFlagCache);
 
-            var expConfigRequester = new ConfigurationRequester(eppoHttpClient, configurationStore);
+            var configRequester = new ConfigurationRequester(eppoHttpClient, configurationStore);
             s_client?._fetchExperimentsTask?.Dispose();
 
             // TODO Test this
             FetchExperimentsTask? fetchExperimentsTask = null;
-            if (appDetails.Deployment == client.SDKDeploymentMode.SERVER)
+            if (appDetails.Deployment == SDKDeploymentMode.SERVER)
             {
-                fetchExperimentsTask = new FetchExperimentsTask(expConfigRequester, Constants.TIME_INTERVAL_IN_MILLIS,
+                fetchExperimentsTask = new FetchExperimentsTask(configRequester, Constants.TIME_INTERVAL_IN_MILLIS,
                     Constants.JITTER_INTERVAL_IN_MILLIS);
                 fetchExperimentsTask.Run();
             }
-            s_client = new EppoClient(expConfigRequester, eppoClientConfig, fetchExperimentsTask);
+            else
+            {
+                configRequester.LoadConfiguration();
+            }
+
+            s_client = new EppoClient(
+                configRequester,
+                eppoClientConfig,
+                fetchExperimentsTask,
+                appDetails);
         }
 
         return s_client;
@@ -467,6 +477,12 @@ public class EppoClient
             s_logger.Error("[Eppo SDK] Error evaluating bandit, returning variation only: " + bee.Message);
         }
         return null;
+    }
+
+    public void ReloadConfiguration()
+    {
+        // TODO Test this
+        _config.LoadConfiguration();
     }
 
     public static EppoClient GetInstance()

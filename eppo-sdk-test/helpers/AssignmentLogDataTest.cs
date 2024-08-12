@@ -14,7 +14,7 @@ public class AssignmentLogDataTest
             "variation",
             "subject",
             new Subject(),
-            AppDetails.Init().AsDict(),
+            new AppDetails().AsDict(),
             new Dictionary<string, string>());
         Assert.That(assignmentLogData.Experiment, Is.EqualTo("feature-flag-allocation"));
     }
