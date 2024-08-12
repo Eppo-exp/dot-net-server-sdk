@@ -1,4 +1,5 @@
-﻿using eppo_sdk.constants;
+﻿using System.Data;
+using eppo_sdk.constants;
 using eppo_sdk.dto;
 using eppo_sdk.dto.bandit;
 using eppo_sdk.exception;
@@ -20,9 +21,11 @@ public class EppoClient
 
     private static EppoClient? s_client = null;
     private readonly IConfigurationRequester _config;
-    private readonly FetchExperimentsTask _fetchExperimentsTask;
+    private readonly FetchExperimentsTask? _fetchExperimentsTask;
     private readonly BanditEvaluator _banditEvaluator;
     private readonly EppoClientConfig _eppoClientConfig;
+
+    private readonly AppDetails _appDetails;
 
     public JObject GetJsonAssignment(string flagKey,
                                      string subjectKey,
@@ -105,12 +108,14 @@ public class EppoClient
 
     private EppoClient(IConfigurationRequester configurationStore,
                        EppoClientConfig eppoClientConfig,
-                       FetchExperimentsTask fetchExperimentsTask)
+                       FetchExperimentsTask? fetchExperimentsTask,
+                       AppDetails? appDetails = null)
     {
         _config = configurationStore;
-        this._eppoClientConfig = eppoClientConfig;
-        this._fetchExperimentsTask = fetchExperimentsTask;
+        _eppoClientConfig = eppoClientConfig;
+        _fetchExperimentsTask = fetchExperimentsTask;
         _banditEvaluator = new BanditEvaluator();
+        _appDetails = appDetails ?? AppDetails.Init();
     }
 
     private HasEppoValue TypeCheckedAssignment(string flagKey,
@@ -172,7 +177,7 @@ public class EppoClient
                     result.Variation.Key,
                     subjectKey,
                     subjectAttributes.AsReadOnly(),
-                    AppDetails.GetInstance().AsDict(),
+                    _appDetails.AsDict(),
                     result.ExtraLogging
                 );
 
@@ -202,7 +207,9 @@ public class EppoClient
                 throw new InvalidDataException("An assignment logging implementation is required");
             }
 
-            var appDetails = AppDetails.GetInstance();
+            // Initialize in either Client(Todo) or Server mode.
+            var appDetails = AppDetails.Init();
+
             var eppoHttpClient = new EppoHttpClient(
                 eppoClientConfig.ApiKey,
                 appDetails.Name,
@@ -221,11 +228,16 @@ public class EppoClient
                 banditFlagCache);
 
             var expConfigRequester = new ConfigurationRequester(eppoHttpClient, configurationStore);
-            s_client?._fetchExperimentsTask.Dispose();
+            s_client?._fetchExperimentsTask?.Dispose();
 
-            var fetchExperimentsTask = new FetchExperimentsTask(expConfigRequester, Constants.TIME_INTERVAL_IN_MILLIS,
-                Constants.JITTER_INTERVAL_IN_MILLIS);
-            fetchExperimentsTask.Run();
+            // TODO Test this
+            FetchExperimentsTask? fetchExperimentsTask = null;
+            if (appDetails.Deployment == client.SDKDeploymentMode.SERVER)
+            {
+                fetchExperimentsTask = new FetchExperimentsTask(expConfigRequester, Constants.TIME_INTERVAL_IN_MILLIS,
+                    Constants.JITTER_INTERVAL_IN_MILLIS);
+                fetchExperimentsTask.Run();
+            }
             s_client = new EppoClient(expConfigRequester, eppoClientConfig, fetchExperimentsTask);
         }
 
@@ -434,7 +446,7 @@ public class EppoClient
                     variation,
                     result,
                     bandit,
-                    AppDetails.GetInstance().AsDict());
+                   _appDetails.AsDict());
 
                 try
                 {

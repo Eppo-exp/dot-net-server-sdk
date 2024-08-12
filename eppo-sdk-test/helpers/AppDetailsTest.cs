@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using eppo_sdk.exception;
 using eppo_sdk.helpers;
 using NUnit.Framework.Internal;
 using static NUnit.Framework.Assert;
@@ -11,22 +12,9 @@ public partial class AppDetailsTest
     private static partial Regex SemVerRegex();
 
     [Test]
-    public void ShouldMaintainSingleton()
-    {
-        var appDetails = AppDetails.GetInstance();
-        var name = appDetails.Name;
-
-        Multiple(() =>
-        {
-            That(name, Is.Not.Null);
-            That(name, Is.EqualTo("dotnet-server"));
-        });
-    }
-
-    [Test]
     public void ShouldReturnASemVer()
     {
-        var appDetails = AppDetails.GetInstance();
+        var appDetails = AppDetails.Init();
         var version = appDetails.Version;
         Multiple(() =>
         {
@@ -36,15 +24,28 @@ public partial class AppDetailsTest
     }
 
     [Test]
-    public void ShouldReturnRightName()
+    public void ShouldReturnRightNameForServer()
     {
-        var appDetails = AppDetails.GetInstance();
+        var appDetails = AppDetails.Init();
         var name = appDetails.Name;
 
         Multiple(() =>
         {
             That(name, Is.Not.Null);
             That(name, Is.EqualTo("dotnet-server"));
+        });
+    }
+
+    [Test]
+    public void ShouldReturnRightNameForClient()
+    {
+        var appDetails = AppDetails.InitClient();
+        var name = appDetails.Name;
+
+        Multiple(() =>
+        {
+            That(name, Is.Not.Null);
+            That(name, Is.EqualTo("dotnet-client"));
         });
     }
 }
