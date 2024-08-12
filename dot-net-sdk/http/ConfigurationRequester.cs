@@ -77,7 +77,6 @@ public class ConfigurationRequester : IConfigurationRequester
                 metadata[KEY_BANDIT_VERSIONS] = bandits.Select((bandit) => bandit.ModelVersion);
                 configurationStore.SetConfiguration(flagList, bandits, metadata);
             }
-
         }
     }
 
