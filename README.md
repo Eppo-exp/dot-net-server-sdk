@@ -2,6 +2,8 @@
 
 [Eppo](https://www.geteppo.com/) is a modular flagging and experimentation analysis tool. Eppo's .NET SDK is built to make assignments in multi-user server side contexts, compatible with Dot Net 7.0 Runtime. Before proceeding you'll need an Eppo account.
 
+Despite the name, this SDK runs in both server and client applications.
+
 ## Features
 
 - Feature gates
@@ -10,6 +12,7 @@
 - A/B/n experiments
 - Mutually exclusive experiments (Layers)
 - Dynamic configuration
+- Multi-armed Contextual Bandits
 
 ## Installation
 
@@ -19,15 +22,28 @@ In your .NET application, add the Eppo.Sdk Package from Nuget.
 dotnet add package Eppo.Sdk
 ```
 
+## Client Mode
+In order to have the most up-to-date _Assignment_ and _Bandit_ configuration, the SDK frequently polls the configuration server. This is not ideal in a client deployment such as a mobile or web app. For these client applications, this SDK can be run in **Client Mode** where configuration loading is done ad-hoc by calling the `EppoClient.ReloadConfiguration` method.
+
 ## Quick start
 
-Begin by initializing a singleton instance of Eppo's client. Once initialized, the client can be used to make assignments anywhere in your app.
+Begin by initializing a singleton instance of Eppo's client. Once initialized*, the client can be used to make assignments anywhere in your app.
+
+_*In **Client Mode**, `ReloadConfigruation` must be called before assignments can be made_
 
 #### Initialize once
 
 ```cs
 var eppoClientConfig = new EppoClientConfig('SDK-KEY-FROM-DASHBOARD');
+
+// For servers:
 var eppoClient = EppoClient.Init(eppoClientConfig);
+
+// For client (such as mobile) applications:
+var eppoClient = EppoClient.InitClientMode(eppoClientConfig);
+
+// Client applications, On app load / session start:
+eppoClient.ReloadConfiguration();
 ```
 
 
