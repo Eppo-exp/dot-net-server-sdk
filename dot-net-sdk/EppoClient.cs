@@ -208,7 +208,7 @@ public class EppoClient
             SDKDeploymentMode.SERVER);
 
     private static EppoClient InitInner(EppoClientConfig eppoClientConfig,
-                                        SDKDeploymentMode sdkDeployment)
+                                        SDKDeploymentMode sdkDeploymentMode)
     {
         lock (s_baton)
         {
@@ -219,8 +219,7 @@ public class EppoClient
                 throw new InvalidDataException("An assignment logging implementation is required");
             }
 
-            // Initialize in either Client(Todo) or Server mode.
-            var appDetails = new AppDetails(sdkDeployment);
+            var appDetails = new AppDetails(sdkDeploymentMode);
 
             var eppoHttpClient = new EppoHttpClient(
                 eppoClientConfig.ApiKey,
@@ -242,7 +241,6 @@ public class EppoClient
             var configRequester = new ConfigurationRequester(eppoHttpClient, configurationStore);
             s_client?._fetchExperimentsTask?.Dispose();
 
-            // TODO Test this
             FetchExperimentsTask? fetchExperimentsTask = null;
             if (appDetails.Deployment == SDKDeploymentMode.SERVER)
             {
@@ -486,9 +484,8 @@ public class EppoClient
         return null;
     }
 
-    public void ReloadConfiguration()
+    public void RefreshConfiguration()
     {
-        // TODO Test this
         _config.LoadConfiguration();
     }
 

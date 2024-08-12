@@ -1,3 +1,4 @@
+using System.Collections.Specialized;
 using eppo_sdk.dto.bandit;
 using eppo_sdk.exception;
 using eppo_sdk.helpers;
