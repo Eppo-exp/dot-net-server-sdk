@@ -158,6 +158,99 @@ public class ConfigurationRequesterTest
     }
 
     [Test]
+    public void ShouldOnlyLoadBanditsIfVersionsAreMissing()
+    {
+
+        var flags = new Dictionary<string, Flag>
+        {
+            ["flag1"] = BasicFlag("flag1", new string[] { "control", "bandit1" }),
+            ["flag2"] = BasicFlag("flag2", new string[] { "control", "bandit2" })
+        };
+        var banditReferences = new BanditReferences()
+        {
+            ["bandit1"] = new BanditReference("v123",
+                new BanditFlagVariation[] {
+                    new("bandit1", "flag1", "allocation", "bandit1", "bandit1")
+                }
+            )
+        };
+        var response = new FlagConfigurationResponse()
+        {
+            BanditReferences = banditReferences,
+            Flags = flags
+        };
+
+        var banditResponse = new BanditModelResponse()
+        {
+            Bandits = new Dictionary<string, Bandit>()
+            {
+                ["bandit1"] = BasicBandit("bandit1"),
+                ["bandit2"] = BasicBandit("bandit2", "bandit2modelversion")
+            }
+        };
+
+        var updatedBanditReferences = new BanditReferences()
+        {
+            ["bandit1"] = new BanditReference("updatedversion",
+                new BanditFlagVariation[] {
+                    new("bandit1", "flag1", "allocation", "bandit1", "bandit1")
+                }
+            ),
+
+            ["bandit2"] = new BanditReference("bandit2modelversion",
+                new BanditFlagVariation[] {
+                    new("bandit2", "flag2", "allocation", "bandit2", "bandit2")
+                }
+            )            
+        };
+        var updatedUFCResponse =  new FlagConfigurationResponse()
+        {
+            BanditReferences = updatedBanditReferences,
+            Flags = flags
+        };
+
+        var api = GetMockAPI();
+
+        // Return a response marked as modified (via `IsModified`) ach time.
+        // The first response triggers a call to fetchBandits.
+        // The second response with the same referencd models suppresses the first fetchBandits call.
+        // On the third call, return an updated response to trigger a call to fetchBandits.
+        api.SetupSequence(m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>()))
+            .Returns(new VersionedResourceResponse<FlagConfigurationResponse>(response, "ETAG", isModified: true))
+            .Returns(new VersionedResourceResponse<FlagConfigurationResponse>(response, "ETAG", isModified: true))
+            .Returns(new VersionedResourceResponse<FlagConfigurationResponse>(updatedUFCResponse, "ETAG", isModified: true));
+
+        //  Only need to return a valid Bandit response as its content does not affect whether or not it is loaded.
+        api.Setup(m => m.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT, It.IsAny<string>()))
+            .Returns(new VersionedResourceResponse<BanditModelResponse>(banditResponse, "ETAG"));
+
+
+        var store = CreateConfigurationStore();
+
+        var requester = new ConfigurationRequester(api.Object, store);
+
+        // First load all the models
+        requester.LoadConfiguration();
+
+        api.Verify(m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>()), Times.Exactly(1));
+        api.Verify(m => m.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT, It.IsAny<string>()), Times.Exactly(1));
+
+
+        // Second load should only call the UFC endpoint
+        requester.LoadConfiguration();
+
+        api.Verify(m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>()), Times.Exactly(2));
+        api.Verify(m => m.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT, It.IsAny<string>()), Times.Exactly(1));
+
+
+        // Third call reloads bandits.
+        requester.LoadConfiguration();
+
+        api.Verify(m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>()), Times.Exactly(3));
+        api.Verify(m => m.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT, It.IsAny<string>()), Times.Exactly(2));
+    }
+
+    [Test]
     public void ShouldSendLastVersionString()
     {
         var mockAPI = GetMockAPI();

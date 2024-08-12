@@ -1,6 +1,5 @@
 using eppo_sdk.dto;
 using eppo_sdk.dto.bandit;
-using eppo_sdk.http;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace eppo_sdk.store;
@@ -27,26 +26,13 @@ public class ConfigurationStore : IConfigurationStore
         this.metadataCache = metadataCache;
     }
 
-    public void SetConfiguration(IEnumerable<Flag> flags, IEnumerable<Bandit> bandits, IDictionary<string, object> metadata)
+    public void SetConfiguration(IEnumerable<Flag> flags, IDictionary<string, object> metadata)
     {
         cacheLock.EnterWriteLock();
         try
         {
-            ClearCaches();
-            foreach (var flag in flags)
-            {
-                ufcCache.Set(flag.Key, flag, cacheOptions);
-            }
-
-            foreach (var bandit in bandits)
-            {
-                banditCache.Set(bandit.BanditKey, bandit, cacheOptions);
-            }
-
-            foreach (KeyValuePair<string, object> kvp in metadata)
-            {
-                metadataCache.Set(kvp.Key, kvp.Value, cacheOptions);
-            }
+            SetFlagsInner(flags);
+            SetMetadataInner(metadata);
         }
         finally
         {
@@ -54,11 +40,46 @@ public class ConfigurationStore : IConfigurationStore
         }
     }
 
-    private void ClearCaches()
+    public void SetConfiguration(IEnumerable<Flag> flags, IEnumerable<Bandit> bandits, IDictionary<string, object> metadata)
+    {
+        cacheLock.EnterWriteLock();
+        try
+        {
+            SetFlagsInner(flags);
+            SetMetadataInner(metadata);
+            SetBanditsInner(bandits);
+        }
+        finally
+        {
+            cacheLock.ExitWriteLock();
+        }
+    }
+
+    private void SetBanditsInner(IEnumerable<Bandit> bandits)
+    {
+        banditCache.Clear();
+        foreach (var bandit in bandits)
+        {
+            banditCache.Set(bandit.BanditKey, bandit, cacheOptions);
+        }
+    }
+
+    private void SetMetadataInner(IDictionary<string, object> metadata)
+    {
+        metadataCache.Clear();
+        foreach (KeyValuePair<string, object> kvp in metadata)
+        {
+            metadataCache.Set(kvp.Key, kvp.Value, cacheOptions);
+        }
+    }
+
+    private void SetFlagsInner(IEnumerable<Flag> flags)
     {
         ufcCache.Clear();
-        banditCache.Clear();
-        metadataCache.Clear();
+        foreach (var flag in flags)
+        {
+            ufcCache.Set(flag.Key, flag, cacheOptions);
+        }
     }
 
     public bool TryGetFlag(string key, out Flag? result)

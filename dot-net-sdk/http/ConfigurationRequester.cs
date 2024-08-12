@@ -16,6 +16,7 @@ public interface IConfigurationRequester
 public class ConfigurationRequester : IConfigurationRequester
 {
     private const string KEY_BANDIT_REFERENCES = "banditReferences";
+    private const string KEY_BANDIT_VERSIONS = "banditVersions";
     private const string KEY_FLAG_CONFIG_VERSION = "ufcVersion";
 
     private readonly EppoHttpClient eppoHttpClient;
@@ -50,28 +51,58 @@ public class ConfigurationRequester : IConfigurationRequester
         {
             // Fetch methods throw if resource is null.
             var flags = flagConfigurationResponse.Resource!;
-            var indexer = flags.BanditReferences ?? new BanditReferences();
-
-            IEnumerable<Bandit> banditModelList = Array.Empty<Bandit>();
-            if (indexer.HasBanditReferences())
-            {
-                BanditModelResponse banditModels = FetchBandits().Resource!;
-                banditModelList = banditModels.Bandits?.ToList().Select(kvp => kvp.Value) ?? Array.Empty<Bandit>();
-            }
-
             var metadata = new Dictionary<string, object>();
+
+            var indexer = flags.BanditReferences ?? new BanditReferences();
+            metadata[KEY_BANDIT_REFERENCES] = indexer;
+
             var version = flagConfigurationResponse.VersionIdentifier;
             if (version != null)
             {
                 metadata[KEY_FLAG_CONFIG_VERSION] = version;
             }
-            metadata[KEY_BANDIT_REFERENCES] = indexer;
 
-            configurationStore.SetConfiguration(
-                 flags.Flags.ToList().Select(kvp => kvp.Value),
-                 banditModelList,
-                 metadata);
+            // Get the flags as a list instead of dict for `setConfiguration`.
+            var flagList = flags.Flags.ToList().Select(kvp => kvp.Value);
+
+            var bandits = FetchBanditsIfRequired(indexer);
+
+            if (bandits == null)
+            {
+                configurationStore.SetConfiguration(flagList, metadata);
+            }
+            else
+            {
+                // Store the bandits models that are loaded, not just those referenced.
+                metadata[KEY_BANDIT_VERSIONS] = bandits.Select((bandit) => bandit.ModelVersion);
+                configurationStore.SetConfiguration(flagList, bandits, metadata);
+            }
         }
+    }
+
+    /// <summary>
+    /// Determine whether to fetch bandits.
+    /// </summary>
+    /// <param name="indexer"></param>
+    /// <returns>Fetched bandits or `null` if fetching was not required.</returns>
+    private IEnumerable<Bandit>? FetchBanditsIfRequired(BanditReferences indexer)
+    {
+        var loadedModels = GetLoadedModels();
+        // If all of the referenced models (including an empty set) are present, no need to fetch.
+        if (indexer.GetBanditModelVersions().All(model => loadedModels.Contains(model)))
+        {
+            return null;
+        }
+
+        BanditModelResponse banditModels = FetchBandits().Resource!;
+        var banditModelList = banditModels.Bandits?.ToList().Select(kvp => kvp.Value) ?? Array.Empty<Bandit>();
+        return banditModelList;
+    }
+
+    private IEnumerable<string> GetLoadedModels()
+    {
+        configurationStore.TryGetMetadata(KEY_BANDIT_VERSIONS, out IEnumerable<string>? models);
+        return models ?? Array.Empty<string>();
     }
 
     private VersionedResourceResponse<FlagConfigurationResponse> FetchFlags(string? lastConfigVersion)
