@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using eppo_sdk.client;
 using eppo_sdk.helpers;
 using NUnit.Framework.Internal;
 using static NUnit.Framework.Assert;
@@ -38,7 +39,7 @@ public partial class AppDetailsTest
     [Test]
     public void ShouldReturnRightNameForClient()
     {
-        var appDetails = new AppDetails(eppo_sdk.client.SDKDeploymentMode.CLIENT);
+        var appDetails = new AppDetails(DeploymentEnvironment.Client());
         var name = appDetails.Name;
 
         Multiple(() =>

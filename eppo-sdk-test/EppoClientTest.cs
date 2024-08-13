@@ -14,6 +14,7 @@ using WireMock.FluentAssertions;
 
 using static NUnit.Framework.Assert;
 using eppo_sdk.helpers;
+using eppo_sdk.client;
 
 namespace eppo_sdk_test;
 
@@ -140,7 +141,7 @@ public class EppoClientTest
         Multiple(() =>
         {
             var baseUrl = _mockServer?.Urls[0]!;
-            var sdkVersion = new AppDetails(eppo_sdk.client.SDKDeploymentMode.CLIENT).Version;
+            var sdkVersion = new AppDetails(DeploymentEnvironment.Client()).Version;
 
             // Assert that only one call to the api server has been made.
             _mockServer!.Should()

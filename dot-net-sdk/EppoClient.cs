@@ -199,16 +199,16 @@ public class EppoClient
     public static EppoClient InitClientMode(EppoClientConfig eppoClientConfig) =>
         InitInner(
             eppoClientConfig,
-            SDKDeploymentMode.CLIENT);
+            DeploymentEnvironment.Client());
 
 
     public static EppoClient Init(EppoClientConfig eppoClientConfig) =>
         InitInner(
             eppoClientConfig,
-            SDKDeploymentMode.SERVER);
+            DeploymentEnvironment.Server());
 
     private static EppoClient InitInner(EppoClientConfig eppoClientConfig,
-                                        SDKDeploymentMode sdkDeploymentMode)
+                                        DeploymentEnvironment sdkDeploymentMode)
     {
         lock (s_baton)
         {
@@ -242,7 +242,7 @@ public class EppoClient
             s_client?._fetchExperimentsTask?.Dispose();
 
             FetchExperimentsTask? fetchExperimentsTask = null;
-            if (appDetails.Deployment == SDKDeploymentMode.SERVER)
+            if (appDetails.Deployment.Polling)
             {
                 fetchExperimentsTask = new FetchExperimentsTask(configRequester, Constants.TIME_INTERVAL_IN_MILLIS,
                     Constants.JITTER_INTERVAL_IN_MILLIS);
