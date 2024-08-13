@@ -7,13 +7,17 @@ public class SDKNameAttribute : Attribute
 
     public SDKNameAttribute(string value)
     {
-        Value = value;   
-
+        Value = value;
     }
 }
 
 public static class SDKDeploymentExtension
 {
+    /// <summary>
+    /// Gets the `SDKName` attribute from this enum value.
+    /// </summary>
+    /// <param name="val"></param>
+    /// <returns></returns>
     public static string GetSDKName(this SDKDeploymentMode val)
     {
         var field = val.GetType().GetField(val.ToString());
@@ -27,7 +31,9 @@ public static class SDKDeploymentExtension
     }
 } 
 
-
+/// <summary>
+/// Types of applications this SDK can run in and associated attributes.
+/// </summary>
 public enum SDKDeploymentMode {
     [SDKName("dotnet-server")]
     SERVER,
