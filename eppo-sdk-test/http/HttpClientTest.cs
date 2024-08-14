@@ -76,7 +76,7 @@ public class HttpClientTest
     [Test]
     public void ShouldFetchAndParseConfig()
     {
-        var Client = CreatClient(BaseUrl);  
+        var Client = CreatClient(BaseUrl);
 
         var ufcResponse = Client.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT);
 

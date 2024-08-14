@@ -135,10 +135,10 @@ For additional control in server deployments, the `EppoClientConfig` class can b
 
 ```cs
 
- var config = new EppoClientConfig("YOUR-API-KEY", myAssignmentLogger)
-        {
-            PollingIntervalInMillis = 5000
-        };
+var config = new EppoClientConfig("YOUR-API-KEY", myAssignmentLogger)
+    {
+        PollingIntervalInMillis = 5000
+    };
 ```
 
 
