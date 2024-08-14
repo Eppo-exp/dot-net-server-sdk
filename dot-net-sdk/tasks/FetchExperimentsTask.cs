@@ -16,14 +16,25 @@ public class FetchExperimentsTask : IDisposable
         ConfigLoader = config;
         TimeIntervalInMillis = timeIntervalInMillis;
         JitterTimeIntervalInMillis = jitterTimeIntervalInMillis;
-        Timer = new Timer(state => Run(), null, timeIntervalInMillis, Timeout.Infinite);
+
+        Timer = new Timer(
+                state => Run(),
+                null,
+                timeIntervalInMillis,
+                Timeout.Infinite);
     }
 
     internal void Run()
     {
-        var rnd = new Random();
-        var nextTick = TimeIntervalInMillis -
-                       rnd.Next(1, unchecked((int)JitterTimeIntervalInMillis));
+        long jitter = 0;
+        if (JitterTimeIntervalInMillis > 0)
+        {
+            var rnd = new Random();
+            jitter = rnd.Next(1, unchecked((int)JitterTimeIntervalInMillis));
+        }
+
+        var nextTick = TimeIntervalInMillis - jitter;
+
         Timer.Change(nextTick, Timeout.Infinite);
         ConfigLoader.LoadConfiguration();
     }

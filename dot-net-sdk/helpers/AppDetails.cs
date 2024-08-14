@@ -1,21 +1,15 @@
 using System.Reflection;
+using eppo_sdk.client;
 
 namespace eppo_sdk.helpers;
 
 public class AppDetails
 {
-    private static AppDetails? s_instance;
+    public DeploymentEnvironment Deployment { get; init;}
 
     private readonly string _version;
-    private readonly string _name = "dotnet-server";
 
-    public static AppDetails GetInstance()
-    {
-        s_instance ??= new AppDetails();
-        return s_instance;
-    }
-
-    private AppDetails()
+    public AppDetails(DeploymentEnvironment? deployment = null)
     {
         // .net returns a 4-segmented version string (MAJOR.MINOR.BUILD.REVISION) here but we want to stick to semver standards (3-segment).
         // We use a convention of Major.Minor.Patch when setting the package version; dotnet parses this to Major.Minor.Build and apprends
@@ -23,11 +17,10 @@ public class AppDetails
         var fullVersion = Assembly.GetExecutingAssembly().GetName().Version!;
         _version = $"{fullVersion.Major}.{fullVersion.Minor}.{fullVersion.Build}";
 
-        // Hardcoded for now; update soon with client/server split.
-        _name = "dotnet-server";
+        this.Deployment = deployment ?? DeploymentEnvironment.Server();
     }
 
-    public string Name => _name;
+    public string Name => Deployment.SdkName;
 
     public string Version => _version;
 

@@ -1,4 +1,5 @@
-﻿using eppo_sdk.constants;
+﻿using eppo_sdk.client;
+using eppo_sdk.constants;
 using eppo_sdk.dto;
 using eppo_sdk.dto.bandit;
 using eppo_sdk.exception;
@@ -12,7 +13,7 @@ using NLog;
 
 namespace eppo_sdk;
 
-public class EppoClient
+public sealed class EppoClient: IDisposable
 {
     private static readonly object s_baton = new();
 
@@ -20,9 +21,11 @@ public class EppoClient
 
     private static EppoClient? s_client = null;
     private readonly IConfigurationRequester _config;
-    private readonly FetchExperimentsTask _fetchExperimentsTask;
+    private readonly FetchExperimentsTask? _fetchExperimentsTask;
     private readonly BanditEvaluator _banditEvaluator;
     private readonly EppoClientConfig _eppoClientConfig;
+
+    private readonly AppDetails _appDetails;
 
     public JObject GetJsonAssignment(string flagKey,
                                      string subjectKey,
@@ -105,12 +108,14 @@ public class EppoClient
 
     private EppoClient(IConfigurationRequester configurationStore,
                        EppoClientConfig eppoClientConfig,
-                       FetchExperimentsTask fetchExperimentsTask)
+                       FetchExperimentsTask? fetchExperimentsTask,
+                       AppDetails appDetails)
     {
         _config = configurationStore;
-        this._eppoClientConfig = eppoClientConfig;
-        this._fetchExperimentsTask = fetchExperimentsTask;
+        _eppoClientConfig = eppoClientConfig;
+        _fetchExperimentsTask = fetchExperimentsTask;
         _banditEvaluator = new BanditEvaluator();
+        _appDetails = appDetails;
     }
 
     private HasEppoValue TypeCheckedAssignment(string flagKey,
@@ -172,7 +177,7 @@ public class EppoClient
                     result.Variation.Key,
                     subjectKey,
                     subjectAttributes.AsReadOnly(),
-                    AppDetails.GetInstance().AsDict(),
+                    _appDetails.AsDict(),
                     result.ExtraLogging
                 );
 
@@ -191,7 +196,19 @@ public class EppoClient
         return assignment;
     }
 
-    public static EppoClient Init(EppoClientConfig eppoClientConfig)
+    public static EppoClient InitClientMode(EppoClientConfig eppoClientConfig) =>
+        InitInner(
+            eppoClientConfig,
+            DeploymentEnvironment.Client());
+
+
+    public static EppoClient Init(EppoClientConfig eppoClientConfig) =>
+        InitInner(
+            eppoClientConfig,
+            DeploymentEnvironment.Server());
+
+    private static EppoClient InitInner(EppoClientConfig eppoClientConfig,
+                                        DeploymentEnvironment sdkDeploymentMode)
     {
         lock (s_baton)
         {
@@ -202,7 +219,8 @@ public class EppoClient
                 throw new InvalidDataException("An assignment logging implementation is required");
             }
 
-            var appDetails = AppDetails.GetInstance();
+            var appDetails = new AppDetails(sdkDeploymentMode);
+
             var eppoHttpClient = new EppoHttpClient(
                 eppoClientConfig.ApiKey,
                 appDetails.Name,
@@ -220,13 +238,26 @@ public class EppoClient
                 modelCache,
                 banditFlagCache);
 
-            var expConfigRequester = new ConfigurationRequester(eppoHttpClient, configurationStore);
-            s_client?._fetchExperimentsTask.Dispose();
+            var configRequester = new ConfigurationRequester(eppoHttpClient, configurationStore);
+            s_client?._fetchExperimentsTask?.Dispose();
 
-            var fetchExperimentsTask = new FetchExperimentsTask(expConfigRequester, Constants.TIME_INTERVAL_IN_MILLIS,
-                Constants.JITTER_INTERVAL_IN_MILLIS);
-            fetchExperimentsTask.Run();
-            s_client = new EppoClient(expConfigRequester, eppoClientConfig, fetchExperimentsTask);
+            FetchExperimentsTask? fetchExperimentsTask = null;
+            if (appDetails.Deployment.Polling)
+            {
+                fetchExperimentsTask = new FetchExperimentsTask(
+                    configRequester,
+                    eppoClientConfig.PollingIntervalInMillis,
+                    eppoClientConfig.PollingJitterInMillis);
+            }
+
+            // Load the configuration for the first time.
+            configRequester.LoadConfiguration();
+
+            s_client = new EppoClient(
+                configRequester,
+                eppoClientConfig,
+                fetchExperimentsTask,
+                appDetails);
         }
 
         return s_client;
@@ -434,7 +465,7 @@ public class EppoClient
                     variation,
                     result,
                     bandit,
-                    AppDetails.GetInstance().AsDict());
+                   _appDetails.AsDict());
 
                 try
                 {
@@ -457,6 +488,11 @@ public class EppoClient
         return null;
     }
 
+    public void RefreshConfiguration()
+    {
+        _config.LoadConfiguration();
+    }
+
     public static EppoClient GetInstance()
     {
         if (s_client == null)
@@ -465,5 +501,10 @@ public class EppoClient
         }
 
         return s_client;
+    }
+
+    public void Dispose()
+    {
+        _fetchExperimentsTask?.Dispose();
     }
 }
