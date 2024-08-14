@@ -92,6 +92,7 @@ public class EppoClientTest
             PollingIntervalInMillis = 25,
             PollingJitterInMillis = 0
         };
+
         client = EppoClient.Init(config);
 
         Thread.Sleep(30);
@@ -123,16 +124,6 @@ public class EppoClientTest
         client.RefreshConfiguration();
         client.RefreshConfiguration();
         VerifyApiCalls(3, "dotnet-client");
-    }
-
-    private void VerifyApiCalls(int callCount, string sdkName = "dotnet-server")
-    {
-        var baseUrl = _mockServer?.Urls[0]!;
-        var sdkVersion = new AppDetails(DeploymentEnvironment.Client()).Version;
-        _mockServer!.Should()
-            .HaveReceived(callCount).Calls()
-            .UsingGet()
-            .And.AtUrl($"{baseUrl}/flag-config/v1/config?apiKey=mock-api-key&sdkName={sdkName}&sdkVersion={sdkVersion}");
     }
 
     [Test]
@@ -258,6 +249,15 @@ public class EppoClientTest
         }
     }
 
+    private void VerifyApiCalls(int callCount, string sdkName = "dotnet-server")
+    {
+        var baseUrl = _mockServer?.Urls[0]!;
+        var sdkVersion = new AppDetails(DeploymentEnvironment.Client()).Version;
+        _mockServer!.Should()
+            .HaveReceived(callCount).Calls()
+            .UsingGet()
+            .And.AtUrl($"{baseUrl}/flag-config/v1/config?apiKey=mock-api-key&sdkName={sdkName}&sdkVersion={sdkVersion}");
+    }
 
     static List<AssignmentTestCase> GetTestAssignmentData()
     {

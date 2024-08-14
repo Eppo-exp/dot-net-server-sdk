@@ -123,12 +123,23 @@ public bool GetBooleanAssignment(
 
 ## Initialization options
 
-The `init` function accepts the following optional configuration arguments.
+The `Init` and `InitClient` functions accept the following optional configuration arguments.
 
 | Option | Type | Description | Default |
 | ------ | ----- | ----- | ----- |
 | **`assignmentLogger`**  | [AssignmentLogger](https://github.com/Eppo-exp/python-sdk/blob/ebc1a0b781769fe9d2e2be6fc81779eb8685a6c7/eppo_client/assignment_logger.py#L6-L10) | A callback that sends each assignment to your data warehouse. Required only for experiment analysis. See [example](#assignment-logger) below. | `None` |
 
+### Polling Interval
+
+For additional control in server deployments, the `EppoClientConfig` class can be initialized with a custom interval to override the default of 30sec.
+
+```cs
+
+ var config = new EppoClientConfig("YOUR-API-KEY", myAssignmentLogger)
+        {
+            PollingIntervalInMillis = 5000
+        };
+```
 
 
 ## Assignment and Bandit Action Logger 
