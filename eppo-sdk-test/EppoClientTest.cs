@@ -25,7 +25,7 @@ public class EppoClientTest
 
     private Mock<IAssignmentLogger> _mockAssignmentLogger;
 
-    private EppoClient client;
+    private EppoClient? client;
 
     [SetUp]
     public void Setup()
