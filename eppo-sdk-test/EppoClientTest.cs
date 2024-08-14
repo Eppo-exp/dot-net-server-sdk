@@ -25,7 +25,9 @@ public class EppoClientTest
 
     private Mock<IAssignmentLogger> _mockAssignmentLogger;
 
-    [OneTimeSetUp]
+    private EppoClient client;
+
+    [SetUp]
     public void Setup()
     {
         SetupMockServer();
@@ -54,7 +56,6 @@ public class EppoClientTest
     {
         _mockServer = WireMockServer.Start();
         var response = GetMockFlagConfig();
-        Console.WriteLine($"MockServer started at: {_mockServer.Urls[0]}");
         this._mockServer
             .Given(Request.Create().UsingGet().WithPath(new RegexMatcher("flag-config/v1/config")))
             .RespondWith(Response.Create().WithStatusCode(HttpStatusCode.OK).WithBody(response).WithHeader("Content-Type", "application/json"));
@@ -63,6 +64,7 @@ public class EppoClientTest
     [OneTimeTearDown]
     public void TearDown()
     {
+        client?.Dispose();
         _mockServer?.Stop();
     }
 
@@ -70,6 +72,7 @@ public class EppoClientTest
     public void TeardownEach()
     {
         _mockAssignmentLogger.Invocations.Clear();
+        _mockServer!.Stop();
     }
 
     private static string GetMockFlagConfig()
@@ -81,49 +84,61 @@ public class EppoClientTest
     }
 
     [Test]
-    public void ShouldReturnDefaultInUnrefreshedClientMode()
+    public void ShouldPollForConfigInServerMode()
     {
-        var client = CreteClientModeClient();
-        var alice = new Dictionary<string, object>()
+        var config = new EppoClientConfig("mock-api-key", _mockAssignmentLogger.Object)
         {
-            ["email"] = "alice@company.com",
-            ["country"] = "US"
+            BaseUrl = _mockServer?.Urls[0]!,
+            PollingIntervalInMillis = 25,
+            PollingJitterInMillis = 0
         };
-        var result = client.GetIntegerAssignment("integer-flag", "alice", alice, 1);
+        client = EppoClient.Init(config);
 
-        // Assert result is the default value of `1`.
-        That(result, Is.EqualTo(1));
+        Thread.Sleep(30);
 
-        _mockServer!.Should()
-            .HaveReceivedNoCalls();
+        VerifyApiCalls(2);
     }
 
     [Test]
-    public void ShouldReturnAssignmentsAfterRefreshInClientMode() {
-                var client = CreteClientModeClient();
-        var alice = new Dictionary<string, object>()
+    public void ShouldNotPollForConfigInClientMode()
+    {
+
+        var config = new EppoClientConfig("mock-api-key", _mockAssignmentLogger.Object)
         {
-            ["email"] = "alice@company.com",
-            ["country"] = "US"
+            BaseUrl = _mockServer?.Urls[0]!,
+            PollingIntervalInMillis = 25,
+            PollingJitterInMillis = 0
         };
+        client = EppoClient.InitClientMode(config);
 
-        var noConfigResult = client.GetIntegerAssignment("integer-flag", "alice", alice, 1);
+        Thread.Sleep(60);
 
-        // Assert result is the default value of `1`.
-        That(noConfigResult, Is.EqualTo(1));
-
-        client.RefreshConfiguration();
-
-        var loadedResult  = client.GetIntegerAssignment("integer-flag", "alice", alice, 1);
-        That(loadedResult, Is.EqualTo(3));
+        VerifyApiCalls(1, "dotnet-client");
     }
 
+    [Test]
+    public void ShouldRefreshConfigurationOnDemand()
+    {
+        client = CreteClientModeClient();
+        client.RefreshConfiguration();
+        client.RefreshConfiguration();
+        VerifyApiCalls(3, "dotnet-client");
+    }
+
+    private void VerifyApiCalls(int callCount, string sdkName = "dotnet-server")
+    {
+        var baseUrl = _mockServer?.Urls[0]!;
+        var sdkVersion = new AppDetails(DeploymentEnvironment.Client()).Version;
+        _mockServer!.Should()
+            .HaveReceived(callCount).Calls()
+            .UsingGet()
+            .And.AtUrl($"{baseUrl}/flag-config/v1/config?apiKey=mock-api-key&sdkName={sdkName}&sdkVersion={sdkVersion}");
+    }
 
     [Test]
     public void ShouldRunInClientMode()
     {
-        var client = CreteClientModeClient();
-        client.RefreshConfiguration();
+        client = CreteClientModeClient();
 
         var alice = new Dictionary<string, object>()
         {
@@ -170,7 +185,9 @@ public class EppoClientTest
             ["email"] = "alice@company.com",
             ["country"] = "US"
         };
-        var result = CreateClient().GetIntegerAssignment("integer-flag", "alice", alice, 1);
+
+        client = CreateClient();
+        var result = client.GetIntegerAssignment("integer-flag", "alice", alice, 1);
 
         Multiple(() =>
         {
@@ -191,7 +208,7 @@ public class EppoClientTest
     [Test, TestCaseSource(nameof(GetTestAssignmentData))]
     public void ShouldValidateAssignments(AssignmentTestCase assignmentTestCase)
     {
-        var client = CreateClient();
+        client = CreateClient();
 
         switch (assignmentTestCase.VariationType)
         {
@@ -273,3 +290,4 @@ public class AssignmentTestCase
 }
 
 public record SubjectTestRecord(string SubjectKey, Subject SubjectAttributes, object Assignment);
+

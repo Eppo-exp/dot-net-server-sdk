@@ -12,7 +12,7 @@ Despite the name, this SDK runs in both server and client applications.
 - A/B/n experiments
 - Mutually exclusive experiments (Layers)
 - Dynamic configuration
-- Multi-armed Contextual Bandits
+- Contextual Multi-Armed Bandits
 
 ## Installation
 
@@ -23,26 +23,25 @@ dotnet add package Eppo.Sdk
 ```
 
 ## Client Mode
-In order to have the most up-to-date _Assignment_ and _Bandit_ configuration, the SDK frequently polls the configuration server. This is not ideal in a client deployment such as a mobile or web app. For these client applications, this SDK can be run in **Client Mode** where configuration loading is done ad-hoc by calling the `EppoClient.RefreshConfiguration` method.
+In order to have the most up-to-date _Assignment_ and _Bandit_ configuration, the SDK frequently polls the configuration server. This is not ideal in a client deployment such as a mobile or web app. For these client applications, this SDK can be run in **Client Mode** where configuration loading is done once on `InitClientMode` and on-demand by calling the `EppoClient.RefreshConfiguration` method.
 
 ## Quick start
 
 Begin by initializing a singleton instance of Eppo's client. Once initialized*, the client can be used to make assignments anywhere in your app.
 
-_*In **Client Mode**, `RefreshConfiguration` must be called before assignments can be made_
 
 #### Initialize once
 
 ```cs
 var eppoClientConfig = new EppoClientConfig('SDK-KEY-FROM-DASHBOARD');
 
-// For servers:
+// For servers; immediately loads configuration and every, roughly, 30seconds after:
 var eppoClient = EppoClient.Init(eppoClientConfig);
 
-// For client (such as mobile) applications:
+// For client (such as mobile) applications; initializes and immediately loads configuration once:
 var eppoClient = EppoClient.InitClientMode(eppoClientConfig);
 
-// Client applications, On app load / session start:
+// Client applications, On app reload or other trigger to reload the configuration.
 eppoClient.RefreshConfiguration();
 ```
 

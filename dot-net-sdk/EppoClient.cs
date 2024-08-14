@@ -13,7 +13,7 @@ using NLog;
 
 namespace eppo_sdk;
 
-public class EppoClient
+public sealed class EppoClient: IDisposable
 {
     private static readonly object s_baton = new();
 
@@ -244,10 +244,14 @@ public class EppoClient
             FetchExperimentsTask? fetchExperimentsTask = null;
             if (appDetails.Deployment.Polling)
             {
-                fetchExperimentsTask = new FetchExperimentsTask(configRequester, Constants.TIME_INTERVAL_IN_MILLIS,
-                    Constants.JITTER_INTERVAL_IN_MILLIS);
-                fetchExperimentsTask.Run();
+                fetchExperimentsTask = new FetchExperimentsTask(
+                    configRequester,
+                    eppoClientConfig.PollingIntervalInMillis,
+                    eppoClientConfig.PollingJitterInMillis);
             }
+
+            // Load the configuration for the first time.
+            configRequester.LoadConfiguration();
 
             s_client = new EppoClient(
                 configRequester,
@@ -497,5 +501,10 @@ public class EppoClient
         }
 
         return s_client;
+    }
+
+    public void Dispose()
+    {
+        _fetchExperimentsTask?.Dispose();
     }
 }
