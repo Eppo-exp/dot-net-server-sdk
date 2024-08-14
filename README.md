@@ -27,7 +27,7 @@ In order to have the most up-to-date _Assignment_ and _Bandit_ configuration, th
 
 ## Quick start
 
-Begin by initializing a singleton instance of Eppo's client. Once initialized*, the client can be used to make assignments anywhere in your app.
+Begin by initializing a singleton instance of Eppo's client. Once initialized, the client can be used to make assignments anywhere in your app.
 
 
 #### Initialize once
@@ -35,7 +35,7 @@ Begin by initializing a singleton instance of Eppo's client. Once initialized*, 
 ```cs
 var eppoClientConfig = new EppoClientConfig('SDK-KEY-FROM-DASHBOARD');
 
-// For servers; immediately loads configuration and every, roughly, 30seconds after:
+// For servers; immediately loads configuration and every roughly, 30 seconds after:
 var eppoClient = EppoClient.Init(eppoClientConfig);
 
 // For client (such as mobile) applications; initializes and immediately loads configuration once:
