@@ -2,9 +2,7 @@ using eppo_sdk.constants;
 using eppo_sdk.dto;
 using eppo_sdk.dto.bandit;
 using eppo_sdk.helpers;
-using eppo_sdk.http;
 using eppo_sdk.store;
-using Moq;
 using NUnit.Framework.Internal;
 using static NUnit.Framework.Assert;
 
@@ -13,243 +11,195 @@ namespace eppo_sdk_test.store;
 
 public class ConfigurationStoreTest
 {
-
-    private ConfigurationStore CreateConfigurationStore(IConfigurationRequester requester)
+    private static ConfigurationStore CreateConfigurationStore()
     {
         var configCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
         var modelCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
         var metadataCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
 
-        return new ConfigurationStore(requester, configCache, modelCache, metadataCache);
-    }
-
-    [Test]
-    public void ShouldStoreAndGetBanditFlags()
-    {
-        var banditFlags = new BanditFlags()
-        {
-            ["banditKey"] = new BanditVariation[] { new("banditKey", "flagKey", "variationKey", "variationValue")
-        }
-        };
-        var response = new FlagConfigurationResponse()
-        {
-            Bandits = banditFlags,
-            Flags = new Dictionary<string, Flag>()
-        };
-        var banditResponse = new BanditModelResponse()
-        {
-            Bandits = new Dictionary<string, Bandit>()
-            {
-                ["banditKey"] = new Bandit("banditKey", "falcon", DateTime.Now, "v123", new ModelData()
-                {
-                    Coefficients = new Dictionary<string, ActionCoefficients>()
-                }),
-            }
-        };
-
-        var mockRequester = new Mock<IConfigurationRequester>();
-
-        mockRequester.Setup(m => m.FetchFlagConfiguration(It.IsAny<string>())).Returns(new VersionedResourceResponse<FlagConfigurationResponse>(response, "ETAG"));
-        mockRequester.Setup(m => m.FetchBanditModels()).Returns(new VersionedResourceResponse<BanditModelResponse>(banditResponse));
-        
-        var store = CreateConfigurationStore(mockRequester.Object);
-        store.LoadConfiguration();
-        Assert.Multiple(() =>
-        {
-            Assert.That(store.GetBanditFlags(), Is.EqualTo(banditFlags));
-            Assert.That(store.TryGetBandit("banditKey", out Bandit? bandit), Is.True);
-            Assert.That(bandit, Is.Not.Null);
-        });
-    }
-
-    [Test]
-    public void ShouldOnlyGetBanditModelsIfReferenced()
-    {
-        var banditFlags = new BanditFlags();
-        var response = new FlagConfigurationResponse()
-        {
-            Bandits = banditFlags,
-            Flags = new Dictionary<string, Flag>()
-        };
-        var banditResponse = new BanditModelResponse()
-        {
-            Bandits = new Dictionary<string, Bandit>()
-        };
-
-        var mockRequester = new Mock<IConfigurationRequester>();
-        mockRequester.Setup(m => m.FetchFlagConfiguration(It.IsAny<string>())).Returns(
-            new VersionedResourceResponse<FlagConfigurationResponse>(response));
-        mockRequester.Setup(m => m.FetchBanditModels()).Returns(new VersionedResourceResponse<BanditModelResponse>(banditResponse));
-
-        var store = CreateConfigurationStore(mockRequester.Object);
-        store.LoadConfiguration();
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(store.GetBanditFlags(), Is.EqualTo(banditFlags));
-            Assert.That(store.TryGetBandit("banditKey", out Bandit? bandit), Is.False);
-            Assert.That(bandit, Is.Null);
-        });
-        mockRequester.Verify(m => m.FetchBanditModels(), Times.Never());
-    }
-
-    [Test]
-    public void ShouldSendIfNonMatchHeaderWithLastEtag()
-    {
-        var banditFlags = new BanditFlags();
-        var response = new FlagConfigurationResponse()
-        {
-            Bandits = banditFlags,
-            Flags = new Dictionary<string, Flag>()
-        };
-        var banditResponse = new BanditModelResponse()
-        {
-            Bandits = new Dictionary<string, Bandit>()
-        };
-
-        var mockRequester = new Mock<IConfigurationRequester>();
-        mockRequester.Setup(m => m.FetchFlagConfiguration(It.IsAny<string>())).Returns(new VersionedResourceResponse<FlagConfigurationResponse>(response, "ETAG"));
-        mockRequester.Setup(m => m.FetchBanditModels()).Returns(new VersionedResourceResponse<BanditModelResponse>(banditResponse));
-
-        var store = CreateConfigurationStore(mockRequester.Object);
-        store.LoadConfiguration();
-        mockRequester.Verify(m => m.FetchFlagConfiguration(null), Times.Exactly(1));
-
-        // ETAG should be set for second call
-        store.LoadConfiguration();
-        mockRequester.Verify(m => m.FetchFlagConfiguration("ETAG"), Times.Exactly(1));
-    }
-
-    [Test]
-    public void ShouldNotSetConfigIfNotModified()
-    {
-        var configCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
-        var modelCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
-        var metadataCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
-
-        var banditFlags = new BanditFlags();
-        var response = new FlagConfigurationResponse()
-        {
-            Bandits = banditFlags,
-            Flags = new Dictionary<string, Flag>()
-            {
-                ["flag1"] = new Flag("flag1", true, new List<Allocation>(), EppoValueType.STRING, new Dictionary<string, Variation>(), 10_000)
-            }
-        };
-        var banditResponse = new BanditModelResponse()
-        {
-            Bandits = new Dictionary<string, Bandit>()
-        };
-
-        var mockRequester = new Mock<IConfigurationRequester>();
-        mockRequester.Setup(m => m.FetchFlagConfiguration(It.IsAny<string>())).Returns(new VersionedResourceResponse<FlagConfigurationResponse>(response, "ETAG", isModified: false));
-
-        var store = new ConfigurationStore(mockRequester.Object, configCache, modelCache, metadataCache);
-
-        store.LoadConfiguration();
-        Assert.Multiple(() =>
-        {
-            Assert.That(configCache, Is.Empty);
-            Assert.That(store.TryGetFlag("flag1", out Flag? flag), Is.False);
-            Assert.That(flag, Is.Null);
-        });
-    }
-
-    [Test]
-    public void ShouldResetFlagsOnLoad()
-    {
-        var banditFlags1 = new BanditFlags()
-        {
-            ["unchangingBandit"] = new BanditVariation[] { new("unchangingBandit", "flagKey", "unchangingBandit", "unchangingBandit") },
-            ["departingBandit"] = new BanditVariation[] { new("departingBandit", "endingFlagKey", "departingBandit", "departingBandit") },
-        };
-
-        var banditFlags2 = new BanditFlags()
-        {
-            ["unchangingBandit"] = new BanditVariation[] { new("unchangingBandit", "flagKey", "unchangingBandit", "unchangingBandit") },
-            ["newBandit"] = new BanditVariation[] { new("newBandit", "newBanditFlagKey", "newBandit", "newBandit") },
-        };
-
-        var response = new FlagConfigurationResponse()
-        {
-            Bandits = banditFlags1,
-            Flags = new Dictionary<string, Flag>()
-        };
-        var banditResponse = new BanditModelResponse()
-        {
-            Bandits = new Dictionary<string, Bandit>()
-        };
-
-        var mockRequester = new Mock<IConfigurationRequester>();
-        mockRequester.Setup(m => m.FetchFlagConfiguration(It.IsAny<string>())).Returns(new VersionedResourceResponse<FlagConfigurationResponse>(response));
-        mockRequester.Setup(m => m.FetchBanditModels()).Returns(new VersionedResourceResponse<BanditModelResponse>(banditResponse));
-
-        var store = CreateConfigurationStore(mockRequester.Object);
-        store.LoadConfiguration();
-
-        Assert.That(store.GetBanditFlags().Keys, Is.EquivalentTo(new List<string> { "unchangingBandit", "departingBandit" }));
-
-        // Now, reload the config with new BanditFlags.
-        mockRequester.Setup(m => m.FetchFlagConfiguration(It.IsAny<string>())).Returns(
-            new VersionedResourceResponse<FlagConfigurationResponse>(
-                new FlagConfigurationResponse()
-                {
-                    Bandits = banditFlags2,
-                    Flags = new Dictionary<string, Flag>()
-                }));
-
-        store.LoadConfiguration();
-
-        Assert.That(store.GetBanditFlags().Keys, Is.EquivalentTo(new List<string> { "unchangingBandit", "newBandit" }));
+        return new ConfigurationStore(configCache, modelCache, metadataCache);
     }
 
     [Test]
     public void ShouldClearOldValuesOnSet()
     {
-        var store = CreateConfigurationStore(new Mock<IConfigurationRequester>().Object);
+        var store = CreateConfigurationStore();
 
         var flag1 = new Flag("flag1", true, new(), EppoValueType.NUMERIC, new(), 10000);
         var flag2 = new Flag("flag2", true, new(), EppoValueType.NUMERIC, new(), 10000);
         var flag3 = new Flag("flag3", true, new(), EppoValueType.NUMERIC, new(), 10000);
 
-        var flags1 = new Flag[] {
+        var initialFlags = new Flag[] {
             flag1,flag2
          };
 
-        var flags2 = new Flag[]
+        var newFlags = new Flag[]
         {
             flag1, flag3
         };
 
-        store.SetConfiguration(flags1, null, null);
+        var bandit1 = new Bandit("bandit1", "falcon", DateTime.Now, "v123", new ModelData()
+        {
+            Coefficients = new Dictionary<string, ActionCoefficients>()
+        });
+        var bandit2 = new Bandit("bandit2", "falcon", DateTime.Now, "v456", new ModelData()
+        {
+            Coefficients = new Dictionary<string, ActionCoefficients>()
+        });
+        var bandit3 = new Bandit("bandit3", "falcon", DateTime.Now, "v789", new ModelData()
+        {
+            Coefficients = new Dictionary<string, ActionCoefficients>()
+        });
+        var initialBandits = new Bandit[] { bandit1, bandit2 };
+        var newBandits = new Bandit[] { bandit1, bandit3 };
+
+        var initialDataDictionary = new Dictionary<string, string>
+        {
+            ["foo"] = "bar",
+            ["bar"] = "baz"
+        };
+        var newDataDictionary = new Dictionary<string, string>
+        {
+            ["bandit1"] = "true",
+            ["bandit3"] = "false"
+        };
+
+        var initialMetadata = new Dictionary<string, object>()
+        {
+            ["UFC_VERSION"] = "UFCVersion1",
+            ["DICT_OBJECT"] = initialDataDictionary
+        };
+
+        var newlMetadata = new Dictionary<string, object>()
+        {
+            ["UFC_VERSION"] = "UFCVersion2",
+            ["DICT_OBJECT"] = newDataDictionary
+        };
+
+        store.SetConfiguration(initialFlags, initialBandits, initialMetadata);
 
         AssertHasFlag(store, "flag1");
         AssertHasFlag(store, "flag2");
         AssertHasFlag(store, "flag3", false);
 
-        store.SetConfiguration(flags2, null, null);
+        AssertHasBandit(store, "bandit1");
+        AssertHasBandit(store, "bandit2");
+        AssertHasBandit(store, "bandit3", false);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(store.TryGetMetadata("UFC_VERSION", out string? data), Is.True);
+            Assert.That(data, Is.EqualTo("UFCVersion1"));
+
+            Assert.That(store.TryGetMetadata("DICT_OBJECT", out Dictionary<string, string>? storedDict), Is.True);
+            Assert.That(storedDict, Is.Not.Null);
+            Assert.That(storedDict?["foo"], Is.Not.Null);
+            Assert.That(storedDict?["foo"], Is.EqualTo("bar"));
+            Assert.That(storedDict?["bar"], Is.Not.Null);
+            Assert.That(storedDict?["bar"], Is.EqualTo("baz"));
+        });
+
+        store.SetConfiguration(newFlags, newBandits, newlMetadata);
 
         AssertHasFlag(store, "flag1");
-        AssertHasFlag(store, "flag3");
         AssertHasFlag(store, "flag2", false);
+        AssertHasFlag(store, "flag3");
 
+        AssertHasBandit(store, "bandit1");
+        AssertHasBandit(store, "bandit2", false);
+        AssertHasBandit(store, "bandit3");
 
-        store.SetConfiguration(Array.Empty<Flag>(), null, null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(store.TryGetMetadata("UFC_VERSION", out string? data), Is.True);
+            Assert.That(data, Is.EqualTo("UFCVersion2"));
+
+            Assert.That(store.TryGetMetadata("DICT_OBJECT", out Dictionary<string, string>? storedDict), Is.True);
+            Assert.That(storedDict, Is.Not.Null);
+            Assert.That(storedDict?["bandit1"], Is.Not.Null);
+            Assert.That(storedDict?["bandit1"], Is.EqualTo("true"));
+            Assert.That(storedDict?["bandit3"], Is.Not.Null);
+            Assert.That(storedDict?["bandit3"], Is.EqualTo("false"));
+        });
+
+        store.SetConfiguration(Array.Empty<Flag>(), Array.Empty<Bandit>(), new Dictionary<string, object>());
 
         AssertHasFlag(store, "flag1", false);
         AssertHasFlag(store, "flag2", false);
         AssertHasFlag(store, "flag3", false);
+
+        AssertHasBandit(store, "bandit1", false);
+        AssertHasBandit(store, "bandit2", false);
+        AssertHasBandit(store, "bandit3", false);
+        Assert.Multiple(() =>
+        {
+            Assert.That(store.TryGetMetadata("UFC_VERSION", out string? data), Is.False);
+            Assert.That(data, Is.Null);
+            Assert.That(store.TryGetMetadata("DICT_OBJECT", out string? storedDict), Is.False);
+            Assert.That(storedDict, Is.Null);
+        });
+
     }
 
-    private static void AssertHasFlag(ConfigurationStore store, string flagKey, bool hasFlag = true)
+    [Test]
+    public void ShouldUpdateConfigPreservingBandits()
     {
-        if (hasFlag)
+        var store = CreateConfigurationStore();
+
+        var flags = Array.Empty<Flag>();
+
+        var bandit1 = new Bandit("bandit1", "falcon", DateTime.Now, "v123", new ModelData()
+        {
+            Coefficients = new Dictionary<string, ActionCoefficients>()
+        });
+        var bandit2 = new Bandit("bandit2", "falcon", DateTime.Now, "v456", new ModelData()
+        {
+            Coefficients = new Dictionary<string, ActionCoefficients>()
+        });
+        var bandit3 = new Bandit("bandit3", "falcon", DateTime.Now, "v789", new ModelData()
+        {
+            Coefficients = new Dictionary<string, ActionCoefficients>()
+        });
+        var bandits = new Bandit[] { bandit1, bandit2 };
+
+        var dataDict = new Dictionary<string, object>
+        {
+
+        };
+
+        store.SetConfiguration(flags, bandits, dataDict);
+        AssertHasBandit(store, "bandit1");
+        AssertHasBandit(store, "bandit2");
+
+        // Existing bandits should not be overwritten
+        store.SetConfiguration(flags, dataDict);
+
+        AssertHasBandit(store, "bandit1");
+        AssertHasBandit(store, "bandit2");
+        AssertHasBandit(store, "bandit3", false);
+
+        store.SetConfiguration(flags, new Bandit[] { bandit3 }, dataDict);
+
+        AssertHasBandit(store, "bandit1", false);
+        AssertHasBandit(store, "bandit2", false);
+        AssertHasBandit(store, "bandit3");
+
+        store.SetConfiguration(flags, Array.Empty<Bandit>(), dataDict);
+
+        AssertHasBandit(store, "bandit1", false);
+        AssertHasBandit(store, "bandit2", false);
+        AssertHasBandit(store, "bandit3", false);
+    }
+
+    private static void AssertHasFlag(ConfigurationStore store, string flagKey, bool expectToExist = true)
+    {
+        if (expectToExist)
         {
             Multiple(() =>
             {
                 That(store.TryGetFlag(flagKey, out Flag? flag), Is.True);
                 That(flag, Is.Not.Null);
-                That(flag!.key, Is.EqualTo(flagKey));
+                That(flag!.Key, Is.EqualTo(flagKey));
             });
         }
         else
@@ -258,6 +208,27 @@ public class ConfigurationStoreTest
             {
                 That(store.TryGetFlag(flagKey, out Flag? flag), Is.False);
                 That(flag, Is.Null);
+            });
+        }
+    }
+
+    private static void AssertHasBandit(ConfigurationStore store, string banditKey, bool expectToExist = true)
+    {
+        if (expectToExist)
+        {
+            Multiple(() =>
+            {
+                That(store.TryGetBandit(banditKey, out Bandit? bandit), Is.True);
+                That(bandit, Is.Not.Null);
+                That(bandit!.BanditKey, Is.EqualTo(banditKey));
+            });
+        }
+        else
+        {
+            Multiple(() =>
+            {
+                That(store.TryGetBandit(banditKey, out Bandit? bandit), Is.False);
+                That(bandit, Is.Null);
             });
         }
     }

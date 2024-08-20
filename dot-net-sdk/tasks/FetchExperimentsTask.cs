@@ -1,34 +1,46 @@
-using eppo_sdk.store;
+using eppo_sdk.http;
 
 namespace eppo_sdk.tasks;
 
 public class FetchExperimentsTask : IDisposable
 {
-    private long TimeIntervalInMillis;
-    private long JitterTimeIntervalInMillis;
-    private IConfigurationStore _configurationStore;
-    private Timer timer;
+    private readonly long TimeIntervalInMillis;
+    private readonly long JitterTimeIntervalInMillis;
+    private readonly IConfigurationRequester ConfigLoader;
+    private readonly Timer Timer;
 
-    public FetchExperimentsTask(IConfigurationStore configurationStore, long timeIntervalInMillis,
-        long jitterTimeIntervalInMillis)
+    public FetchExperimentsTask(IConfigurationRequester config,
+                                long timeIntervalInMillis,
+                                long jitterTimeIntervalInMillis)
     {
-        _configurationStore = configurationStore;
+        ConfigLoader = config;
         TimeIntervalInMillis = timeIntervalInMillis;
         JitterTimeIntervalInMillis = jitterTimeIntervalInMillis;
-        timer = new Timer(state => Run(), null, timeIntervalInMillis, Timeout.Infinite);
+
+        Timer = new Timer(
+                state => Run(),
+                null,
+                timeIntervalInMillis,
+                Timeout.Infinite);
     }
 
     internal void Run()
     {
-        var rnd = new Random();
-        var nextTick = TimeIntervalInMillis -
-                       rnd.Next(1, unchecked((int)JitterTimeIntervalInMillis));
-        timer.Change(nextTick, Timeout.Infinite);
-        _configurationStore.LoadConfiguration();
+        long jitter = 0;
+        if (JitterTimeIntervalInMillis > 0)
+        {
+            var rnd = new Random();
+            jitter = rnd.Next(1, unchecked((int)JitterTimeIntervalInMillis));
+        }
+
+        var nextTick = TimeIntervalInMillis - jitter;
+
+        Timer.Change(nextTick, Timeout.Infinite);
+        ConfigLoader.LoadConfiguration();
     }
 
     public void Dispose()
     {
-        timer.Dispose();
+        Timer.Dispose();
     }
 }

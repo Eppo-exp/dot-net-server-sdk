@@ -1,12 +1,11 @@
 using eppo_sdk.dto;
-using eppo_sdk.helpers;
 
 namespace eppo_sdk_test.helpers;
 
 public class AssignmentLogDataTest
 {
     [Test]
-    public void ShouldReturnAssignmentLogData()
+    public void ShouldBuildExperimentKey()
     {
         var assignmentLogData = new AssignmentLogData(
             "feature-flag",
@@ -14,7 +13,7 @@ public class AssignmentLogDataTest
             "variation",
             "subject",
             new Subject(),
-            AppDetails.GetInstance().AsDict(),
+            new Dictionary<string, string>(),
             new Dictionary<string, string>());
         Assert.That(assignmentLogData.Experiment, Is.EqualTo("feature-flag-allocation"));
     }

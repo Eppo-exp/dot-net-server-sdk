@@ -1,8 +1,8 @@
 using System.Net;
 using eppo_sdk;
 using eppo_sdk.dto;
-using eppo_sdk.dto.bandit;
 using eppo_sdk.logger;
+using FluentAssertions;
 using Moq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -10,7 +10,11 @@ using WireMock.Matchers;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
+using WireMock.FluentAssertions;
+
 using static NUnit.Framework.Assert;
+using eppo_sdk.helpers;
+using eppo_sdk.client;
 
 namespace eppo_sdk_test;
 
@@ -18,27 +22,40 @@ namespace eppo_sdk_test;
 public class EppoClientTest
 {
     private WireMockServer? _mockServer;
-    private EppoClient? _client;
 
     private Mock<IAssignmentLogger> _mockAssignmentLogger;
 
-    [OneTimeSetUp]
+    private EppoClient? client;
+
+    [SetUp]
     public void Setup()
     {
         SetupMockServer();
         _mockAssignmentLogger = new Mock<IAssignmentLogger>();
+    }
+
+    private EppoClient CreateClient()
+    {
         var config = new EppoClientConfig("mock-api-key", _mockAssignmentLogger.Object)
         {
             BaseUrl = _mockServer?.Urls[0]!
         };
-        _client = EppoClient.Init(config);
+        return EppoClient.Init(config);
+    }
+
+    private EppoClient CreteClientModeClient()
+    {
+        var config = new EppoClientConfig("mock-api-key", _mockAssignmentLogger.Object)
+        {
+            BaseUrl = _mockServer?.Urls[0]!
+        };
+        return EppoClient.InitClientMode(config);
     }
 
     private void SetupMockServer()
     {
         _mockServer = WireMockServer.Start();
         var response = GetMockFlagConfig();
-        Console.WriteLine($"MockServer started at: {_mockServer.Urls[0]}");
         this._mockServer
             .Given(Request.Create().UsingGet().WithPath(new RegexMatcher("flag-config/v1/config")))
             .RespondWith(Response.Create().WithStatusCode(HttpStatusCode.OK).WithBody(response).WithHeader("Content-Type", "application/json"));
@@ -47,6 +64,7 @@ public class EppoClientTest
     [OneTimeTearDown]
     public void TearDown()
     {
+        client?.Dispose();
         _mockServer?.Stop();
     }
 
@@ -54,6 +72,7 @@ public class EppoClientTest
     public void TeardownEach()
     {
         _mockAssignmentLogger.Invocations.Clear();
+        _mockServer!.Stop();
     }
 
     private static string GetMockFlagConfig()
@@ -65,15 +84,101 @@ public class EppoClientTest
     }
 
     [Test]
-    public void ShouldLogAssignment()
+    public void ShouldPollForConfigInServerMode()
     {
+        var config = new EppoClientConfig("mock-api-key", _mockAssignmentLogger.Object)
+        {
+            BaseUrl = _mockServer?.Urls[0]!,
+            PollingIntervalInMillis = 25,
+            PollingJitterInMillis = 0
+        };
+
+        client = EppoClient.Init(config);
+
+        Thread.Sleep(30);
+
+        VerifyApiCalls(2);
+    }
+
+    [Test]
+    public void ShouldNotPollForConfigInClientMode()
+    {
+
+        var config = new EppoClientConfig("mock-api-key", _mockAssignmentLogger.Object)
+        {
+            BaseUrl = _mockServer?.Urls[0]!,
+            PollingIntervalInMillis = 25,
+            PollingJitterInMillis = 0
+        };
+        client = EppoClient.InitClientMode(config);
+
+        Thread.Sleep(60);
+
+        VerifyApiCalls(1, "dotnet-client");
+    }
+
+    [Test]
+    public void ShouldRefreshConfigurationOnDemand()
+    {
+        client = CreteClientModeClient();
+        client.RefreshConfiguration();
+        client.RefreshConfiguration();
+        VerifyApiCalls(3, "dotnet-client");
+    }
+
+    [Test]
+    public void ShouldRunInClientMode()
+    {
+        client = CreteClientModeClient();
 
         var alice = new Dictionary<string, object>()
         {
             ["email"] = "alice@company.com",
             ["country"] = "US"
         };
-        var result = _client!.GetIntegerAssignment("integer-flag", "alice", alice, 1);
+
+        var expectedMetadata = new Dictionary<string, string>()
+        {
+            ["sdkName"] = "dotnet-client"
+        };
+
+        var result = client.GetIntegerAssignment("integer-flag", "alice", alice, 1);
+
+        Multiple(() =>
+        {
+            var baseUrl = _mockServer?.Urls[0]!;
+            var sdkVersion = new AppDetails(DeploymentEnvironment.Client()).Version;
+
+            // Assert that only one call to the api server has been made.
+            _mockServer!.Should()
+                .HaveReceivedACall()
+                .UsingGet()
+                .And.AtUrl($"{baseUrl}/flag-config/v1/config?apiKey=mock-api-key&sdkName=dotnet-client&sdkVersion={sdkVersion}");
+
+            // Assert - Result verification
+            That(result, Is.EqualTo(3));
+
+            // Assert - Assignment logger verification
+            var assignmentLogStatement = _mockAssignmentLogger.Invocations.First().Arguments[0] as AssignmentLogData;
+            That(assignmentLogStatement, Is.Not.Null);
+            var logEvent = assignmentLogStatement!;
+
+            That(logEvent.MetaData["sdkName"], Is.EqualTo("dotnet-client"));
+            That(logEvent.Subject, Is.EqualTo("alice"));
+        });
+    }
+
+    [Test]
+    public void ShouldLogAssignment()
+    {
+        var alice = new Dictionary<string, object>()
+        {
+            ["email"] = "alice@company.com",
+            ["country"] = "US"
+        };
+
+        client = CreateClient();
+        var result = client.GetIntegerAssignment("integer-flag", "alice", alice, 1);
 
         Multiple(() =>
         {
@@ -94,7 +199,7 @@ public class EppoClientTest
     [Test, TestCaseSource(nameof(GetTestAssignmentData))]
     public void ShouldValidateAssignments(AssignmentTestCase assignmentTestCase)
     {
-        var client = _client!;
+        client = CreateClient();
 
         switch (assignmentTestCase.VariationType)
         {
@@ -144,6 +249,15 @@ public class EppoClientTest
         }
     }
 
+    private void VerifyApiCalls(int callCount, string sdkName = "dotnet-server")
+    {
+        var baseUrl = _mockServer?.Urls[0]!;
+        var sdkVersion = new AppDetails(DeploymentEnvironment.Client()).Version;
+        _mockServer!.Should()
+            .HaveReceived(callCount).Calls()
+            .UsingGet()
+            .And.AtUrl($"{baseUrl}/flag-config/v1/config?apiKey=mock-api-key&sdkName={sdkName}&sdkVersion={sdkVersion}");
+    }
 
     static List<AssignmentTestCase> GetTestAssignmentData()
     {
@@ -156,7 +270,8 @@ public class EppoClientTest
             atc.TestCaseFile = file;
             testCases.Add(atc);
         }
-        if (testCases.Count == 0) {
+        if (testCases.Count == 0)
+        {
             throw new Exception("Danger Danger. No Test Cases Loaded. Do not proceed until solved");
         }
         return testCases;
@@ -175,3 +290,4 @@ public class AssignmentTestCase
 }
 
 public record SubjectTestRecord(string SubjectKey, Subject SubjectAttributes, object Assignment);
+

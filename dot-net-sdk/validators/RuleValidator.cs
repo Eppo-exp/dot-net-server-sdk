@@ -13,7 +13,7 @@ public static partial class RuleValidator
 {
     public static FlagEvaluation? EvaluateFlag(Flag flag, string subjectKey, IDictionary<string, object> subjectAttributes)
     {
-        if (!flag.enabled) return null;
+        if (!flag.Enabled) return null;
 
         var now = DateTimeOffset.Now.ToUniversalTime();
         foreach (var allocation in flag.Allocations)
@@ -32,9 +32,9 @@ public static partial class RuleValidator
             {
                 foreach (var split in allocation.Splits)
                 {
-                    if (MatchesAllShards(split.Shards, subjectKey, flag.totalShards))
+                    if (MatchesAllShards(split.Shards, subjectKey, flag.TotalShards))
                     {
-                        if (flag.variations.TryGetValue(split.VariationKey, out Variation? variation) && variation != null)
+                        if (flag.Variations.TryGetValue(split.VariationKey, out Variation? variation) && variation != null)
                         {
                             return new FlagEvaluation(variation, allocation.DoLog, allocation.Key, split.ExtraLogging);
                         }

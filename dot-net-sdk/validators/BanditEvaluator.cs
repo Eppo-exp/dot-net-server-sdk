@@ -105,7 +105,8 @@ public class BanditEvaluator
     {
         var numberOfActions = actionScores.Count;
 
-        var bestAction = actionScores.Aggregate((currentmax, next) => currentmax.Value > next.Value ? currentmax : next);
+        // Order by key then by value to get the highest score, tie broken by action key.
+        var bestAction = actionScores.ToList().OrderByDescending(action=>action.Value).ThenBy(action=>action.Key).First();
 
         var minProbability = probabilityFloor / numberOfActions;
 
