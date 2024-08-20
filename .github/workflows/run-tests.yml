@@ -7,8 +7,16 @@ on:
   push:
     branches: [ "main" ]
   pull_request:
-    branches: [ "main" ]
-
+    branches: [ "*" ]
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      test_data_branch:
+        type: string
+        description: The branch in sdk-test-data to target for testcase files
+        required: false
+        default: main
+  
 jobs:
   build:
 
@@ -16,6 +24,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+      with:
+        repository: Eppo-exp/dot-net-server-sdk
+        ref: ${{ github.head_ref || github.ref_name || 'main' }}
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
@@ -31,4 +42,4 @@ jobs:
       run: make test-data
 
     - name: Test
-      run: make test
+      run: make test branchName=${{ github.event.inputs.test_data_branch || 'main' }}
