@@ -1,0 +1,53 @@
+name: Run Tests
+
+env:
+  SDK_BRANCH_NAME: ${{ inputs.sdk_branch  || github.head_ref || github.ref_name || 'main' }}
+  TEST_DATA_BRANCH_NAME: ${{ inputs.test_data_branch || 'main' }}
+
+on:
+  push:
+    branches: [ "main" ]
+
+  pull_request:
+    branches: [ "*" ]
+
+  workflow_dispatch:
+
+  workflow_call:
+    inputs:
+      test_data_branch:
+        type: string
+        description: The branch in sdk-test-data to target for testcase files
+        required: false
+        default: main
+      sdk_branch:
+        type: string
+        description: The branch of the SDK to test
+        required: false
+  
+jobs:
+  build-and-run-tests:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        repository: Eppo-exp/dot-net-server-sdk
+        ref: ${{ env.SDK_BRANCH_NAME }}
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 7.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: make build
+
+    - name: Pull test data
+      run: make test-data
+
+    - name: Test
+      run: make test branchName=${{ env.TEST_DATA_BRANCH_NAME }}
