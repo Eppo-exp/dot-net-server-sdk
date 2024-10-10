@@ -1,9 +1,13 @@
 using eppo_sdk.http;
+using NLog;
 
 namespace eppo_sdk.tasks;
 
 public class FetchExperimentsTask : IDisposable
 {
+
+    private static readonly Logger s_logger = LogManager.GetCurrentClassLogger();
+
     private readonly long TimeIntervalInMillis;
     private readonly long JitterTimeIntervalInMillis;
     private readonly IConfigurationRequester ConfigLoader;
@@ -36,7 +40,14 @@ public class FetchExperimentsTask : IDisposable
         var nextTick = TimeIntervalInMillis - jitter;
 
         Timer.Change(nextTick, Timeout.Infinite);
-        ConfigLoader.LoadConfiguration();
+        try
+        {
+            ConfigLoader.LoadConfiguration();
+        }
+        catch (Exception e)
+        {
+            s_logger.Error("Error occured polling for configuration, " + e.Message);
+        }
     }
 
     public void Dispose()
