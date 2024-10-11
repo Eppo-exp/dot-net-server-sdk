@@ -42,6 +42,7 @@ public class VersionedResourceResponse<TResource>
 /// </summary>
 public class EppoHttpClient
 {
+    private static readonly Logger s_logger = LogManager.GetCurrentClassLogger();
     private readonly Dictionary<string, string> _defaultParams = new();
     private readonly string _baseUrl;
     private readonly int _requestTimeoutMillis;
@@ -120,6 +121,11 @@ public class EppoHttpClient
         if (restResponse.StatusCode == HttpStatusCode.Unauthorized)
         {
             throw new UnauthorizedAccessException("Invalid Eppo API Key");
+        }
+
+        if (restResponse.Data == null) {
+            // Useful to log why we have a null response body.
+        s_logger.Debug("Null response body, status was: " + restResponse.StatusCode);
         }
 
         // HTTP uses the `ETag` header to identify the version of the resource (or entity) returned in the response.
