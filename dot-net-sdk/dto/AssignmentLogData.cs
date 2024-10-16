@@ -30,7 +30,7 @@ public record AssignmentLogData : ISerializable
         this.FeatureFlag = featureFlag;
         this.Allocation = allocation;
         this.Variation = variation;
-        this.Timestamp = new DateTime();
+        this.Timestamp = DateTime.UtcNow;
         this.Subject = subject;
         this.SubjectAttributes = subjectAttributes;
         MetaData = metaData;
