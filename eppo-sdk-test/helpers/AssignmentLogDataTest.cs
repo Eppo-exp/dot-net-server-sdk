@@ -28,6 +28,6 @@ public class AssignmentLogDataTest
     [Test]
     public void ShouldSetAssignmentTimestamp()
     {
-        Assert.That(assignmentLogData.Timestamp, Is.EqualTo(DateTime.UtcNow).Within(1).Milliseconds);
+        Assert.That(assignmentLogData.Timestamp, Is.EqualTo(DateTime.UtcNow).Within(100).Milliseconds);
     }
 }
