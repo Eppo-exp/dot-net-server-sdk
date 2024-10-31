@@ -57,7 +57,7 @@ public class EppoClientTest
         _mockServer = WireMockServer.Start();
         var response = GetMockFlagConfig();
         this._mockServer
-            .Given(Request.Create().UsingGet().WithPath(new RegexMatcher("flag-config/v1/config")))
+            .Given(Request.Create().UsingGet().WithPath(new RegexMatcher("api/flag-config/v1/config")))
             .RespondWith(Response.Create().WithStatusCode(HttpStatusCode.OK).WithBody(response).WithHeader("Content-Type", "application/json"));
     }
 
@@ -153,7 +153,7 @@ public class EppoClientTest
             _mockServer!.Should()
                 .HaveReceivedACall()
                 .UsingGet()
-                .And.AtUrl($"{baseUrl}/flag-config/v1/config?apiKey=mock-api-key&sdkName=dotnet-client&sdkVersion={sdkVersion}");
+                .And.AtUrl($"{baseUrl}/api/flag-config/v1/config?apiKey=mock-api-key&sdkName=dotnet-client&sdkVersion={sdkVersion}");
 
             // Assert - Result verification
             That(result, Is.EqualTo(3));
@@ -256,7 +256,7 @@ public class EppoClientTest
         _mockServer!.Should()
             .HaveReceived(callCount).Calls()
             .UsingGet()
-            .And.AtUrl($"{baseUrl}/flag-config/v1/config?apiKey=mock-api-key&sdkName={sdkName}&sdkVersion={sdkVersion}");
+            .And.AtUrl($"{baseUrl}/api/flag-config/v1/config?apiKey=mock-api-key&sdkName={sdkName}&sdkVersion={sdkVersion}");
     }
 
     static List<AssignmentTestCase> GetTestAssignmentData()

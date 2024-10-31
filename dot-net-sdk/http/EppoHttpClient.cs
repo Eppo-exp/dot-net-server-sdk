@@ -98,7 +98,7 @@ public class EppoHttpClient
         // Prepare request.
         var request = new RestRequest
         {
-            Timeout = _requestTimeoutMillis
+            Timeout = TimeSpan.FromMilliseconds(_requestTimeoutMillis)
         };
 
         // Add query parameters.        
