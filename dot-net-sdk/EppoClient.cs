@@ -13,7 +13,7 @@ using NLog;
 
 namespace eppo_sdk;
 
-public sealed class EppoClient: IDisposable
+public sealed class EppoClient : IDisposable
 {
     private static readonly object s_baton = new();
 
@@ -307,6 +307,12 @@ public sealed class EppoClient: IDisposable
         }
 
     }
+    
+    public BanditResult GetBanditAction(string flagKey,
+                                        string subjectKey,
+                                        IDictionary<String, object?> subjectAttributes,
+                                        string[] actions,
+                                        string defaultValue) => GetBanditAction(flagKey, ContextAttributes.FromDict(subjectKey, subjectAttributes), actions, defaultValue);
 
 
     /// <summary>Gets the selected action, if applicable, for the given <paramref name="flagKey"/> and contexts.
