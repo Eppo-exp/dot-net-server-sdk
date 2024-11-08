@@ -88,7 +88,7 @@ public class ProfileEppoClientTest
             ["country"] = "FR"
         };
 
-    const int numIterations = 10000;
+        const int numIterations = 10000;
         var stopwatch = Stopwatch.StartNew();
 
         for (int i = 0; i < numIterations; i++)
