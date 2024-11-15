@@ -35,7 +35,9 @@ public class ContextAttributes : IContextAttributes
         return obj;
     }
 
-    public static ContextAttributes FromNullableAttributes(string key, IDictionary<string, object?>? categoricalAttributes, IDictionary<string, object?>? numericAttributes)
+    public static ContextAttributes FromNullableAttributes(string key,
+                                                           IDictionary<string, object?>? categoricalAttributes,
+                                                           IDictionary<string, object?>? numericAttributes)
     {
         var obj = new ContextAttributes(key);
 
@@ -48,7 +50,9 @@ public class ContextAttributes : IContextAttributes
         return obj;
     }
 
-    public static ContextAttributes FromNullableAttributes(string key, IDictionary<string, string?>? categoricalAttributes, IDictionary<string, object?>? numericAttributes)
+    public static ContextAttributes FromNullableAttributes(string key,
+                                                           IDictionary<string, string?>? categoricalAttributes,
+                                                           IDictionary<string, object?>? numericAttributes)
     {
         var obj = new ContextAttributes(key);
         obj.AddDict(categoricalAttributes);
