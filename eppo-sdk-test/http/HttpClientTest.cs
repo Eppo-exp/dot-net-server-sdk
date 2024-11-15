@@ -45,7 +45,7 @@ public class HttpClientTest
         var currentETag = "CURRENT";
 
         MockServer
-            .Given(Request.Create().UsingGet().WithPath(new RegexMatcher("api/flag-config/v1/config")))
+            .Given(Request.Create().UsingGet().WithPath(new RegexMatcher("flag-config/v1/config")))
             .RespondWith(Response.Create()
                 .WithStatusCode(HttpStatusCode.OK)
                 .WithBody(response)
@@ -99,7 +99,7 @@ public class HttpClientTest
         MockServer.Should()
             .HaveReceivedACall()
             .UsingGet()
-            .And.AtUrl($"{BaseUrl}/api/flag-config/v1/config?apiKey=none&sdkName=dotnetTest&sdkVersion=9.9.9");
+            .And.AtUrl($"{BaseUrl}/flag-config/v1/config?apiKey=none&sdkName=dotnetTest&sdkVersion=9.9.9");
     }
 
     [Test]
