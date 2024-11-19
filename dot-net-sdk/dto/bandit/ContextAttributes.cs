@@ -35,7 +35,24 @@ public class ContextAttributes : IContextAttributes
         return obj;
     }
 
-    public static ContextAttributes FromNullableAttributes(string key, IDictionary<string, string?>? categoricalAttributes, IDictionary<string, object?>? numericAttributes)
+    public static ContextAttributes FromNullableAttributes(string key,
+                                                           IDictionary<string, object?>? categoricalAttributes,
+                                                           IDictionary<string, object?>? numericAttributes)
+    {
+        var obj = new ContextAttributes(key);
+
+        if (categoricalAttributes != null)
+        {
+            // Attributes are sorted by type when added so we explcitly stringify values here.
+            obj.AddDict(categoricalAttributes.ToDictionary(k => k.Key, k => k.Value != null ? Compare.ToString(k.Value) : null));
+        }
+        obj.AddDict(NumbersOnly(numericAttributes));
+        return obj;
+    }
+
+    public static ContextAttributes FromNullableAttributes(string key,
+                                                           IDictionary<string, string?>? categoricalAttributes,
+                                                           IDictionary<string, object?>? numericAttributes)
     {
         var obj = new ContextAttributes(key);
         obj.AddDict(categoricalAttributes);

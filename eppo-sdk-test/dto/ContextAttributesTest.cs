@@ -33,6 +33,36 @@ public class ContextAttributesTest
             Assert.That(actual.GetCategorical(), Is.EquivalentTo(expectedStrings));
         });
     }
+    [Test]
+    public void ShouldAllowExplicitCategoricalAttributes()
+    {
+        var categoryAttrs = new Dictionary<string, object?>() {
+            {"age", 30},
+            {"tier", "4"},
+            {"referralUser", true},
+            {"favouriteColour", "green"}
+        };
+        var numericAttrs = new Dictionary<string, object?>() {
+            {"accountAge", 0.5},
+        };
+        var expectedNumeric = new Dictionary<string, double>()
+        {
+            {"accountAge", 0.5},
+        };
+        var expectedStrings = new Dictionary<string, string>()
+        {
+            {"age","30"},
+            {"tier", "4"},
+            {"referralUser","true"},
+            {"favouriteColour","green"}
+        };
+        var actual = ContextAttributes.FromNullableAttributes("context", categoryAttrs, numericAttrs);
+        Assert.Multiple(() =>
+        {
+            Assert.That(actual.GetNumeric(), Is.EquivalentTo(expectedNumeric));
+            Assert.That(actual.GetCategorical(), Is.EquivalentTo(expectedStrings));
+        });
+    }
 
     [Test]
     public void Add_InvalidType_ThrowsInvalidAttributeTypeException()

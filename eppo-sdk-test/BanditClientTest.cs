@@ -351,12 +351,12 @@ public class BanditClientTest
                     atr => atr.ActionKey,
                     atr => ContextAttributes.FromNullableAttributes(atr.ActionKey, atr.CategoricalAttributes, atr.NumericAttributes));
 
+            var subjectContext = ContextAttributes.FromNullableAttributes(subject.SubjectKey, subject.SubjectAttributes.CategoricalAttributes, subject.SubjectAttributes.NumericAttributes);
 
             var result = client.GetBanditAction(
                 banditTestCase.Flag,
-                subject.SubjectKey,
-                subject.SubjectAttributes.AsDict(),
-                subject.Actions.ToDictionary(atr => atr.ActionKey, atr => atr.AsDict()),
+                subjectContext,
+                actions,
                 banditTestCase.DefaultValue
             );
             Multiple(() =>
@@ -403,7 +403,7 @@ public record BanditSubjectTestRecord(string SubjectKey,
 }
 
 public record ActionTestRecord(string ActionKey,
-                               Dictionary<string, string?> CategoricalAttributes,
+                               Dictionary<string, object?> CategoricalAttributes,
                                Dictionary<string, object?> NumericAttributes)
 {
     public IDictionary<string, object?> AsDict()
@@ -426,7 +426,7 @@ public record ActionTestRecord(string ActionKey,
 public record SubjectAttributeSet
 {
     public IDictionary<string, object?>? NumericAttributes = new Dictionary<string, object?>();
-    public IDictionary<string, string?>? CategoricalAttributes = new Dictionary<string, string?>();
+    public IDictionary<string, object?>? CategoricalAttributes = new Dictionary<string, object?>();
 
     public IDictionary<string, object?> AsDict()
     {
