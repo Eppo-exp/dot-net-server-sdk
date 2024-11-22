@@ -2,7 +2,7 @@ namespace eppo_sdk.constants;
 
 public class Constants
 {
-    public const string DEFAULT_BASE_URL = "https://fscdn.eppo.cloud";
+    public const string DEFAULT_BASE_URL = "https://fscdn.eppo.cloud/api";
 
     public const int REQUEST_TIMEOUT_MILLIS = 1000;
 
@@ -14,7 +14,7 @@ public class Constants
 
     public const int MAX_CACHE_ENTRIES = 1000;
 
-    public const string UFC_ENDPOINT = "/api/flag-config/v1/config";
+    public const string UFC_ENDPOINT = "/flag-config/v1/config";
 
-    public const string BANDIT_ENDPOINT = "/api/flag-config/v1/bandits";
+    public const string BANDIT_ENDPOINT = "/flag-config/v1/bandits";
 }
