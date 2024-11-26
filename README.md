@@ -1,6 +1,7 @@
+# Eppo .NET SDK
+
 [![Run Tests](https://github.com/Eppo-exp/dot-net-server-sdk/actions/workflows/run-tests.yml/badge.svg)](https://github.com/Eppo-exp/dot-net-server-sdk/actions/workflows/run-tests.yml)
 
-# Eppo .NET SDK
 
 [Eppo](https://www.geteppo.com/) is a modular flagging and experimentation analysis tool. Eppo's .NET SDK is built to make assignments in multi-user server side contexts, compatible with Dot Net 7.0 Runtime. Before proceeding you'll need an Eppo account.
 
