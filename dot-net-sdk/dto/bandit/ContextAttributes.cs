@@ -15,13 +15,11 @@ public interface IContextAttributes : IDictionary<string, object>
 /// A contextual dictionary allowing only string, bool and numeric types.
 public class ContextAttributes : IContextAttributes
 {
-
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
     public string Key { get; init; }
 
     private readonly Dictionary<string, object> _internalDictionary = new();
-
 
     public ContextAttributes(string key)
     {
@@ -35,24 +33,33 @@ public class ContextAttributes : IContextAttributes
         return obj;
     }
 
-    public static ContextAttributes FromNullableAttributes(string key,
-                                                           IDictionary<string, object?>? categoricalAttributes,
-                                                           IDictionary<string, object?>? numericAttributes)
+    public static ContextAttributes FromNullableAttributes(
+        string key,
+        IDictionary<string, object?>? categoricalAttributes,
+        IDictionary<string, object?>? numericAttributes
+    )
     {
         var obj = new ContextAttributes(key);
 
         if (categoricalAttributes != null)
         {
             // Attributes are sorted by type when added so we explcitly stringify values here.
-            obj.AddDict(categoricalAttributes.ToDictionary(k => k.Key, k => k.Value != null ? Compare.ToString(k.Value) : null));
+            obj.AddDict(
+                categoricalAttributes.ToDictionary(
+                    k => k.Key,
+                    k => k.Value != null ? Compare.ToString(k.Value) : null
+                )
+            );
         }
         obj.AddDict(NumbersOnly(numericAttributes));
         return obj;
     }
 
-    public static ContextAttributes FromNullableAttributes(string key,
-                                                           IDictionary<string, string?>? categoricalAttributes,
-                                                           IDictionary<string, object?>? numericAttributes)
+    public static ContextAttributes FromNullableAttributes(
+        string key,
+        IDictionary<string, string?>? categoricalAttributes,
+        IDictionary<string, object?>? numericAttributes
+    )
     {
         var obj = new ContextAttributes(key);
         obj.AddDict(categoricalAttributes);
@@ -62,7 +69,8 @@ public class ContextAttributes : IContextAttributes
 
     private static IDictionary<string, double> NumbersOnly(IDictionary<string, object?>? attributes)
     {
-        var result = new Dictionary<string, double>(); ;
+        var result = new Dictionary<string, double>();
+        ;
         if (attributes == null || attributes.Count == 0)
         {
             return result;
@@ -72,11 +80,12 @@ public class ContextAttributes : IContextAttributes
             if (kvp.Value == null)
             {
                 continue;
-
             }
             if (!IsNumeric(kvp.Value))
             {
-                Logger.Warn($"[Eppo SDK] Attribute with key {kvp.Key} passed as a NumericAttribute but is not numeric");
+                Logger.Warn(
+                    $"[Eppo SDK] Attribute with key {kvp.Key} passed as a NumericAttribute but is not numeric"
+                );
             }
             else
             {
@@ -86,7 +95,11 @@ public class ContextAttributes : IContextAttributes
         return result;
     }
 
-    public ContextAttributes(string key, IDictionary<string, string>? categoricalAttributes, IDictionary<string, double>? numericAttributes)
+    public ContextAttributes(
+        string key,
+        IDictionary<string, string>? categoricalAttributes,
+        IDictionary<string, double>? numericAttributes
+    )
     {
         Key = key;
         AddDict(categoricalAttributes);
@@ -95,7 +108,8 @@ public class ContextAttributes : IContextAttributes
 
     private void AddDict<TV>(IDictionary<string, TV>? dict)
     {
-        if (dict == null) return;
+        if (dict == null)
+            return;
         foreach (var kvp in dict)
         {
             if (kvp.Value == null)
@@ -109,7 +123,8 @@ public class ContextAttributes : IContextAttributes
     /// Adds a value to the subject dictionary enforcing only string, bool and numeric types.
     public void Add(string key, object value)
     {
-        if (value == null) return;
+        if (value == null)
+            return;
         // Implement your custom validation logic here
         if (IsNumeric(value) || IsCategorical(value))
         {
@@ -121,7 +136,8 @@ public class ContextAttributes : IContextAttributes
         }
     }
 
-    public IDictionary<string, object> AsDict() => _internalDictionary.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+    public IDictionary<string, object> AsDict() =>
+        _internalDictionary.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
     /// Gets only the numeric attributes.
     public IDictionary<string, double> GetNumeric()
@@ -143,10 +159,13 @@ public class ContextAttributes : IContextAttributes
 
     private static bool IsCategorical(object value) => value is string || value is bool;
 
-
     // Standard Dictionary methods are "sealed" so overriding isn't possible. Thus we delegate everything here.
 
-    public object this[string key] { get => _internalDictionary[key]; set => Add(key, value); }
+    public object this[string key]
+    {
+        get => _internalDictionary[key];
+        set => Add(key, value);
+    }
 
     public ICollection<string> Keys => _internalDictionary.Keys;
 
@@ -160,20 +179,24 @@ public class ContextAttributes : IContextAttributes
 
     public void Clear() => _internalDictionary.Clear();
 
-    public bool Contains(KeyValuePair<string, object> item) => _internalDictionary.ContainsKey(item.Key) && _internalDictionary[item.Key].Equals(item.Value);
+    public bool Contains(KeyValuePair<string, object> item) =>
+        _internalDictionary.ContainsKey(item.Key)
+        && _internalDictionary[item.Key].Equals(item.Value);
 
     public bool ContainsKey(string key) => _internalDictionary.ContainsKey(key);
 
-    public IEnumerator<KeyValuePair<string, object>> GetEnumerator() => _internalDictionary.GetEnumerator();
+    public IEnumerator<KeyValuePair<string, object>> GetEnumerator() =>
+        _internalDictionary.GetEnumerator();
 
     public bool Remove(string key) => _internalDictionary.Remove(key);
 
     public bool Remove(KeyValuePair<string, object> item) => _internalDictionary.Remove(item.Key); // Assuming removal by key
 
-    public bool TryGetValue(string key, [MaybeNullWhen(false)] out object value) => _internalDictionary.TryGetValue(key, out value);
+    public bool TryGetValue(string key, [MaybeNullWhen(false)] out object value) =>
+        _internalDictionary.TryGetValue(key, out value);
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    public void CopyTo(KeyValuePair<string, object>[] array, int arrayIndex) => ((IDictionary<string, object>)_internalDictionary).CopyTo(array, arrayIndex);
+    public void CopyTo(KeyValuePair<string, object>[] array, int arrayIndex) =>
+        ((IDictionary<string, object>)_internalDictionary).CopyTo(array, arrayIndex);
 }
-
