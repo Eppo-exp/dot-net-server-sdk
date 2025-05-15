@@ -11,10 +11,12 @@ namespace eppo_sdk.validators;
 
 public static partial class RuleValidator
 {
-    public static FlagEvaluation? EvaluateFlag(Flag flag, string subjectKey, IDictionary<string, object> subjectAttributes)
+    public static FlagEvaluation? EvaluateFlag(Flag flag, string subjectKey, IDictionary<string, object> subjectAttributesDict)
     {
         if (!flag.Enabled) return null;
 
+        // Copy the dictionary. We're going to add the Subject ID below, but we don't want to log it in the subject attrs dict
+        IDictionary<string, object> subjectAttributes = new Dictionary<string, object>(subjectAttributesDict);
         var now = DateTimeOffset.Now.ToUniversalTime();
         foreach (var allocation in flag.Allocations)
         {

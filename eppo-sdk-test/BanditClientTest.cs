@@ -204,7 +204,17 @@ public class BanditClientTest
             GreaterOrEqual(banditLog.OptimalityGap, 0);
             GreaterOrEqual(banditLog.ActionProbability, 0);
 
+            That(banditLog.SubjectCategoricalAttributes, Is.Not.Null);
+            That(banditLog.SubjectNumericAttributes, Is.Not.Null);
 
+            AssertDictsEquivalent(banditLog.SubjectCategoricalAttributes!, new Dictionary<string, string>()
+            {
+        ["favourite_colour"] = "red",
+        ["country"] = "UK",
+        ["timeofday"] = "night",
+        ["loyalty_tier"] = "gold"
+            });
+            
             That(result.Action, Is.Not.Null);
             var chosenAction = actions[result.Action!];
 
