@@ -27,89 +27,114 @@ public sealed class EppoClient : IDisposable
 
     private readonly AppDetails _appDetails;
 
-    public JObject GetJsonAssignment(string flagKey,
-                                     string subjectKey,
-                                     IDictionary<string, object> subjectAttributes,
-                                     JObject defaultValue)
+    public JObject GetJsonAssignment(
+        string flagKey,
+        string subjectKey,
+        IDictionary<string, object> subjectAttributes,
+        JObject defaultValue
+    )
     {
         return TypeCheckedAssignment(
-            flagKey,
-            subjectKey,
-            subjectAttributes,
-            EppoValueType.JSON,
-            defaultValue).JsonValue();
+                flagKey,
+                subjectKey,
+                subjectAttributes,
+                EppoValueType.JSON,
+                defaultValue
+            )
+            .JsonValue();
     }
 
-    public string GetJsonStringAssignment(string flagKey,
-                                          string subjectKey,
-                                          IDictionary<string, object> subjectAttributes,
-                                          string defaultValue)
+    public string GetJsonStringAssignment(
+        string flagKey,
+        string subjectKey,
+        IDictionary<string, object> subjectAttributes,
+        string defaultValue
+    )
     {
         return TypeCheckedAssignment(
-            flagKey,
-            subjectKey,
-            subjectAttributes,
-            EppoValueType.JSON,
-            defaultValue).StringValue();
+                flagKey,
+                subjectKey,
+                subjectAttributes,
+                EppoValueType.JSON,
+                defaultValue
+            )
+            .StringValue();
     }
 
-    public bool GetBooleanAssignment(string flagKey,
-                                     string subjectKey,
-                                     IDictionary<string, object> subjectAttributes,
-                                     bool defaultValue)
+    public bool GetBooleanAssignment(
+        string flagKey,
+        string subjectKey,
+        IDictionary<string, object> subjectAttributes,
+        bool defaultValue
+    )
     {
         return TypeCheckedAssignment(
-            flagKey,
-            subjectKey,
-            subjectAttributes,
-            EppoValueType.BOOLEAN,
-            defaultValue).BoolValue();
+                flagKey,
+                subjectKey,
+                subjectAttributes,
+                EppoValueType.BOOLEAN,
+                defaultValue
+            )
+            .BoolValue();
     }
 
-    public double GetNumericAssignment(string flagKey,
-                                       string subjectKey,
-                                       IDictionary<string, object> subjectAttributes,
-                                       double defaultValue)
+    public double GetNumericAssignment(
+        string flagKey,
+        string subjectKey,
+        IDictionary<string, object> subjectAttributes,
+        double defaultValue
+    )
     {
         return TypeCheckedAssignment(
-            flagKey,
-            subjectKey,
-            subjectAttributes,
-            EppoValueType.NUMERIC,
-            defaultValue).DoubleValue();
+                flagKey,
+                subjectKey,
+                subjectAttributes,
+                EppoValueType.NUMERIC,
+                defaultValue
+            )
+            .DoubleValue();
     }
 
-    public long GetIntegerAssignment(string flagKey,
-                                     string subjectKey,
-                                     IDictionary<string, object> subjectAttributes,
-                                     long defaultValue)
+    public long GetIntegerAssignment(
+        string flagKey,
+        string subjectKey,
+        IDictionary<string, object> subjectAttributes,
+        long defaultValue
+    )
     {
         return TypeCheckedAssignment(
-            flagKey,
-            subjectKey,
-            subjectAttributes,
-            EppoValueType.INTEGER,
-            defaultValue).IntegerValue();
+                flagKey,
+                subjectKey,
+                subjectAttributes,
+                EppoValueType.INTEGER,
+                defaultValue
+            )
+            .IntegerValue();
     }
 
-    public string GetStringAssignment(string flagKey,
-                                      string subjectKey,
-                                      IDictionary<string, object> subjectAttributes,
-                                      string defaultValue)
+    public string GetStringAssignment(
+        string flagKey,
+        string subjectKey,
+        IDictionary<string, object> subjectAttributes,
+        string defaultValue
+    )
     {
         return TypeCheckedAssignment(
-            flagKey,
-            subjectKey,
-            subjectAttributes,
-            EppoValueType.STRING,
-            defaultValue).StringValue();
+                flagKey,
+                subjectKey,
+                subjectAttributes,
+                EppoValueType.STRING,
+                defaultValue
+            )
+            .StringValue();
     }
 
-
-    private EppoClient(IConfigurationRequester configurationStore,
-                       EppoClientConfig eppoClientConfig,
-                       FetchExperimentsTask? fetchExperimentsTask,
-                       AppDetails appDetails)
+    private EppoClient(
+        IConfigurationRequester configurationStore,
+        EppoClientConfig eppoClientConfig,
+        FetchExperimentsTask? fetchExperimentsTask,
+        AppDetails appDetails
+    )
     {
         _config = configurationStore;
         _eppoClientConfig = eppoClientConfig;
@@ -118,27 +143,34 @@ public sealed class EppoClient : IDisposable
         _appDetails = appDetails;
     }
 
-    private HasEppoValue TypeCheckedAssignment(string flagKey,
-                                                string subjectKey,
-                                                IDictionary<string, object> subjectAttributes,
-                                                EppoValueType expectedValueType,
-                                                object defaultValue)
+    private HasEppoValue TypeCheckedAssignment(
+        string flagKey,
+        string subjectKey,
+        IDictionary<string, object> subjectAttributes,
+        EppoValueType expectedValueType,
+        object defaultValue
+    )
     {
         var result = GetAssignment(flagKey, subjectKey, subjectAttributes);
         var eppoDefaultValue = new HasEppoValue(defaultValue);
-        if (HasEppoValue.IsNullValue(result)) return eppoDefaultValue;
+        if (HasEppoValue.IsNullValue(result))
+            return eppoDefaultValue;
         var assignment = result!;
         if (assignment.Type != expectedValueType)
         {
-            s_logger.Warn($"[Eppo SDK] Expected type {expectedValueType} does not match parsed type {assignment.Type}");
+            s_logger.Warn(
+                $"[Eppo SDK] Expected type {expectedValueType} does not match parsed type {assignment.Type}"
+            );
             return eppoDefaultValue;
         }
         return assignment;
     }
 
-    private HasEppoValue? GetAssignment(string flagKey,
-                                        string subjectKey,
-                                        IDictionary<string, object> subjectAttributes)
+    private HasEppoValue? GetAssignment(
+        string flagKey,
+        string subjectKey,
+        IDictionary<string, object> subjectAttributes
+    )
     {
         InputValidator.ValidateNotBlank(subjectKey, "Invalid argument: subjectKey cannot be blank");
         InputValidator.ValidateNotBlank(flagKey, "Invalid argument: flagKey cannot be blank");
@@ -152,14 +184,17 @@ public sealed class EppoClient : IDisposable
         if (!configuration.Enabled)
         {
             s_logger.Info(
-                $"[Eppo SDK] No assigned variation because the experiment or feature flag {flagKey} is disabled");
+                $"[Eppo SDK] No assigned variation because the experiment or feature flag {flagKey} is disabled"
+            );
             return null;
         }
 
         var result = RuleValidator.EvaluateFlag(configuration, subjectKey, subjectAttributes);
         if (result == null)
         {
-            s_logger.Info("[Eppo SDK] No assigned variation. The subject attributes did not match any targeting rules");
+            s_logger.Info(
+                "[Eppo SDK] No assigned variation. The subject attributes did not match any targeting rules"
+            );
             return null;
         }
 
@@ -172,21 +207,20 @@ public sealed class EppoClient : IDisposable
         }
 
         AssignmentLogData assignmentEvent = new AssignmentLogData(
-                    flagKey,
-                    result.AllocationKey,
-                    result.Variation.Key,
-                    subjectKey,
-                    subjectAttributes.AsReadOnly(),
-                    _appDetails.AsDict(),
-                    result.ExtraLogging
-                );
+            flagKey,
+            result.AllocationKey,
+            result.Variation.Key,
+            subjectKey,
+            subjectAttributes.AsReadOnly(),
+            _appDetails.AsDict(),
+            result.ExtraLogging
+        );
 
         if (result.DoLog)
         {
             try
             {
-                _eppoClientConfig.AssignmentLogger
-                    .LogAssignment(assignmentEvent);
+                _eppoClientConfig.AssignmentLogger.LogAssignment(assignmentEvent);
             }
             catch (Exception)
             {
@@ -197,23 +231,19 @@ public sealed class EppoClient : IDisposable
     }
 
     public static EppoClient InitClientMode(EppoClientConfig eppoClientConfig) =>
-        InitInner(
-            eppoClientConfig,
-            DeploymentEnvironment.Client());
-
+        InitInner(eppoClientConfig, DeploymentEnvironment.Client());
 
     public static EppoClient Init(EppoClientConfig eppoClientConfig) =>
-        InitInner(
-            eppoClientConfig,
-            DeploymentEnvironment.Server());
+        InitInner(eppoClientConfig, DeploymentEnvironment.Server());
 
-    private static EppoClient InitInner(EppoClientConfig eppoClientConfig,
-                                        DeploymentEnvironment sdkDeploymentMode)
+    private static EppoClient InitInner(
+        EppoClientConfig eppoClientConfig,
+        DeploymentEnvironment sdkDeploymentMode
+    )
     {
         lock (s_baton)
         {
-            InputValidator.ValidateNotBlank(eppoClientConfig.ApiKey,
-                "An API key is required");
+            InputValidator.ValidateNotBlank(eppoClientConfig.ApiKey, "An API key is required");
             if (eppoClientConfig.AssignmentLogger == null)
             {
                 throw new InvalidDataException("An assignment logging implementation is required");
@@ -236,7 +266,8 @@ public sealed class EppoClient : IDisposable
             var configurationStore = new ConfigurationStore(
                 configCache,
                 modelCache,
-                banditFlagCache);
+                banditFlagCache
+            );
 
             var configRequester = new ConfigurationRequester(eppoHttpClient, configurationStore);
             s_client?._fetchExperimentsTask?.Dispose();
@@ -247,7 +278,8 @@ public sealed class EppoClient : IDisposable
                 fetchExperimentsTask = new FetchExperimentsTask(
                     configRequester,
                     eppoClientConfig.PollingIntervalInMillis,
-                    eppoClientConfig.PollingJitterInMillis);
+                    eppoClientConfig.PollingJitterInMillis
+                );
             }
 
             // Load the configuration for the first time.
@@ -257,12 +289,12 @@ public sealed class EppoClient : IDisposable
                 configRequester,
                 eppoClientConfig,
                 fetchExperimentsTask,
-                appDetails);
+                appDetails
+            );
         }
 
         return s_client;
     }
-
 
     /// <summary>Selects a Bandit Action from the list of <paramref name="actions"/>, if applicable, for the given <paramref name="flagKey"/> and subject context.
     /// <param name="flagKey">The flag or bandit key to lookup.</param>
@@ -290,14 +322,18 @@ public sealed class EppoClient : IDisposable
     /// );
     /// </code></example>
     /// </summary>
-    public BanditResult GetBanditAction(string flagKey,
-                                        ContextAttributes subject,
-                                        string[] actions,
-                                        string defaultValue)
+    public BanditResult GetBanditAction(
+        string flagKey,
+        ContextAttributes subject,
+        string[] actions,
+        string defaultValue
+    )
     {
         try
         {
-            var actionContexts = actions.Distinct().ToDictionary(action => action, action => new ContextAttributes(action));
+            var actionContexts = actions
+                .Distinct()
+                .ToDictionary(action => action, action => new ContextAttributes(action));
             return GetBanditDetail(flagKey, subject, actionContexts, defaultValue);
         }
         catch (Exception e)
@@ -305,15 +341,21 @@ public sealed class EppoClient : IDisposable
             s_logger.Error("[Eppo SDK] error getting Bandit action: " + e.Message);
             return new BanditResult(defaultValue);
         }
-
     }
-    
-    public BanditResult GetBanditAction(string flagKey,
-                                        string subjectKey,
-                                        IDictionary<String, object?> subjectAttributes,
-                                        string[] actions,
-                                        string defaultValue) => GetBanditAction(flagKey, ContextAttributes.FromDict(subjectKey, subjectAttributes), actions, defaultValue);
 
+    public BanditResult GetBanditAction(
+        string flagKey,
+        string subjectKey,
+        IDictionary<String, object?> subjectAttributes,
+        string[] actions,
+        string defaultValue
+    ) =>
+        GetBanditAction(
+            flagKey,
+            ContextAttributes.FromDict(subjectKey, subjectAttributes),
+            actions,
+            defaultValue
+        );
 
     /// <summary>Gets the selected action, if applicable, for the given <paramref name="flagKey"/> and contexts.
     /// <param name="flagKey">The flag or bandit key to lookup.</param>
@@ -352,10 +394,12 @@ public sealed class EppoClient : IDisposable
     /// );
     /// </code></example>
     /// </summary>
-    public BanditResult GetBanditAction(string flagKey,
-                                        ContextAttributes subject,
-                                        IDictionary<string, ContextAttributes> actions,
-                                        string defaultValue)
+    public BanditResult GetBanditAction(
+        string flagKey,
+        ContextAttributes subject,
+        IDictionary<string, ContextAttributes> actions,
+        string defaultValue
+    )
     {
         try
         {
@@ -366,17 +410,16 @@ public sealed class EppoClient : IDisposable
             s_logger.Error("[Eppo SDK] error getting Bandit action: " + e.Message);
             return new BanditResult(defaultValue);
         }
-
     }
 
     /// <summary>Gets the selected action, if applicable, for the given <paramref name="flagKey"/> and contexts.
     /// <param name="flagKey">The flag or bandit key to lookup.</param>
     /// <param name="subjectKey">The subject's identifier.</param>
     /// <param name="subjectAttributes">The subject's attributes for consideration
-    /// <para>Note: Attributes are sorted based on type into Categorical (String, boolean) and 
+    /// <para>Note: Attributes are sorted based on type into Categorical (String, boolean) and
     /// Numerical attributes (numbers). All other attributes are discarded and a warning is logged.</para></param>
     /// <param name="actions">The actions to consider and their contextual attributes.
-    /// <para>Note: Attributes are sorted based on type into Categorical (String, boolean) and 
+    /// <para>Note: Attributes are sorted based on type into Categorical (String, boolean) and
     /// Numerical attributes (numbers). All other attributes are discarded and a warning is logged.</para></param>
     /// <param name="defaultValue">Default flag variation.</param>
     /// <example>
@@ -410,52 +453,61 @@ public sealed class EppoClient : IDisposable
     ///     "defaultValue");
     /// </code></example>
     /// </summary>
-    public BanditResult GetBanditAction(string flagKey,
-                                        string subjectKey,
-                                        IDictionary<string, object?> subjectAttributes,
-                                        IDictionary<string, IDictionary<string, object?>> actions,
-                                        string defaultValue)
+    public BanditResult GetBanditAction(
+        string flagKey,
+        string subjectKey,
+        IDictionary<string, object?> subjectAttributes,
+        IDictionary<string, IDictionary<string, object?>> actions,
+        string defaultValue
+    )
     {
         return GetBanditDetail(
             flagKey,
             ContextAttributes.FromDict(subjectKey, subjectAttributes),
-            actions.ToDictionary(kvp => kvp.Key, kvp => ContextAttributes.FromDict(kvp.Key, kvp.Value)),
-            defaultValue);
+            actions.ToDictionary(
+                kvp => kvp.Key,
+                kvp => ContextAttributes.FromDict(kvp.Key, kvp.Value)
+            ),
+            defaultValue
+        );
     }
 
-    private BanditResult GetBanditDetail(string flagKey,
-                                        ContextAttributes subject,
-                                        IDictionary<string, ContextAttributes> actions,
-                                        string defaultValue)
+    private BanditResult GetBanditDetail(
+        string flagKey,
+        ContextAttributes subject,
+        IDictionary<string, ContextAttributes> actions,
+        string defaultValue
+    )
     {
         InputValidator.ValidateNotBlank(flagKey, "Invalid argument: flagKey cannot be blank");
 
         BanditResult? result = null;
 
         // Get the user's flag assignment for the given key.
-        var variation = GetStringAssignment(
-            flagKey,
-            subject.Key,
-            subject,
-            defaultValue);
+        var variation = GetStringAssignment(flagKey, subject.Key, subject, defaultValue);
 
         // Only proceed to computing a bandit if there are actions provided and the variation maps to a bandit key
-        if (actions.Count > 0
-            && _config.GetBanditReferences().TryGetBanditKey(flagKey, variation, out string? banditKey)
-            && banditKey != null)
+        if (
+            actions.Count > 0
+            && _config
+                .GetBanditReferences()
+                .TryGetBanditKey(flagKey, variation, out string? banditKey)
+            && banditKey != null
+        )
         {
             result = EvaluateAndLogBandit(banditKey!, flagKey, subject, actions, variation);
         }
 
         return result ?? new(variation);
-
     }
 
-    private BanditResult? EvaluateAndLogBandit(string banditKey,
-                                               string flagKey,
-                                               ContextAttributes subject,
-                                               IDictionary<string, ContextAttributes> actions,
-                                               string variation)
+    private BanditResult? EvaluateAndLogBandit(
+        string banditKey,
+        string flagKey,
+        ContextAttributes subject,
+        IDictionary<string, ContextAttributes> actions,
+        string variation
+    )
     {
         try
         {
@@ -465,13 +517,15 @@ public sealed class EppoClient : IDisposable
                     flagKey,
                     subject,
                     actions,
-                    bandit.ModelData);
+                    bandit.ModelData
+                );
 
                 var banditActionLog = new BanditLogEvent(
                     variation,
                     result,
                     bandit,
-                   _appDetails.AsDict());
+                    _appDetails.AsDict()
+                );
 
                 try
                 {
@@ -484,12 +538,16 @@ public sealed class EppoClient : IDisposable
             else
             {
                 // There should be a bandit matching `banditKey`, but there is not, and that's a problem.
-                s_logger.Error($"[Eppo SDK] Bandit model {banditKey} not found for {flagKey} {variation}");
+                s_logger.Error(
+                    $"[Eppo SDK] Bandit model {banditKey} not found for {flagKey} {variation}"
+                );
             }
         }
         catch (BanditEvaluationException bee)
         {
-            s_logger.Error("[Eppo SDK] Error evaluating bandit, returning variation only: " + bee.Message);
+            s_logger.Error(
+                "[Eppo SDK] Error evaluating bandit, returning variation only: " + bee.Message
+            );
         }
         return null;
     }

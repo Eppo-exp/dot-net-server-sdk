@@ -1,24 +1,35 @@
 using System.Text.RegularExpressions;
-using NuGet.Versioning;
-using Newtonsoft.Json;
-
 using eppo_sdk.dto;
 using eppo_sdk.exception;
 using eppo_sdk.helpers;
+using Newtonsoft.Json;
+using NuGet.Versioning;
 using static eppo_sdk.dto.OperatorType;
-namespace eppo_sdk.validators;
 
+namespace eppo_sdk.validators;
 
 public static partial class RuleValidator
 {
-    public static FlagEvaluation? EvaluateFlag(Flag flag, string subjectKey, IDictionary<string, object> subjectAttributes)
+    public static FlagEvaluation? EvaluateFlag(
+        Flag flag,
+        string subjectKey,
+        IDictionary<string, object> subjectAttributesDict
+    )
     {
-        if (!flag.Enabled) return null;
+        if (!flag.Enabled)
+            return null;
 
+        // Copy the dictionary. We're going to add the Subject ID below, but we don't want to log it in the subject attrs dict
+        IDictionary<string, object> subjectAttributes = new Dictionary<string, object>(
+            subjectAttributesDict
+        );
         var now = DateTimeOffset.Now.ToUniversalTime();
         foreach (var allocation in flag.Allocations)
         {
-            if (allocation.StartAt.HasValue && allocation.StartAt.Value > now || allocation.EndAt.HasValue && allocation.EndAt.Value < now)
+            if (
+                allocation.StartAt.HasValue && allocation.StartAt.Value > now
+                || allocation.EndAt.HasValue && allocation.EndAt.Value < now
+            )
             {
                 continue;
             }
@@ -28,18 +39,34 @@ public static partial class RuleValidator
                 subjectAttributes[Subject.SUBJECT_KEY_FIELD] = subjectKey;
             }
 
-            if (allocation.Rules == null || allocation.Rules.Count == 0 || MatchesAnyRule(allocation.Rules, subjectAttributes))
+            if (
+                allocation.Rules == null
+                || allocation.Rules.Count == 0
+                || MatchesAnyRule(allocation.Rules, subjectAttributes)
+            )
             {
                 foreach (var split in allocation.Splits)
                 {
                     if (MatchesAllShards(split.Shards, subjectKey, flag.TotalShards))
                     {
-                        if (flag.Variations.TryGetValue(split.VariationKey, out Variation? variation) && variation != null)
+                        if (
+                            flag.Variations.TryGetValue(
+                                split.VariationKey,
+                                out Variation? variation
+                            )
+                            && variation != null
+                        )
                         {
-                            return new FlagEvaluation(variation, allocation.DoLog, allocation.Key, split.ExtraLogging);
+                            return new FlagEvaluation(
+                                variation,
+                                allocation.DoLog,
+                                allocation.Key,
+                                split.ExtraLogging
+                            );
                         }
-                        throw new ExperimentConfigurationNotFound($"Variation {split.VariationKey} could not be found");
-
+                        throw new ExperimentConfigurationNotFound(
+                            $"Variation {split.VariationKey} could not be found"
+                        );
                     }
                 }
             }
@@ -48,10 +75,12 @@ public static partial class RuleValidator
         return null;
     }
 
-
-
-    // Find the first shard that does not match. If it's null. then all shards match.     
-    public static bool MatchesAllShards(IEnumerable<Shard> shards, string subjectKey, int totalShards) => shards.FirstOrDefault(shard => !MatchesShard(shard, subjectKey, totalShards)) == null;
+    // Find the first shard that does not match. If it's null. then all shards match.
+    public static bool MatchesAllShards(
+        IEnumerable<Shard> shards,
+        string subjectKey,
+        int totalShards
+    ) => shards.FirstOrDefault(shard => !MatchesShard(shard, subjectKey, totalShards)) == null;
 
     private static bool MatchesShard(Shard shard, string subjectKey, int totalShards)
     {
@@ -61,18 +90,30 @@ public static partial class RuleValidator
         return shard.ranges.Any(range => Sharder.IsInRange(subjectBucket, range));
     }
 
-    private static bool MatchesAnyRule(IEnumerable<Rule> rules, IDictionary<string, object> subject) => rules.Any() && FindMatchingRule(subject, rules) != null;
+    private static bool MatchesAnyRule(
+        IEnumerable<Rule> rules,
+        IDictionary<string, object> subject
+    ) => rules.Any() && FindMatchingRule(subject, rules) != null;
 
-    public static Rule? FindMatchingRule(IDictionary<string, object> subjectAttributes, IEnumerable<Rule> rules) => rules.FirstOrDefault(rule => MatchesRule(subjectAttributes, rule));
+    public static Rule? FindMatchingRule(
+        IDictionary<string, object> subjectAttributes,
+        IEnumerable<Rule> rules
+    ) => rules.FirstOrDefault(rule => MatchesRule(subjectAttributes, rule));
 
-    private static bool MatchesRule(IDictionary<string, object> subjectAttributes, Rule rule) => rule.conditions.All(condition => EvaluateCondition(subjectAttributes, condition));
+    private static bool MatchesRule(IDictionary<string, object> subjectAttributes, Rule rule) =>
+        rule.conditions.All(condition => EvaluateCondition(subjectAttributes, condition));
 
-    private static bool EvaluateCondition(IDictionary<string, object> subjectAttributes, Condition condition)
+    private static bool EvaluateCondition(
+        IDictionary<string, object> subjectAttributes,
+        Condition condition
+    )
     {
         try
         {
             // Operators other than `IS_NULL` need to assume non-null
-            bool isNull = !subjectAttributes.TryGetValue(condition.Attribute, out Object? outVal) || HasEppoValue.IsNullValue(new HasEppoValue(outVal));
+            bool isNull =
+                !subjectAttributes.TryGetValue(condition.Attribute, out Object? outVal)
+                || HasEppoValue.IsNullValue(new HasEppoValue(outVal));
             if (condition.Operator == IS_NULL)
             {
                 return condition.BoolValue() == isNull;
@@ -84,81 +125,108 @@ public static partial class RuleValidator
                 switch (condition.Operator)
                 {
                     case GTE:
+                    {
+                        if (value.IsNumeric() && condition.IsNumeric())
                         {
-                            if (value.IsNumeric() && condition.IsNumeric())
-                            {
-                                return value.DoubleValue() >= condition.DoubleValue();
-                            }
-
-                            if (NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
-                                NuGetVersion.TryParse(Compare.ToString(condition.Value), out var conditionSemver))
-                            {
-                                return valueSemver >= conditionSemver;
-                            }
-
-                            return false;
+                            return value.DoubleValue() >= condition.DoubleValue();
                         }
+
+                        if (
+                            NuGetVersion.TryParse(value.StringValue(), out var valueSemver)
+                            && NuGetVersion.TryParse(
+                                Compare.ToString(condition.Value),
+                                out var conditionSemver
+                            )
+                        )
+                        {
+                            return valueSemver >= conditionSemver;
+                        }
+
+                        return false;
+                    }
                     case GT:
+                    {
+                        if (value.IsNumeric() && condition.IsNumeric())
                         {
-                            if (value.IsNumeric() && condition.IsNumeric())
-                            {
-                                return value.DoubleValue() > condition.DoubleValue();
-                            }
-
-                            if (NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
-                                NuGetVersion.TryParse(Compare.ToString(condition.Value), out var conditionSemver))
-                            {
-                                return valueSemver > conditionSemver;
-                            }
-
-                            return false;
+                            return value.DoubleValue() > condition.DoubleValue();
                         }
+
+                        if (
+                            NuGetVersion.TryParse(value.StringValue(), out var valueSemver)
+                            && NuGetVersion.TryParse(
+                                Compare.ToString(condition.Value),
+                                out var conditionSemver
+                            )
+                        )
+                        {
+                            return valueSemver > conditionSemver;
+                        }
+
+                        return false;
+                    }
                     case LTE:
+                    {
+                        if (value.IsNumeric() && condition.IsNumeric())
                         {
-                            if (value.IsNumeric() && condition.IsNumeric())
-                            {
-                                return value.DoubleValue() <= condition.DoubleValue();
-                            }
-
-                            if (NuGetVersion.TryParse(value.StringValue(), out var valueSemver) &&
-                                NuGetVersion.TryParse(Compare.ToString(condition.Value), out var conditionSemver))
-                            {
-                                return valueSemver <= conditionSemver;
-                            }
-
-                            return false;
+                            return value.DoubleValue() <= condition.DoubleValue();
                         }
+
+                        if (
+                            NuGetVersion.TryParse(value.StringValue(), out var valueSemver)
+                            && NuGetVersion.TryParse(
+                                Compare.ToString(condition.Value),
+                                out var conditionSemver
+                            )
+                        )
+                        {
+                            return valueSemver <= conditionSemver;
+                        }
+
+                        return false;
+                    }
                     case LT:
+                    {
+                        if (value.IsNumeric() && condition.IsNumeric())
                         {
-                            if (value.IsNumeric() && condition.IsNumeric())
-                            {
-                                return value.DoubleValue() < condition.DoubleValue();
-                            }
-
-                            if (NuGetVersion.TryParse(Compare.ToString(value.Value), out var valueSemver) &&
-                                NuGetVersion.TryParse(Compare.ToString(condition.Value), out var conditionSemver))
-                            {
-                                return valueSemver < conditionSemver;
-                            }
-
-                            return false;
+                            return value.DoubleValue() < condition.DoubleValue();
                         }
+
+                        if (
+                            NuGetVersion.TryParse(
+                                Compare.ToString(value.Value),
+                                out var valueSemver
+                            )
+                            && NuGetVersion.TryParse(
+                                Compare.ToString(condition.Value),
+                                out var conditionSemver
+                            )
+                        )
+                        {
+                            return valueSemver < conditionSemver;
+                        }
+
+                        return false;
+                    }
                     case MATCHES:
-                        {
-                            return Regex.Match(Compare.ToString(value.Value), Compare.ToString(condition.Value)).Success;
-                        }
+                    {
+                        return Regex
+                            .Match(Compare.ToString(value.Value), Compare.ToString(condition.Value))
+                            .Success;
+                    }
                     case NOT_MATCHES:
-                        {
-                            return !Regex.Match(Compare.ToString(value.Value), Compare.ToString(condition.Value)).Success;
-                        }
+                    {
+                        return !Regex
+                            .Match(Compare.ToString(value.Value), Compare.ToString(condition.Value))
+                            .Success;
+                    }
                     case ONE_OF:
-                        {
-                            return Compare.IsOneOf(value, condition.ArrayValue());
-                        }
+                    {
+                        return Compare.IsOneOf(value, condition.ArrayValue());
+                    }
                     case NOT_ONE_OF:
-                        {
-                            return !Compare.IsOneOf(value, condition.ArrayValue());
-                        }
+                    {
+                        return !Compare.IsOneOf(value, condition.ArrayValue());
+                    }
                 }
             }
             return false; // Return false if attribute is not found or other errors occur
@@ -176,6 +244,7 @@ public class Compare
     {
         return arrayValues.IndexOf(ToString(value.Value)) >= 0;
     }
+
     public static string ToString(object? obj)
     {
         // Simple casting to string except for tricksy floats.
