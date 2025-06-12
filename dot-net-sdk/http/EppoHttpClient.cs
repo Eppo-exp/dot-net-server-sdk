@@ -6,9 +6,8 @@ using RestSharp.Serializers.NewtonsoftJson;
 
 namespace eppo_sdk.http;
 
-
 /// <summary>
-/// Wraps the structured response from the API server with version information. 
+/// Wraps the structured response from the API server with version information.
 /// </summary>
 /// <typeparam name="TResource"></typeparam>
 public class VersionedResourceResponse<TResource>
@@ -17,9 +16,11 @@ public class VersionedResourceResponse<TResource>
     public readonly bool IsModified;
     public readonly string? VersionIdentifier;
 
-    public VersionedResourceResponse(TResource? resource,
-                                     string? versionIdentifier = null,
-                                     bool isModified = true)
+    public VersionedResourceResponse(
+        TResource? resource,
+        string? versionIdentifier = null,
+        bool isModified = true
+    )
     {
         Resource = resource;
         IsModified = isModified;
@@ -29,16 +30,16 @@ public class VersionedResourceResponse<TResource>
 
 /// <summary>
 /// The `EppoHttpClient` wraps the network call and response parsing, returning structured data to the caller.
-/// 
+///
 /// Resources returned are _versioned_, using mechanisms in the underlying transport layer to identify distinct
 /// versions of the resource and identify when it has not changed on the server. Specifically, the client makes
 /// use of the `ETAG` response header and the `IF-NONE-MATCH` request header to version the resource and
 /// determine if it has changed. When the resource has not changed, the network layer drops the response body
 /// from transport, saving bandwidth.
-/// 
+///
 /// Outwardly, the resource is wrapped in a `VersionedResourceResponse` instance carrying the version identifer
 /// and whether it changed. If callers do not pass their "current" version identifier, the resource is always
-/// loaded and `VersionedResourceResponse.IsModified` is `true`. 
+/// loaded and `VersionedResourceResponse.IsModified` is `true`.
 /// </summary>
 public class EppoHttpClient
 {
@@ -47,11 +48,13 @@ public class EppoHttpClient
     private readonly string _baseUrl;
     private readonly int _requestTimeoutMillis;
 
-    public EppoHttpClient(string apikey,
-                          string sdkName,
-                          string sdkVersion,
-                          string baseUrl,
-                          int requestTimeOutMillis = Constants.REQUEST_TIMEOUT_MILLIS)
+    public EppoHttpClient(
+        string apikey,
+        string sdkName,
+        string sdkVersion,
+        string baseUrl,
+        int requestTimeOutMillis = Constants.REQUEST_TIMEOUT_MILLIS
+    )
     {
         _defaultParams.Add("apiKey", apikey);
         _defaultParams.Add("sdkName", sdkName);
@@ -74,10 +77,17 @@ public class EppoHttpClient
     /// <param name="url"></param>
     /// <param name="lastVersion"></param> If provided, attempts to optimize network usage and response processing.
     /// <returns></returns>
-    public virtual VersionedResourceResponse<TResource> Get<TResource>(string url,
-                                                                       string? lastVersion = null)
+    public virtual VersionedResourceResponse<TResource> Get<TResource>(
+        string url,
+        string? lastVersion = null
+    )
     {
-        return Get<TResource>(url, new Dictionary<string, string>(), new Dictionary<string, string>(), lastVersion);
+        return Get<TResource>(
+            url,
+            new Dictionary<string, string>(),
+            new Dictionary<string, string>(),
+            lastVersion
+        );
     }
 
     /// <summary>
@@ -90,18 +100,20 @@ public class EppoHttpClient
     /// <param name="lastVersion"></param> If provided, attempts to optimize network usage and response processing.
     /// <returns></returns>
     /// <exception cref="UnauthorizedAccessException"></exception>
-    public VersionedResourceResponse<TResource> Get<TResource>(string url,
-                                                               Dictionary<string, string> parameters,
-                                                               Dictionary<string, string> headers,
-                                                               string? lastVersion = null)
+    public VersionedResourceResponse<TResource> Get<TResource>(
+        string url,
+        Dictionary<string, string> parameters,
+        Dictionary<string, string> headers,
+        string? lastVersion = null
+    )
     {
         // Prepare request.
         var request = new RestRequest
         {
-            Timeout = TimeSpan.FromMilliseconds(_requestTimeoutMillis)
+            Timeout = TimeSpan.FromMilliseconds(_requestTimeoutMillis),
         };
 
-        // Add query parameters.        
+        // Add query parameters.
         _defaultParams.ToList().ForEach(x => parameters.Add(x.Key, x.Value));
         parameters.ToList().ForEach(x => request.AddParameter(new QueryParameter(x.Key, x.Value)));
 
@@ -115,7 +127,10 @@ public class EppoHttpClient
         }
         request.AddHeaders(headers);
 
-        var client = new RestClient(_baseUrl + url, configureSerialization: s => s.UseNewtonsoftJson());
+        var client = new RestClient(
+            _baseUrl + url,
+            configureSerialization: s => s.UseNewtonsoftJson()
+        );
         var restResponse = client.Execute<TResource>(request);
 
         if (restResponse.StatusCode == HttpStatusCode.Unauthorized)
@@ -133,13 +148,19 @@ public class EppoHttpClient
         string? eTag;
         try
         {
-            eTag = restResponse.Headers?.ToList()?.Find(x => x.Name == "ETag").Value?.ToString() ?? null;
+            eTag =
+                restResponse.Headers?.ToList()?.Find(x => x.Name == "ETag").Value?.ToString()
+                ?? null;
         }
         catch (Exception)
         {
             eTag = null;
         }
 
-        return new VersionedResourceResponse<TResource>(restResponse.Data, eTag, isModified: restResponse.StatusCode != HttpStatusCode.NotModified);
+        return new VersionedResourceResponse<TResource>(
+            restResponse.Data,
+            eTag,
+            isModified: restResponse.StatusCode != HttpStatusCode.NotModified
+        );
     }
 }

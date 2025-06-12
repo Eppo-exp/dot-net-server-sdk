@@ -7,7 +7,6 @@ public interface IBanditRefenceIndexer
     public IEnumerable<string> GetBanditModelVersions();
 }
 
-
 public class BanditReferences : Dictionary<string, BanditReference>, IBanditRefenceIndexer
 {
     public bool TryGetBanditKey(string flagKey, string variationValue, out string? banditKey)
@@ -34,12 +33,12 @@ public class BanditReferences : Dictionary<string, BanditReference>, IBanditRefe
 
     public IEnumerable<string> GetBanditModelVersions()
     {
-        return this.Where(BanditHasVariations).ToList().Select(
-            (KeyValuePair<string, BanditReference> kvp) => kvp.Value.ModelVersion
-        );
+        return this.Where(BanditHasVariations)
+            .ToList()
+            .Select((KeyValuePair<string, BanditReference> kvp) => kvp.Value.ModelVersion);
     }
 
     private static bool BanditHasVariations(
-        KeyValuePair<string, BanditReference> keyAndBanditReference)
-             => keyAndBanditReference.Value.FlagVariations.Length > 0;
+        KeyValuePair<string, BanditReference> keyAndBanditReference
+    ) => keyAndBanditReference.Value.FlagVariations.Length > 0;
 }

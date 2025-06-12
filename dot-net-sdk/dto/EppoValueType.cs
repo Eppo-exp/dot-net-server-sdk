@@ -8,5 +8,5 @@ public enum EppoValueType
     BOOLEAN,
     NULL,
     ARRAY_OF_STRING,
-    JSON
+    JSON,
 }

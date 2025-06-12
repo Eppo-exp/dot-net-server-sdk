@@ -5,7 +5,6 @@ namespace eppo_sdk.tasks;
 
 public class FetchExperimentsTask : IDisposable
 {
-
     private static readonly Logger s_logger = LogManager.GetCurrentClassLogger();
 
     private readonly long TimeIntervalInMillis;
@@ -13,19 +12,17 @@ public class FetchExperimentsTask : IDisposable
     private readonly IConfigurationRequester ConfigLoader;
     private readonly Timer Timer;
 
-    public FetchExperimentsTask(IConfigurationRequester config,
-                                long timeIntervalInMillis,
-                                long jitterTimeIntervalInMillis)
+    public FetchExperimentsTask(
+        IConfigurationRequester config,
+        long timeIntervalInMillis,
+        long jitterTimeIntervalInMillis
+    )
     {
         ConfigLoader = config;
         TimeIntervalInMillis = timeIntervalInMillis;
         JitterTimeIntervalInMillis = jitterTimeIntervalInMillis;
 
-        Timer = new Timer(
-                state => Run(),
-                null,
-                timeIntervalInMillis,
-                Timeout.Infinite);
+        Timer = new Timer(state => Run(), null, timeIntervalInMillis, Timeout.Infinite);
     }
 
     internal void Run()

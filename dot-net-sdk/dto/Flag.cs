@@ -6,6 +6,5 @@ public record Flag(
     List<Allocation> Allocations,
     EppoValueType VariationType,
     Dictionary<string, Variation> Variations,
-    int TotalShards)
-{
-}
+    int TotalShards
+) { }

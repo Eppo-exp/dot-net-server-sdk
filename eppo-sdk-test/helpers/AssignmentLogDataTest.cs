@@ -16,7 +16,8 @@ public class AssignmentLogDataTest
             "subject",
             new Subject(),
             new Dictionary<string, string>(),
-            new Dictionary<string, string>());
+            new Dictionary<string, string>()
+        );
     }
 
     [Test]
@@ -28,6 +29,9 @@ public class AssignmentLogDataTest
     [Test]
     public void ShouldSetAssignmentTimestamp()
     {
-        Assert.That(assignmentLogData.Timestamp, Is.EqualTo(DateTime.UtcNow).Within(100).Milliseconds);
+        Assert.That(
+            assignmentLogData.Timestamp,
+            Is.EqualTo(DateTime.UtcNow).Within(100).Milliseconds
+        );
     }
 }

@@ -4,46 +4,57 @@ using static NUnit.Framework.Assert;
 
 namespace eppo_sdk_test.validators;
 
-using StringDictionary = Dictionary<string, string>;
 using DoubleDictionary = Dictionary<string, double>;
-
+using StringDictionary = Dictionary<string, string>;
 
 public class BanditEvaluatorTest
 {
     BanditEvaluator banditEvaluator = new BanditEvaluator(10000);
 
     readonly List<NumericAttributeCoefficient> numCoeffs = new()
-        {
-            new NumericAttributeCoefficient("age", 2.0, 0.5),
-            new NumericAttributeCoefficient("height", 1.5, 0.3)
-        };
+    {
+        new NumericAttributeCoefficient("age", 2.0, 0.5),
+        new NumericAttributeCoefficient("height", 1.5, 0.3),
+    };
 
     readonly List<NumericAttributeCoefficient> negativeNumCoeffs = new()
-        {
-            new NumericAttributeCoefficient("age", -2.0, 0.5),
-            new NumericAttributeCoefficient("height", -1.5, 0.3)
-        };
+    {
+        new NumericAttributeCoefficient("age", -2.0, 0.5),
+        new NumericAttributeCoefficient("height", -1.5, 0.3),
+    };
 
     readonly List<CategoricalAttributeCoefficient> catCoeffs = new()
     {
-        new CategoricalAttributeCoefficient("color", 0.2, new DoubleDictionary() {["red"] = 1.0, ["blue"] = 0.5}),
-        new CategoricalAttributeCoefficient("size", 0.3, new DoubleDictionary() {["large"] = 2.0, ["small"] = 1.0}),
+        new CategoricalAttributeCoefficient(
+            "color",
+            0.2,
+            new DoubleDictionary() { ["red"] = 1.0, ["blue"] = 0.5 }
+        ),
+        new CategoricalAttributeCoefficient(
+            "size",
+            0.3,
+            new DoubleDictionary() { ["large"] = 2.0, ["small"] = 1.0 }
+        ),
     };
 
     readonly List<CategoricalAttributeCoefficient> negativeCatCoeffs = new()
     {
-        new CategoricalAttributeCoefficient("color", 0.2, new DoubleDictionary() {["red"] = -1.0, ["blue"] = -0.5}),
-        new CategoricalAttributeCoefficient("size", 0.3, new DoubleDictionary() {["large"] = -2.0, ["small"] = -1.0}),
+        new CategoricalAttributeCoefficient(
+            "color",
+            0.2,
+            new DoubleDictionary() { ["red"] = -1.0, ["blue"] = -0.5 }
+        ),
+        new CategoricalAttributeCoefficient(
+            "size",
+            0.3,
+            new DoubleDictionary() { ["large"] = -2.0, ["small"] = -1.0 }
+        ),
     };
 
     [Test]
     public void ShouldScoreNumericAttributes()
     {
-        var subjectAttributes = new DoubleDictionary()
-        {
-            ["age"] = 30,
-            ["height"] = 170
-        };
+        var subjectAttributes = new DoubleDictionary() { ["age"] = 30, ["height"] = 170 };
         var expectedScore = 30 * 2.0 + 170 * 1.5;
         var actualScore = BanditEvaluator.ScoreNumericAttributes(numCoeffs, subjectAttributes);
         That(actualScore, Is.EqualTo(expectedScore));
@@ -52,10 +63,7 @@ public class BanditEvaluatorTest
     [Test]
     public void ShouldScoreNumericAttributesWithMissing()
     {
-        var subjectAttributes = new DoubleDictionary()
-        {
-            ["age"] = 30
-        };
+        var subjectAttributes = new DoubleDictionary() { ["age"] = 30 };
         var expectedScore = 30 * 2.0 + 0.3; // 0.3 is missing value for height.
         var actualScore = BanditEvaluator.ScoreNumericAttributes(numCoeffs, subjectAttributes);
         That(actualScore, Is.EqualTo(expectedScore));
@@ -64,9 +72,7 @@ public class BanditEvaluatorTest
     [Test]
     public void ShouldScoreNumericAttributesWithAllMissing()
     {
-        var subjectAttributes = new DoubleDictionary()
-        {
-        };
+        var subjectAttributes = new DoubleDictionary() { };
         var expectedScore = 0.5 + 0.3;
         var actualScore = BanditEvaluator.ScoreNumericAttributes(numCoeffs, subjectAttributes);
         That(actualScore, Is.EqualTo(expectedScore));
@@ -75,38 +81,33 @@ public class BanditEvaluatorTest
     [Test]
     public void ShouldScoreNumericAttributeNoCoefficients()
     {
-        var subjectAttributes = new DoubleDictionary()
-        {
-            ["age"] = 30,
-            ["height"] = 170
-        };
+        var subjectAttributes = new DoubleDictionary() { ["age"] = 30, ["height"] = 170 };
         var expectedScore = 0.0; // No coefficients to apply
 
-        var actualScore = BanditEvaluator.ScoreNumericAttributes(new List<NumericAttributeCoefficient>(), subjectAttributes);
+        var actualScore = BanditEvaluator.ScoreNumericAttributes(
+            new List<NumericAttributeCoefficient>(),
+            subjectAttributes
+        );
         That(actualScore, Is.EqualTo(expectedScore));
     }
+
     [Test]
     public void ShouldScoreNumericAttributeNegativeCoefficients()
     {
-        var subjectAttributes = new DoubleDictionary()
-        {
-            ["age"] = 30,
-            ["height"] = 170
-        };
+        var subjectAttributes = new DoubleDictionary() { ["age"] = 30, ["height"] = 170 };
         var expectedScore = 30 * -2.0 + 170 * -1.5;
 
-        var actualScore = BanditEvaluator.ScoreNumericAttributes(negativeNumCoeffs, subjectAttributes);
+        var actualScore = BanditEvaluator.ScoreNumericAttributes(
+            negativeNumCoeffs,
+            subjectAttributes
+        );
         That(actualScore, Is.EqualTo(expectedScore));
     }
 
     [Test]
     public void ShouldScoreCategoricalAttributes()
     {
-        var subjectAttributes = new StringDictionary()
-        {
-            ["color"] = "red",
-            ["size"] = "large"
-        };
+        var subjectAttributes = new StringDictionary() { ["color"] = "red", ["size"] = "large" };
         var expectedScore = 1.0 + 2.0;
 
         var actualScore = BanditEvaluator.ScoreCategoricalAttributes(catCoeffs, subjectAttributes);
@@ -116,10 +117,7 @@ public class BanditEvaluatorTest
     [Test]
     public void ShouldScoreCategoricalAttributesSomeMissing()
     {
-        var subjectAttributes = new StringDictionary()
-        {
-            ["color"] = "red"
-        };
+        var subjectAttributes = new StringDictionary() { ["color"] = "red" };
         var expectedScore = 1.0 + 0.3;
 
         var actualScore = BanditEvaluator.ScoreCategoricalAttributes(catCoeffs, subjectAttributes);
@@ -129,9 +127,7 @@ public class BanditEvaluatorTest
     [Test]
     public void ShouldScoreCategoricalAttributesAllMissing()
     {
-        var subjectAttributes = new StringDictionary()
-        {
-        };
+        var subjectAttributes = new StringDictionary() { };
         var expectedScore = 0.2 + 0.3;
 
         var actualScore = BanditEvaluator.ScoreCategoricalAttributes(catCoeffs, subjectAttributes);
@@ -141,42 +137,43 @@ public class BanditEvaluatorTest
     [Test]
     public void ShouldScoreCategoricalAttributesNoCoefficients()
     {
-        var subjectAttributes = new StringDictionary()
-        {
-            ["color"] = "red",
-            ["size"] = "large"
-        };
+        var subjectAttributes = new StringDictionary() { ["color"] = "red", ["size"] = "large" };
         var expectedScore = 0;
 
-        var actualScore = BanditEvaluator.ScoreCategoricalAttributes(new List<CategoricalAttributeCoefficient>(), subjectAttributes);
+        var actualScore = BanditEvaluator.ScoreCategoricalAttributes(
+            new List<CategoricalAttributeCoefficient>(),
+            subjectAttributes
+        );
         That(actualScore, Is.EqualTo(expectedScore));
     }
+
     [Test]
     public void ShouldScoreCategoricalAttributesNegativeCoefficients()
     {
-        var subjectAttributes = new StringDictionary()
-        {
-            ["color"] = "red",
-            ["size"] = "large"
-        };
+        var subjectAttributes = new StringDictionary() { ["color"] = "red", ["size"] = "large" };
         var expectedScore = -1.0 + -2.0;
 
-        var actualScore = BanditEvaluator.ScoreCategoricalAttributes(negativeCatCoeffs, subjectAttributes);
+        var actualScore = BanditEvaluator.ScoreCategoricalAttributes(
+            negativeCatCoeffs,
+            subjectAttributes
+        );
         That(actualScore, Is.EqualTo(expectedScore));
     }
 
     [Test]
     public void ShouldWeighOneAction()
     {
-        var scores = new Dictionary<string, double>
-        {
-            ["action"] = 87.0
-        };
-        var expectedWeights = new Dictionary<string, double>
-        {
-            ["action"] = 1.0
-        };
-        That(BanditEvaluator.WeighActions(scores, 10 /* Gamma */, 0.1 /* min probability */), Is.EquivalentTo(expectedWeights));
+        var scores = new Dictionary<string, double> { ["action"] = 87.0 };
+        var expectedWeights = new Dictionary<string, double> { ["action"] = 1.0 };
+        That(
+            BanditEvaluator.WeighActions(
+                scores,
+                10 /* Gamma */
+                ,
+                0.1 /* min probability */
+            ),
+            Is.EquivalentTo(expectedWeights)
+        );
     }
 
     [Test]
@@ -203,14 +200,14 @@ public class BanditEvaluatorTest
             ["action2"] = expectedFloorValue,
             ["action3"] = expectedFloorValue,
             ["action4"] = expectedFloorValue,
-            ["action5"] = expectedFloorValue
+            ["action5"] = expectedFloorValue,
         };
 
         var weights = BanditEvaluator.WeighActions(scores, gamma, minProbability);
 
         AssertActionScoreDictsMatch(weights, expectedWeights);
-
     }
+
     [Test]
     public void ShouldWeighMultipleActionScores()
     {
@@ -221,13 +218,12 @@ public class BanditEvaluatorTest
             ["Crosby"] = 87.0,
             ["Lemieux"] = 66.0,
             ["Gretzky"] = 99.0,
-            ["Lindros"] = 88.0
+            ["Lindros"] = 88.0,
         };
 
         // Low gamma to encourage small spread of weights.
         var gamma = 0.1;
         var minProbability = 0.1;
-
 
         var weights = BanditEvaluator.WeighActions(scores, gamma, minProbability);
 
@@ -236,27 +232,19 @@ public class BanditEvaluatorTest
         Multiple(() =>
         {
             That(weights.Select(aScore => aScore.Value).Sum(), Is.EqualTo(1));
-            That(weights.OrderBy(w => w.Value).Select(w => w.Key), Is.EquivalentTo(
-                new List<string>
-                    {
-                    "Gretzky",
-                    "Lindros",
-                    "Crosby",
-                    "Lemieux",
-                    "Ovechkin"
-                    }
-            ));
+            That(
+                weights.OrderBy(w => w.Value).Select(w => w.Key),
+                Is.EquivalentTo(
+                    new List<string> { "Gretzky", "Lindros", "Crosby", "Lemieux", "Ovechkin" }
+                )
+            );
         });
     }
 
     [Test]
     public void ShouldWeighWithGamma()
     {
-        var scores = new Dictionary<string, double>
-        {
-            ["action"] = 2.0,
-            ["action2"] = 0.5,
-        };
+        var scores = new Dictionary<string, double> { ["action"] = 2.0, ["action2"] = 0.5 };
 
         var smallGamma = 1;
         var largeGamma = 10;
@@ -267,17 +255,12 @@ public class BanditEvaluatorTest
         Multiple(() =>
         {
             // Winner shares more of their score with a smaller gamma
-            That(
-                smallGammaWeights["action"],
-                Is.LessThan(largeGammaWeights["action"]));
+            That(smallGammaWeights["action"], Is.LessThan(largeGammaWeights["action"]));
 
             // Non-winners get bigger share of weight with a smaller gamma
-            That(
-                smallGammaWeights["action2"],
-                Is.GreaterThan(largeGammaWeights["action2"]));
+            That(smallGammaWeights["action2"], Is.GreaterThan(largeGammaWeights["action2"]));
         });
     }
-
 
     [Test]
     public void ShouldEquallyWeighEvenField()
@@ -294,7 +277,7 @@ public class BanditEvaluatorTest
             ["action1"] = 1.0 / 4,
             ["action2"] = 1.0 / 4,
             ["action3"] = 1.0 / 4,
-            ["action4"] = 1.0 / 4
+            ["action4"] = 1.0 / 4,
         };
         var gamma = 0.1;
         var minProbability = 0.1;
@@ -312,47 +295,62 @@ public class BanditEvaluatorTest
         const string subjectKey = "test_subject";
         var subjectAttributes = new ContextAttributes(subjectKey)
         {
-             { "age", 25.0 } ,
-             { "location", "US" }
+            { "age", 25.0 },
+            { "location", "US" },
         };
 
-        ContextAttributes[] actionContexts = {
-            new("action1") { { "price", 10.0 },{ "category", "A" } },
-            new("action2") { { "price", 20.0 },{ "category", "B" } }
+        ContextAttributes[] actionContexts =
+        {
+            new("action1") { { "price", 10.0 }, { "category", "A" } },
+            new("action2") { { "price", 20.0 }, { "category", "B" } },
         };
 
         var coefficients = new Dictionary<string, ActionCoefficients>()
         {
             {
-                "action1", new ActionCoefficients("action1", 0.5)
+                "action1",
+                new ActionCoefficients("action1", 0.5)
                 {
-                    SubjectNumericCoefficients = new List<NumericAttributeCoefficient>() { new("age", 0.1, 0.0) },
+                    SubjectNumericCoefficients = new List<NumericAttributeCoefficient>()
+                    {
+                        new("age", 0.1, 0.0),
+                    },
                     SubjectCategoricalCoefficients = new List<CategoricalAttributeCoefficient>()
                     {
-                        new( "location",  0.0, new DoubleDictionary() { { "US", 0.2 } } )
+                        new("location", 0.0, new DoubleDictionary() { { "US", 0.2 } }),
                     },
-                    ActionNumericCoefficients = new List<NumericAttributeCoefficient>() { new( "price", 0.05,  0.0 )},
+                    ActionNumericCoefficients = new List<NumericAttributeCoefficient>()
+                    {
+                        new("price", 0.05, 0.0),
+                    },
                     ActionCategoricalCoefficients = new List<CategoricalAttributeCoefficient>()
                     {
-                        new( "category",  0.0, new DoubleDictionary(){ { "A", 0.3 } } )
-                    }
+                        new("category", 0.0, new DoubleDictionary() { { "A", 0.3 } }),
+                    },
                 }
             },
             {
-                "action2", new ActionCoefficients("action2", 0.3)
+                "action2",
+                new ActionCoefficients("action2", 0.3)
                 {
-                    SubjectNumericCoefficients = new List<NumericAttributeCoefficient>() { new("age", 0.1, 0.0) },
+                    SubjectNumericCoefficients = new List<NumericAttributeCoefficient>()
+                    {
+                        new("age", 0.1, 0.0),
+                    },
                     SubjectCategoricalCoefficients = new List<CategoricalAttributeCoefficient>()
                     {
-                        new( "location",  0.0, new DoubleDictionary() { { "US", 0.2 } } )
+                        new("location", 0.0, new DoubleDictionary() { { "US", 0.2 } }),
                     },
-                    ActionNumericCoefficients = new List<NumericAttributeCoefficient>() { new( "price", 0.05,  0.0 )},
+                    ActionNumericCoefficients = new List<NumericAttributeCoefficient>()
+                    {
+                        new("price", 0.05, 0.0),
+                    },
                     ActionCategoricalCoefficients = new List<CategoricalAttributeCoefficient>()
                     {
-                        new( "category",  0.0, new DoubleDictionary(){ { "B", 0.3 } } )
-                    }
+                        new("category", 0.0, new DoubleDictionary() { { "B", 0.3 } }),
+                    },
                 }
-            }
+            },
         };
 
         var banditModel = new ModelData
@@ -360,23 +358,34 @@ public class BanditEvaluatorTest
             Gamma = 0.1,
             DefaultActionScore = 0.0,
             ActionProbabilityFloor = 0.1,
-            Coefficients = coefficients
+            Coefficients = coefficients,
         };
 
         var evaluator = new BanditEvaluator(10_000);
 
         // Evaluate bandit
-        var evaluation = evaluator.EvaluateBandit(flagKey, subjectAttributes, actionContexts.ToDictionary(i => i.Key), banditModel);
+        var evaluation = evaluator.EvaluateBandit(
+            flagKey,
+            subjectAttributes,
+            actionContexts.ToDictionary(i => i.Key),
+            banditModel
+        );
         Multiple(() =>
         {
             That(evaluation, Is.Not.Null);
 
             That(evaluation!.FlagKey, Is.EqualTo(flagKey));
             That(evaluation.SubjectKey, Is.EqualTo(subjectKey));
-            That(evaluation.SubjectAttributes.NumericAttributes, Is.EquivalentTo(subjectAttributes.AsAttributeSet().NumericAttributes));
-            That(evaluation.SubjectAttributes.CategoricalAttributes, Is.EquivalentTo(subjectAttributes.AsAttributeSet().CategoricalAttributes));
+            That(
+                evaluation.SubjectAttributes.NumericAttributes,
+                Is.EquivalentTo(subjectAttributes.AsAttributeSet().NumericAttributes)
+            );
+            That(
+                evaluation.SubjectAttributes.CategoricalAttributes,
+                Is.EquivalentTo(subjectAttributes.AsAttributeSet().CategoricalAttributes)
+            );
 
-            // Note: The test result here is different than in the python SDK for the same inputs because of the 
+            // Note: The test result here is different than in the python SDK for the same inputs because of the
             // mechanism used to shuffle the actions. Here, we use the same sharder as we would for non-test environments.
             // In Python, a pass-thru sharder is used, so the actions are shuffled into a differtent order.
             That(evaluation.ActionKey, Is.EqualTo("action2"));
@@ -386,7 +395,10 @@ public class BanditEvaluatorTest
         });
     }
 
-    private static void AssertActionScoreDictsMatch(IDictionary<string, double> actual, IDictionary<string, double> expected)
+    private static void AssertActionScoreDictsMatch(
+        IDictionary<string, double> actual,
+        IDictionary<string, double> expected
+    )
     {
         Multiple(() =>
         {

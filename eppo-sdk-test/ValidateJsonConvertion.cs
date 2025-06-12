@@ -4,12 +4,14 @@ using Newtonsoft.Json;
 using static NUnit.Framework.Assert;
 
 namespace eppo_sdk_test;
+
 public class ValidateJsonConvertion
 {
     [Test]
     public void ShouldConvertCondition()
     {
-        const string json = @"{
+        const string json =
+            @"{
             'value': ['iOS','Android'],
             'operator': 'ONE_OF',
             'attribute': 'device'
@@ -23,10 +25,12 @@ public class ValidateJsonConvertion
             That(condition?.ArrayValue().Count, Is.EqualTo(2));
         });
     }
+
     [Test]
     public void ShouldConvertSplits()
     {
-        const string json = @"[
+        const string json =
+            @"[
             {
               'variationKey': 'on',
               'shards': [
@@ -75,18 +79,18 @@ public class ValidateJsonConvertion
 
             That(splits?[0].Shards[1].salt, Is.EqualTo("some-salt-two"));
 
-            That(splits?[0].ExtraLogging, Is.EquivalentTo(new Dictionary<string, string>
-            {
-                ["foo"] = "bar",
-                ["bar"] = "baz"
-            }));
+            That(
+                splits?[0].ExtraLogging,
+                Is.EquivalentTo(new Dictionary<string, string> { ["foo"] = "bar", ["bar"] = "baz" })
+            );
         });
     }
 
     [Test]
     public void ShouldConvertRules()
     {
-        const string json = @"[
+        const string json =
+            @"[
         {
           'allocationKey': 'allocation-experiment-4',
           'conditions': [{'value': ['iOS','Android'],'operator': 'ONE_OF','attribute': 'device'},
@@ -106,11 +110,10 @@ public class ValidateJsonConvertion
         var rules = JsonConvert.DeserializeObject<List<Rule>>(json);
         Assert.That(rules?.Count, Is.EqualTo(3));
         Assert.That(rules[0].conditions[0].Operator, Is.EqualTo(OperatorType.ONE_OF));
-        Assert.That(rules[0].conditions[0].ArrayValue(), Is.EqualTo(new List<string>
-        {
-            "iOS",
-            "Android"
-        }));
+        Assert.That(
+            rules[0].conditions[0].ArrayValue(),
+            Is.EqualTo(new List<string> { "iOS", "Android" })
+        );
         Assert.That(rules[0].conditions[0].Attribute, Is.EqualTo("device"));
 
         Assert.That(rules[1].conditions[0].Operator, Is.EqualTo(OperatorType.NOT_ONE_OF));
@@ -120,7 +123,8 @@ public class ValidateJsonConvertion
     [Test]
     public void ShouldConvertVariations()
     {
-        const string json = @"{
+        const string json =
+            @"{
       'on': {
         'key': 'on',
         'value': true
@@ -142,14 +146,14 @@ public class ValidateJsonConvertion
             That(variations?.TryGetValue("on", out on), Is.True);
             That(on, Is.Not.Null);
             That(on?.BoolValue(), Is.True);
-
         });
     }
 
     [Test]
     public void ShouldConvertAllocations()
     {
-        const string json = /*lang=json*/ @"[
+        const string json = /*lang=json*/
+            @"[
         {
           'key': 'on-for-age-50+',
           'rules': [
@@ -206,29 +210,39 @@ public class ValidateJsonConvertion
             That(allocations?.Count, Is.EqualTo(2));
             That(allocations?[0].Key, Is.EqualTo("on-for-age-50+"));
             That(allocations?[0].DoLog, Is.EqualTo(false));
-            That(allocations?[0].StartAt, Is.EqualTo(DateTime.Parse("2022-10-31T09:00:00.594Z").ToUniversalTime()));
-            That(allocations?[0].EndAt, Is.EqualTo(DateTime.Parse("2050-10-31T09:00:00.594Z").ToUniversalTime()));
+            That(
+                allocations?[0].StartAt,
+                Is.EqualTo(DateTime.Parse("2022-10-31T09:00:00.594Z").ToUniversalTime())
+            );
+            That(
+                allocations?[0].EndAt,
+                Is.EqualTo(DateTime.Parse("2050-10-31T09:00:00.594Z").ToUniversalTime())
+            );
 
             That(allocations?[0].Rules.Count, Is.EqualTo(1));
             That(allocations?[0].Splits.Count, Is.EqualTo(1));
 
             That(allocations?[1].Key, Is.EqualTo("off-for-all"));
             That(allocations?[1].DoLog, Is.EqualTo(true));
-            That(allocations?[1].StartAt, Is.EqualTo(DateTime.Parse("2022-10-31T09:00:00.594Z").ToUniversalTime()));
-            That(allocations?[1].EndAt, Is.EqualTo(DateTime.Parse("2050-10-31T09:00:00.594Z").ToUniversalTime()));
+            That(
+                allocations?[1].StartAt,
+                Is.EqualTo(DateTime.Parse("2022-10-31T09:00:00.594Z").ToUniversalTime())
+            );
+            That(
+                allocations?[1].EndAt,
+                Is.EqualTo(DateTime.Parse("2050-10-31T09:00:00.594Z").ToUniversalTime())
+            );
 
             That(allocations?[1].Rules.Count, Is.EqualTo(0));
             That(allocations?[1].Splits.Count, Is.EqualTo(1));
         });
-
     }
-
-
 
     [Test]
     public void ShouldParseBandit()
     {
-        const string banditJson = @"{
+        const string banditJson =
+            @"{
     ""banditKey"": ""banner_bandit"",
     ""modelName"": ""falcon"",
     ""updatedAt"": ""2023-09-13T04:52:06.462Z"",
@@ -291,7 +305,10 @@ public class ValidateJsonConvertion
             That(notNullBandit.BanditKey, Is.EqualTo("banner_bandit"));
             That(notNullBandit.ModelName, Is.EqualTo("falcon"));
             That(notNullBandit.ModelVersion, Is.EqualTo("v123"));
-            That(notNullBandit.UpdatedAt, Is.EqualTo(DateTime.Parse("2023-09-13T04:52:06.462Z").ToUniversalTime()));
+            That(
+                notNullBandit.UpdatedAt,
+                Is.EqualTo(DateTime.Parse("2023-09-13T04:52:06.462Z").ToUniversalTime())
+            );
 
             That(notNullBandit.ModelData, Is.Not.Null);
             var model = notNullBandit.ModelData;
@@ -310,7 +327,6 @@ public class ValidateJsonConvertion
             That(ac.ActionKey, Is.EqualTo("nike"));
             That(ac.Intercept, Is.EqualTo(1.0));
 
-
             That(ac.ActionCategoricalCoefficients, Is.Not.Null);
             That(ac.ActionNumericCoefficients, Is.Not.Null);
             That(ac.SubjectCategoricalCoefficients, Is.Not.Null);
@@ -320,30 +336,49 @@ public class ValidateJsonConvertion
             {
                 ["gold"] = 4.5,
                 ["silver"] = 3.2,
-                ["bronze"] = 1.9
+                ["bronze"] = 1.9,
             };
-            var loyaltyAttrCoef = new CategoricalAttributeCoefficient("loyalty_tier", 0.0, loyaltyDict);
-            AssertCategoricalCoefficients(ac.ActionCategoricalCoefficients, new() { loyaltyAttrCoef });
+            var loyaltyAttrCoef = new CategoricalAttributeCoefficient(
+                "loyalty_tier",
+                0.0,
+                loyaltyDict
+            );
+            AssertCategoricalCoefficients(
+                ac.ActionCategoricalCoefficients,
+                new() { loyaltyAttrCoef }
+            );
 
-            var genderDict = new Dictionary<string, double>
-            {
-                ["male"] = -0.5,
-                ["female"] = 0.5
-            };
-            var genderAttrCoef = new CategoricalAttributeCoefficient("gender_identity", 2.3, genderDict);
-            AssertCategoricalCoefficients(ac.SubjectCategoricalCoefficients, new() { genderAttrCoef });
+            var genderDict = new Dictionary<string, double> { ["male"] = -0.5, ["female"] = 0.5 };
+            var genderAttrCoef = new CategoricalAttributeCoefficient(
+                "gender_identity",
+                2.3,
+                genderDict
+            );
+            AssertCategoricalCoefficients(
+                ac.SubjectCategoricalCoefficients,
+                new() { genderAttrCoef }
+            );
 
-            That(ac.ActionNumericCoefficients, Is.EquivalentTo(new List<NumericAttributeCoefficient>() { new("brand_affinity", 1, -0.1) }));
-            That(ac.SubjectNumericCoefficients, Is.EquivalentTo(new List<NumericAttributeCoefficient>() { new("account_age", 0.3, 0) }));
+            That(
+                ac.ActionNumericCoefficients,
+                Is.EquivalentTo(
+                    new List<NumericAttributeCoefficient>() { new("brand_affinity", 1, -0.1) }
+                )
+            );
+            That(
+                ac.SubjectNumericCoefficients,
+                Is.EquivalentTo(
+                    new List<NumericAttributeCoefficient>() { new("account_age", 0.3, 0) }
+                )
+            );
         });
     }
-
-
 
     [Test]
     public void ShouldParsePartialBandit()
     {
-        const string banditJson = @"{
+        const string banditJson =
+            @"{
 
       ""banditKey"": ""cold_start_bandit"",
       ""modelName"": ""falcon"",
@@ -369,7 +404,10 @@ public class ValidateJsonConvertion
             That(notNullBandit.BanditKey, Is.EqualTo("cold_start_bandit"));
             That(notNullBandit.ModelName, Is.EqualTo("falcon"));
             That(notNullBandit.ModelVersion, Is.EqualTo("cold start"));
-            That(notNullBandit.UpdatedAt, Is.EqualTo(DateTime.Parse("2023-09-13T04:52:06.462Z").ToUniversalTime()));
+            That(
+                notNullBandit.UpdatedAt,
+                Is.EqualTo(DateTime.Parse("2023-09-13T04:52:06.462Z").ToUniversalTime())
+            );
 
             That(notNullBandit.ModelData, Is.Not.Null);
             var model = notNullBandit.ModelData;
@@ -380,11 +418,13 @@ public class ValidateJsonConvertion
 
             That(model.Coefficients, Is.Not.Null);
             That(model.Coefficients, Has.Count.EqualTo(0));
-
         });
     }
 
-    private static void AssertCategoricalCoefficients(IReadOnlyList<CategoricalAttributeCoefficient> actual, List<CategoricalAttributeCoefficient> expected)
+    private static void AssertCategoricalCoefficients(
+        IReadOnlyList<CategoricalAttributeCoefficient> actual,
+        List<CategoricalAttributeCoefficient> expected
+    )
     {
         // Can't use EquivalentTo here b/c the nested collection won't match (EquivalentTo appears to use EqualTo on nested values)
         That(actual, Has.Count.EqualTo(expected.Count));
@@ -392,9 +432,11 @@ public class ValidateJsonConvertion
         for (var i = 0; i < actual.Count; ++i)
         {
             That(actual[i].AttributeKey, Is.EqualTo(expected[i].AttributeKey));
-            That(actual[i].MissingValueCoefficient, Is.EqualTo(expected[i].MissingValueCoefficient));
+            That(
+                actual[i].MissingValueCoefficient,
+                Is.EqualTo(expected[i].MissingValueCoefficient)
+            );
             That(actual[i].ValueCoefficients, Is.EquivalentTo(expected[i].ValueCoefficients));
         }
     }
-
 }
