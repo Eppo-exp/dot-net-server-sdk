@@ -1,6 +1,7 @@
 namespace eppo_sdk.dto.bandit;
 
-public class ModelData {
+public class ModelData
+{
     public double Gamma;
     public required IDictionary<string, ActionCoefficients> Coefficients;
 

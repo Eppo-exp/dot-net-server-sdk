@@ -123,9 +123,10 @@ public class EppoHttpClient
             throw new UnauthorizedAccessException("Invalid Eppo API Key");
         }
 
-        if (restResponse.Data == null) {
+        if (restResponse.Data == null)
+        {
             // Useful to log why we have a null response body.
-        s_logger.Debug("Null response body, status was: " + restResponse.StatusCode);
+            s_logger.Debug("Null response body, status was: " + restResponse.StatusCode);
         }
 
         // HTTP uses the `ETag` header to identify the version of the resource (or entity) returned in the response.

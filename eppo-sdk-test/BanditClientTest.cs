@@ -495,7 +495,8 @@ public record BanditSubjectTestRecord(
     SubjectAttributeSet SubjectAttributes,
     ActionTestRecord[] Actions,
     BanditResult Assignment
-) { }
+)
+{ }
 
 public record ActionTestRecord(
     string ActionKey,

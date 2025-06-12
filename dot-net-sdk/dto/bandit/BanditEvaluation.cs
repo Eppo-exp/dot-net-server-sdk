@@ -2,7 +2,8 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace eppo_sdk.dto.bandit;
 
-public record BanditEvaluation{
+public record BanditEvaluation
+{
 
     [SetsRequiredMembers]
     public BanditEvaluation(string flagKey,

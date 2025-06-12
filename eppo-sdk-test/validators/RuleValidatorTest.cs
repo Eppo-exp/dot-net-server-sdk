@@ -15,7 +15,7 @@ public class RuleValidatorTest
         var jObj = JObject.Parse(someJson);
 
 
-        var values = new List<Tuple<object, string>> (){
+        var values = new List<Tuple<object, string>>(){
             new(true, "true"),
             new("true", "true"),
             new(1.0, "1"),
@@ -25,7 +25,7 @@ public class RuleValidatorTest
             new(jObj, someJson)
         };
 
-        Assert.That(values.Select( v => Compare.ToString(v.Item1)), Is.EquivalentTo(values.Select(v => v.Item2)));
+        Assert.That(values.Select(v => Compare.ToString(v.Item1)), Is.EquivalentTo(values.Select(v => v.Item2)));
     }
     [Test]
     public void ShouldMatchAndyRuleWithEmptyCondition()
@@ -112,7 +112,7 @@ public class RuleValidatorTest
     {
         var rules = new List<Rule>();
         Rule rule = CreateRule(new List<Condition>());
-        AddRegexConditionToRule(rule , false); // Use the NOT_MATCHES operator
+        AddRegexConditionToRule(rule, false); // Use the NOT_MATCHES operator
         rules.Add(rule);
 
         var subjectAttributes = new Subject { { "match", "1234" } }; // Regex Condition is [a-z]+
@@ -125,7 +125,7 @@ public class RuleValidatorTest
     {
         var rules = new List<Rule>();
         Rule rule = CreateRule(new List<Condition>());
-        AddRegexConditionToRule(rule , false); // Use the NOT_MATCHES operator
+        AddRegexConditionToRule(rule, false); // Use the NOT_MATCHES operator
         rules.Add(rule);
 
         var subjectAttributes = new Subject { { "match", null } };
@@ -413,9 +413,9 @@ public class RuleValidatorTest
     {
 
         var now = DateTimeOffset.Now;
-        var overAlloc = new Allocation("over", new List<Rule>(), matchingSplits, false, null, endAt: now.Subtract( new TimeSpan( 0,0,10000)).DateTime );
+        var overAlloc = new Allocation("over", new List<Rule>(), matchingSplits, false, null, endAt: now.Subtract(new TimeSpan(0, 0, 10000)).DateTime);
 
-        var futureAlloc = new Allocation("hasntStarted", new List<Rule>(), matchingSplits, false, startAt: now.Add( new TimeSpan( 0,0,6000)).DateTime, null);
+        var futureAlloc = new Allocation("hasntStarted", new List<Rule>(), matchingSplits, false, startAt: now.Add(new TimeSpan(0, 0, 6000)).DateTime, null);
 
         var flag = new Flag(
             "inactive_allocs",

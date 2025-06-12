@@ -201,9 +201,9 @@ public class ConfigurationRequesterTest
                 new BanditFlagVariation[] {
                     new("bandit2", "flag2", "allocation", "bandit2", "bandit2")
                 }
-            )            
+            )
         };
-        var updatedUFCResponse =  new FlagConfigurationResponse()
+        var updatedUFCResponse = new FlagConfigurationResponse()
         {
             BanditReferences = updatedBanditReferences,
             Flags = flags
@@ -445,7 +445,7 @@ public class ConfigurationRequesterTest
         requester.LoadConfiguration();
         AssertHasConfig(requester, flags3, banditRefs3, bandits3);
     }
-    
+
     private static Mock<EppoHttpClient> GetMockAPI()
     {
         return new Mock<EppoHttpClient>("apiKey", "sdkName", "sdkVersion", "baseUrl", 3000);

@@ -26,7 +26,7 @@ public class EppoClientConfig
         get => _pollingIntervalInMillis ?? Constants.TIME_INTERVAL_IN_MILLIS;
         set
         {
-            if (value <= 0 ) 
+            if (value <= 0)
             {
                 throw new Exception("Polling interval must be a positive number");
             }
@@ -40,11 +40,11 @@ public class EppoClientConfig
         get => _pollingJitterInMillis ?? Constants.JITTER_INTERVAL_IN_MILLIS;
         set
         {
-            if (value < 0 ) 
+            if (value < 0)
             {
                 throw new Exception("Polling jitter can not be negative.");
             }
-             _pollingJitterInMillis = value;
+            _pollingJitterInMillis = value;
         }
     }
 

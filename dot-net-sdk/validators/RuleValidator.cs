@@ -125,108 +125,108 @@ public static partial class RuleValidator
                 switch (condition.Operator)
                 {
                     case GTE:
-                    {
-                        if (value.IsNumeric() && condition.IsNumeric())
                         {
-                            return value.DoubleValue() >= condition.DoubleValue();
-                        }
+                            if (value.IsNumeric() && condition.IsNumeric())
+                            {
+                                return value.DoubleValue() >= condition.DoubleValue();
+                            }
 
-                        if (
-                            NuGetVersion.TryParse(value.StringValue(), out var valueSemver)
-                            && NuGetVersion.TryParse(
-                                Compare.ToString(condition.Value),
-                                out var conditionSemver
+                            if (
+                                NuGetVersion.TryParse(value.StringValue(), out var valueSemver)
+                                && NuGetVersion.TryParse(
+                                    Compare.ToString(condition.Value),
+                                    out var conditionSemver
+                                )
                             )
-                        )
-                        {
-                            return valueSemver >= conditionSemver;
-                        }
+                            {
+                                return valueSemver >= conditionSemver;
+                            }
 
-                        return false;
-                    }
+                            return false;
+                        }
                     case GT:
-                    {
-                        if (value.IsNumeric() && condition.IsNumeric())
                         {
-                            return value.DoubleValue() > condition.DoubleValue();
-                        }
+                            if (value.IsNumeric() && condition.IsNumeric())
+                            {
+                                return value.DoubleValue() > condition.DoubleValue();
+                            }
 
-                        if (
-                            NuGetVersion.TryParse(value.StringValue(), out var valueSemver)
-                            && NuGetVersion.TryParse(
-                                Compare.ToString(condition.Value),
-                                out var conditionSemver
+                            if (
+                                NuGetVersion.TryParse(value.StringValue(), out var valueSemver)
+                                && NuGetVersion.TryParse(
+                                    Compare.ToString(condition.Value),
+                                    out var conditionSemver
+                                )
                             )
-                        )
-                        {
-                            return valueSemver > conditionSemver;
-                        }
+                            {
+                                return valueSemver > conditionSemver;
+                            }
 
-                        return false;
-                    }
+                            return false;
+                        }
                     case LTE:
-                    {
-                        if (value.IsNumeric() && condition.IsNumeric())
                         {
-                            return value.DoubleValue() <= condition.DoubleValue();
-                        }
+                            if (value.IsNumeric() && condition.IsNumeric())
+                            {
+                                return value.DoubleValue() <= condition.DoubleValue();
+                            }
 
-                        if (
-                            NuGetVersion.TryParse(value.StringValue(), out var valueSemver)
-                            && NuGetVersion.TryParse(
-                                Compare.ToString(condition.Value),
-                                out var conditionSemver
+                            if (
+                                NuGetVersion.TryParse(value.StringValue(), out var valueSemver)
+                                && NuGetVersion.TryParse(
+                                    Compare.ToString(condition.Value),
+                                    out var conditionSemver
+                                )
                             )
-                        )
-                        {
-                            return valueSemver <= conditionSemver;
-                        }
+                            {
+                                return valueSemver <= conditionSemver;
+                            }
 
-                        return false;
-                    }
+                            return false;
+                        }
                     case LT:
-                    {
-                        if (value.IsNumeric() && condition.IsNumeric())
                         {
-                            return value.DoubleValue() < condition.DoubleValue();
-                        }
+                            if (value.IsNumeric() && condition.IsNumeric())
+                            {
+                                return value.DoubleValue() < condition.DoubleValue();
+                            }
 
-                        if (
-                            NuGetVersion.TryParse(
-                                Compare.ToString(value.Value),
-                                out var valueSemver
+                            if (
+                                NuGetVersion.TryParse(
+                                    Compare.ToString(value.Value),
+                                    out var valueSemver
+                                )
+                                && NuGetVersion.TryParse(
+                                    Compare.ToString(condition.Value),
+                                    out var conditionSemver
+                                )
                             )
-                            && NuGetVersion.TryParse(
-                                Compare.ToString(condition.Value),
-                                out var conditionSemver
-                            )
-                        )
-                        {
-                            return valueSemver < conditionSemver;
-                        }
+                            {
+                                return valueSemver < conditionSemver;
+                            }
 
-                        return false;
-                    }
+                            return false;
+                        }
                     case MATCHES:
-                    {
-                        return Regex
-                            .Match(Compare.ToString(value.Value), Compare.ToString(condition.Value))
-                            .Success;
-                    }
+                        {
+                            return Regex
+                                .Match(Compare.ToString(value.Value), Compare.ToString(condition.Value))
+                                .Success;
+                        }
                     case NOT_MATCHES:
-                    {
-                        return !Regex
-                            .Match(Compare.ToString(value.Value), Compare.ToString(condition.Value))
-                            .Success;
-                    }
+                        {
+                            return !Regex
+                                .Match(Compare.ToString(value.Value), Compare.ToString(condition.Value))
+                                .Success;
+                        }
                     case ONE_OF:
-                    {
-                        return Compare.IsOneOf(value, condition.ArrayValue());
-                    }
+                        {
+                            return Compare.IsOneOf(value, condition.ArrayValue());
+                        }
                     case NOT_ONE_OF:
-                    {
-                        return !Compare.IsOneOf(value, condition.ArrayValue());
-                    }
+                        {
+                            return !Compare.IsOneOf(value, condition.ArrayValue());
+                        }
                 }
             }
             return false; // Return false if attribute is not found or other errors occur

@@ -5,7 +5,7 @@ namespace eppo_sdk.helpers;
 
 public class AppDetails
 {
-    public DeploymentEnvironment Deployment { get; init;}
+    public DeploymentEnvironment Deployment { get; init; }
 
     private readonly string _version;
 
