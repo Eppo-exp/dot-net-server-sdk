@@ -43,7 +43,7 @@ jobs:
     - name: Lint and format check
       run: |
         dotnet tool install -g csharpier
-        ~/.dotnet/tools/csharpier check . --check
+        ~/.dotnet/tools/csharpier check .
 
     - name: Setup .NET 7
       uses: actions/setup-dotnet@v3
