@@ -19,34 +19,31 @@ public class BanditClientTest
     private const string BANDIT_CONFIG_FILE = "files/ufc/bandit-flags-v1.json";
     private const string BANDIT_MODEL_FILE = "files/ufc/bandit-models-v1.json";
     private WireMockServer? mockServer;
-    private readonly ContextAttributes subject =
-        new("subject_key")
+    private readonly ContextAttributes subject = new("subject_key")
+    {
+        { "account_age", 3 },
+        { "favourite_colour", "red" },
+        { "age", 30 },
+        { "country", "UK" },
+    };
+    private readonly ContextAttributes americanSubject = new("subject_key")
+    {
+        { "account_age", 3 },
+        { "favourite_colour", "red" },
+        { "age", 30 },
+        { "country", "USA" },
+    };
+    private readonly Dictionary<string, ContextAttributes> actions = new()
+    {
         {
-            { "account_age", 3 },
-            { "favourite_colour", "red" },
-            { "age", 30 },
-            { "country", "UK" },
-        };
-    private readonly ContextAttributes americanSubject =
-        new("subject_key")
+            "action1",
+            new("action1") { { "foo", "bar" }, { "bar", "baz" } }
+        },
         {
-            { "account_age", 3 },
-            { "favourite_colour", "red" },
-            { "age", 30 },
-            { "country", "USA" },
-        };
-    private readonly Dictionary<string, ContextAttributes> actions =
-        new()
-        {
-            {
-                "action1",
-                new("action1") { { "foo", "bar" }, { "bar", "baz" } }
-            },
-            {
-                "action2",
-                new("action2") { { "height", 10 }, { "isfast", true } }
-            },
-        };
+            "action2",
+            new("action2") { { "height", 10 }, { "isfast", true } }
+        },
+    };
 
     [OneTimeSetUp]
     public void Setup()
@@ -495,8 +492,7 @@ public record BanditSubjectTestRecord(
     SubjectAttributeSet SubjectAttributes,
     ActionTestRecord[] Actions,
     BanditResult Assignment
-)
-{ }
+) { }
 
 public record ActionTestRecord(
     string ActionKey,

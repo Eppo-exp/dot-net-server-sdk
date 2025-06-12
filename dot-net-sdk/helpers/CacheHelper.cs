@@ -8,9 +8,6 @@ public class CacheHelper
 
     public CacheHelper(int maxEntries)
     {
-        this.Cache = new MemoryCache(new MemoryCacheOptions
-        {
-            SizeLimit = maxEntries
-        });
+        this.Cache = new MemoryCache(new MemoryCacheOptions { SizeLimit = maxEntries });
     }
 }

@@ -22,19 +22,30 @@ public class ConfigurationRequester : IConfigurationRequester
     private readonly EppoHttpClient eppoHttpClient;
     private readonly IConfigurationStore configurationStore;
 
-    public ConfigurationRequester(EppoHttpClient eppoHttpClient, IConfigurationStore configurationStore)
+    public ConfigurationRequester(
+        EppoHttpClient eppoHttpClient,
+        IConfigurationStore configurationStore
+    )
     {
         this.eppoHttpClient = eppoHttpClient;
         this.configurationStore = configurationStore;
     }
 
-    public bool TryGetBandit(string key, out Bandit? bandit) => configurationStore.TryGetBandit(key, out bandit);
+    public bool TryGetBandit(string key, out Bandit? bandit) =>
+        configurationStore.TryGetBandit(key, out bandit);
 
-    public bool TryGetFlag(string key, out Flag? flag) => configurationStore.TryGetFlag(key, out flag);
+    public bool TryGetFlag(string key, out Flag? flag) =>
+        configurationStore.TryGetFlag(key, out flag);
 
     public BanditReferences GetBanditReferences()
     {
-        if (configurationStore.TryGetMetadata(KEY_BANDIT_REFERENCES, out BanditReferences? banditReferences) && banditReferences != null)
+        if (
+            configurationStore.TryGetMetadata(
+                KEY_BANDIT_REFERENCES,
+                out BanditReferences? banditReferences
+            )
+            && banditReferences != null
+        )
         {
             return banditReferences;
         }
@@ -95,7 +106,8 @@ public class ConfigurationRequester : IConfigurationRequester
         }
 
         BanditModelResponse banditModels = FetchBandits().Resource!;
-        var banditModelList = banditModels.Bandits?.ToList().Select(kvp => kvp.Value) ?? Array.Empty<Bandit>();
+        var banditModelList =
+            banditModels.Bandits?.ToList().Select(kvp => kvp.Value) ?? Array.Empty<Bandit>();
         return banditModelList;
     }
 
@@ -105,11 +117,16 @@ public class ConfigurationRequester : IConfigurationRequester
         return models ?? Array.Empty<string>();
     }
 
-    private VersionedResourceResponse<FlagConfigurationResponse> FetchFlags(string? lastConfigVersion)
+    private VersionedResourceResponse<FlagConfigurationResponse> FetchFlags(
+        string? lastConfigVersion
+    )
     {
         try
         {
-            var response = eppoHttpClient.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, lastConfigVersion);
+            var response = eppoHttpClient.Get<FlagConfigurationResponse>(
+                Constants.UFC_ENDPOINT,
+                lastConfigVersion
+            );
             if (response.IsModified && response.Resource == null)
             {
                 // Invalid and unexpected state.

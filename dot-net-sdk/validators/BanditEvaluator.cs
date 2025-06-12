@@ -5,11 +5,9 @@ using eppo_sdk.helpers;
 
 namespace eppo_sdk.validators;
 
-
 /// Scores and selects and action based on the supplied contexts and Bandit Model data.
 public class BanditEvaluator
 {
-
     private readonly int totalShards;
 
     public BanditEvaluator(int totalShards = 10_000)
@@ -21,7 +19,8 @@ public class BanditEvaluator
         string flagKey,
         ContextAttributes subject,
         IDictionary<string, ContextAttributes> actionsWithContexts,
-        ModelData banditModel)
+        ModelData banditModel
+    )
     {
         if (actionsWithContexts.Count == 0)
         {
@@ -32,19 +31,18 @@ public class BanditEvaluator
         var actionScores = ScoreActions(
             subject.AsAttributeSet(),
             actionsWithContexts.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.AsAttributeSet()),
-            banditModel);
+            banditModel
+        );
 
         // Assign action weights using FALCON.
         var actionWeights = WeighActions(
             actionScores,
             banditModel.Gamma,
-            banditModel.ActionProbabilityFloor);
+            banditModel.ActionProbabilityFloor
+        );
 
         // Shuffle the actions and select one based on the subject's bucket.
-        var selectedAction = SelectAction(
-            flagKey,
-            subject.Key,
-            actionWeights);
+        var selectedAction = SelectAction(flagKey, subject.Key, actionWeights);
 
         var selectedActionContext = actionsWithContexts[selectedAction];
         var actionScore = actionScores[selectedAction];
@@ -67,46 +65,61 @@ public class BanditEvaluator
         );
     }
 
-    public static IDictionary<string, double> ScoreActions(AttributeSet subjectAttributes,
-                                                 IDictionary<string, AttributeSet> actionsWithContexts,
-                                                 ModelData banditModel) =>
+    public static IDictionary<string, double> ScoreActions(
+        AttributeSet subjectAttributes,
+        IDictionary<string, AttributeSet> actionsWithContexts,
+        ModelData banditModel
+    ) =>
         actionsWithContexts.ToDictionary(
             kvp => kvp.Key,
-            kvp => banditModel.Coefficients.TryGetValue(kvp.Key, out var coefficients)
+            kvp =>
+                banditModel.Coefficients.TryGetValue(kvp.Key, out var coefficients)
                     ? ScoreAction(subjectAttributes, kvp.Value, coefficients)
-                    : banditModel.DefaultActionScore);
+                    : banditModel.DefaultActionScore
+        );
 
-
-    private static double ScoreAction(AttributeSet subjectAttributes,
-                                      AttributeSet actionAttributes,
-                                      ActionCoefficients coefficients)
+    private static double ScoreAction(
+        AttributeSet subjectAttributes,
+        AttributeSet actionAttributes,
+        ActionCoefficients coefficients
+    )
     {
         double score = coefficients.Intercept;
 
         score += ScoreNumericAttributes(
             coefficients.SubjectNumericCoefficients,
-            subjectAttributes.NumericAttributes);
+            subjectAttributes.NumericAttributes
+        );
         score += ScoreCategoricalAttributes(
             coefficients.SubjectCategoricalCoefficients,
-            subjectAttributes.CategoricalAttributes);
+            subjectAttributes.CategoricalAttributes
+        );
         score += ScoreNumericAttributes(
             coefficients.ActionNumericCoefficients,
-            actionAttributes.NumericAttributes);
+            actionAttributes.NumericAttributes
+        );
         score += ScoreCategoricalAttributes(
             coefficients.ActionCategoricalCoefficients,
-            actionAttributes.CategoricalAttributes);
+            actionAttributes.CategoricalAttributes
+        );
 
         return score;
     }
 
-    public static IDictionary<string, double> WeighActions(IDictionary<string, double> actionScores,
-                                                    double gamma,
-                                                    double probabilityFloor)
+    public static IDictionary<string, double> WeighActions(
+        IDictionary<string, double> actionScores,
+        double gamma,
+        double probabilityFloor
+    )
     {
         var numberOfActions = actionScores.Count;
 
         // Order by key then by value to get the highest score, tie broken by action key.
-        var bestAction = actionScores.ToList().OrderByDescending(action => action.Value).ThenBy(action => action.Key).First();
+        var bestAction = actionScores
+            .ToList()
+            .OrderByDescending(action => action.Value)
+            .ThenBy(action => action.Key)
+            .First();
 
         var minProbability = probabilityFloor / numberOfActions;
 
@@ -114,8 +127,12 @@ public class BanditEvaluator
             .Where(t => t.Key != bestAction.Key)
             .ToDictionary(
                 kvp => kvp.Key,
-                t => Math.Max(minProbability, 1.0f / (numberOfActions + gamma * (bestAction.Value - t.Value))));
-
+                t =>
+                    Math.Max(
+                        minProbability,
+                        1.0f / (numberOfActions + gamma * (bestAction.Value - t.Value))
+                    )
+            );
 
         var remainingWeight = Math.Max(0.0, 1.0 - weights.Sum(w => w.Value));
         weights[bestAction.Key] = remainingWeight;
@@ -123,12 +140,15 @@ public class BanditEvaluator
         return weights;
     }
 
-    private string SelectAction(string flagKey,
-                                string subjectKey,
-                                IDictionary<string, double> actionWeights)
+    private string SelectAction(
+        string flagKey,
+        string subjectKey,
+        IDictionary<string, double> actionWeights
+    )
     {
         // Shuffle the actions "randomly" by using the sharder to hash and bucket them
-        var sortedActionWeights = actionWeights.OrderBy(t => Sharder.GetShard($"{flagKey}-{subjectKey}-{t.Key}", totalShards))
+        var sortedActionWeights = actionWeights
+            .OrderBy(t => Sharder.GetShard($"{flagKey}-{subjectKey}-{t.Key}", totalShards))
             .ThenBy(t => t.Key) // tie-breaker using action name
             .ToList();
 
@@ -147,11 +167,15 @@ public class BanditEvaluator
         }
 
         // Mathematically speaking, this shouldn't happen so long as the rest of the algortihm runs correctly.
-        throw new BanditEvaluationException($"[Eppo SDK] No action selected for {flagKey} {subjectKey}");
+        throw new BanditEvaluationException(
+            $"[Eppo SDK] No action selected for {flagKey} {subjectKey}"
+        );
     }
 
-    public static double ScoreNumericAttributes(IReadOnlyList<NumericAttributeCoefficient> coefficients,
-                                                IDictionary<string, double> attributes)
+    public static double ScoreNumericAttributes(
+        IReadOnlyList<NumericAttributeCoefficient> coefficients,
+        IDictionary<string, double> attributes
+    )
     {
         double score = 0.0f;
         foreach (var coefficient in coefficients)
@@ -168,13 +192,18 @@ public class BanditEvaluator
         return score;
     }
 
-    public static double ScoreCategoricalAttributes(IReadOnlyList<CategoricalAttributeCoefficient> coefficients,
-                                                    IDictionary<string, string> attributes)
+    public static double ScoreCategoricalAttributes(
+        IReadOnlyList<CategoricalAttributeCoefficient> coefficients,
+        IDictionary<string, string> attributes
+    )
     {
         double score = 0.0f;
         foreach (var coefficient in coefficients)
         {
-            if (attributes.TryGetValue(coefficient.AttributeKey, out var value) && coefficient.ValueCoefficients.TryGetValue(value, out var coeff))
+            if (
+                attributes.TryGetValue(coefficient.AttributeKey, out var value)
+                && coefficient.ValueCoefficients.TryGetValue(value, out var coeff)
+            )
             {
                 score += coeff;
             }

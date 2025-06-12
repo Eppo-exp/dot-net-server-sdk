@@ -8,7 +8,10 @@ public class SharderTest
     public void ShouldReturnHexString()
     {
         Assert.That(Sharder.GetHex("hello-world"), Is.EqualTo("2095312189753de6ad47dfe20cbe97ec"));
-        Assert.That(Sharder.GetHex("another-string-with-experiment-subject"), Is.EqualTo("fd6bfc667b1bcdb901173f3d712e6c50"));
+        Assert.That(
+            Sharder.GetHex("another-string-with-experiment-subject"),
+            Is.EqualTo("fd6bfc667b1bcdb901173f3d712e6c50")
+        );
     }
 
     [Test]

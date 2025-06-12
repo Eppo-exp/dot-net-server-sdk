@@ -10,16 +10,20 @@ public class ConfigurationStore : IConfigurationStore
     private readonly MemoryCache metadataCache;
     private readonly MemoryCache banditCache;
 
-    private readonly MemoryCacheEntryOptions cacheOptions = new MemoryCacheEntryOptions().SetSize(1);
+    private readonly MemoryCacheEntryOptions cacheOptions = new MemoryCacheEntryOptions().SetSize(
+        1
+    );
 
     /// <summary>
     /// Used for concurrent-read and exclusive-write locking.
     /// </summary>
     private readonly ReaderWriterLockSlim cacheLock = new();
 
-    public ConfigurationStore(MemoryCache flagConfigurationCache,
-                              MemoryCache banditModelCache,
-                              MemoryCache metadataCache)
+    public ConfigurationStore(
+        MemoryCache flagConfigurationCache,
+        MemoryCache banditModelCache,
+        MemoryCache metadataCache
+    )
     {
         this.ufcCache = flagConfigurationCache;
         this.banditCache = banditModelCache;
@@ -40,7 +44,11 @@ public class ConfigurationStore : IConfigurationStore
         }
     }
 
-    public void SetConfiguration(IEnumerable<Flag> flags, IEnumerable<Bandit> bandits, IDictionary<string, object> metadata)
+    public void SetConfiguration(
+        IEnumerable<Flag> flags,
+        IEnumerable<Bandit> bandits,
+        IDictionary<string, object> metadata
+    )
     {
         cacheLock.EnterWriteLock();
         try

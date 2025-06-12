@@ -26,10 +26,6 @@ public class AppDetails
 
     public IReadOnlyDictionary<string, string> AsDict()
     {
-        return new Dictionary<string, string>()
-        {
-            ["sdkName"] = Name,
-            ["sdkVersion"] = Version
-        };
+        return new Dictionary<string, string>() { ["sdkName"] = Name, ["sdkVersion"] = Version };
     }
 }

@@ -13,7 +13,9 @@ public class InputValidatorTest
     [Test]
     public void ShouldValidateNotBlankAndThrowError()
     {
-        var invalidDataException = Assert.Throws<InvalidDataException>(() => InputValidator.ValidateNotBlank("", "Name should be valid"));
+        var invalidDataException = Assert.Throws<InvalidDataException>(() =>
+            InputValidator.ValidateNotBlank("", "Name should be valid")
+        );
         Assert.That(invalidDataException?.Message, Is.EqualTo("Name should be valid"));
     }
 }

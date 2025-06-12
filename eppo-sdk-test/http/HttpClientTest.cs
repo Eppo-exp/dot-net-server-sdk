@@ -1,15 +1,13 @@
-
 using System.Net;
 using eppo_sdk.constants;
 using eppo_sdk.dto;
 using eppo_sdk.http;
+using FluentAssertions;
+using WireMock.FluentAssertions;
 using WireMock.Matchers;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
-using FluentAssertions;
-using WireMock.FluentAssertions;
-
 using static NUnit.Framework.Assert;
 
 namespace eppo_sdk_test.http;
@@ -21,7 +19,10 @@ public class HttpClientTest
 
     private string BaseUrl;
 
-    private WireMockServer MockServer { get => _mockServer!; }
+    private WireMockServer MockServer
+    {
+        get => _mockServer!;
+    }
 
     [OneTimeSetUp]
     public void Setup()
@@ -46,29 +47,40 @@ public class HttpClientTest
 
         MockServer
             .Given(Request.Create().UsingGet().WithPath(new RegexMatcher("flag-config/v1/config")))
-            .RespondWith(Response.Create()
-                .WithStatusCode(HttpStatusCode.OK)
-                .WithBody(response)
-                .WithHeader("Content-Type", "application/json")
-                .WithHeader("ETag", currentETag));
+            .RespondWith(
+                Response
+                    .Create()
+                    .WithStatusCode(HttpStatusCode.OK)
+                    .WithBody(response)
+                    .WithHeader("Content-Type", "application/json")
+                    .WithHeader("ETag", currentETag)
+            );
 
         MockServer
-            .Given(Request.Create()
-                .UsingGet()
-                .WithHeader("IF-NONE-MATCH", currentETag)
-                .WithPath(new RegexMatcher("flag-config/v1/config")))
-            .RespondWith(Response.Create()
-                .WithStatusCode(HttpStatusCode.NotModified)
-                .WithHeader("Content-Type", "application/json")
-                .WithHeader("ETag", currentETag));
+            .Given(
+                Request
+                    .Create()
+                    .UsingGet()
+                    .WithHeader("IF-NONE-MATCH", currentETag)
+                    .WithPath(new RegexMatcher("flag-config/v1/config"))
+            )
+            .RespondWith(
+                Response
+                    .Create()
+                    .WithStatusCode(HttpStatusCode.NotModified)
+                    .WithHeader("Content-Type", "application/json")
+                    .WithHeader("ETag", currentETag)
+            );
 
         BaseUrl = MockServer.Urls.First()!;
     }
 
     private static string GetMockFlagConfig()
     {
-        var filePath = Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent?.Parent?.Parent?.FullName,
-            "files/ufc/bandit-flags-v1.json");
+        var filePath = Path.Combine(
+            new DirectoryInfo(Environment.CurrentDirectory).Parent?.Parent?.Parent?.FullName,
+            "files/ufc/bandit-flags-v1.json"
+        );
         using var sr = new StreamReader(filePath);
         return sr.ReadToEnd();
     }
@@ -96,10 +108,13 @@ public class HttpClientTest
 
         Client.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT);
 
-        MockServer.Should()
+        MockServer
+            .Should()
             .HaveReceivedACall()
             .UsingGet()
-            .And.AtUrl($"{BaseUrl}/flag-config/v1/config?apiKey=none&sdkName=dotnetTest&sdkVersion=9.9.9");
+            .And.AtUrl(
+                $"{BaseUrl}/flag-config/v1/config?apiKey=none&sdkName=dotnetTest&sdkVersion=9.9.9"
+            );
     }
 
     [Test]
@@ -109,7 +124,10 @@ public class HttpClientTest
 
         var ufcResponse = Client.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT);
 
-        var shouldBeUnmodifiedResponse = Client.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, ufcResponse.VersionIdentifier);
+        var shouldBeUnmodifiedResponse = Client.Get<FlagConfigurationResponse>(
+            Constants.UFC_ENDPOINT,
+            ufcResponse.VersionIdentifier
+        );
 
         Assert.Multiple(() =>
         {

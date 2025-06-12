@@ -7,10 +7,14 @@ public class AttributeSet
 {
     [JsonProperty("numeric_attributes")]
     public IDictionary<string, double> NumericAttributes { get; }
+
     [JsonProperty("categorical_attributes")]
     public IDictionary<string, string> CategoricalAttributes { get; }
 
-    public AttributeSet(IDictionary<string, string> categoricalAttributes, IDictionary<string, double> numericAttributes)
+    public AttributeSet(
+        IDictionary<string, string> categoricalAttributes,
+        IDictionary<string, double> numericAttributes
+    )
     {
         CategoricalAttributes = categoricalAttributes;
         NumericAttributes = numericAttributes;

@@ -11,10 +11,12 @@ public class FetchExperimentsTaskTest
     {
         var count = 0;
         var mockConfig = new Mock<IConfigurationRequester>();
-        mockConfig.Setup(x => x.LoadConfiguration()).Callback(() =>
-        {
-            count++;
-        });
+        mockConfig
+            .Setup(x => x.LoadConfiguration())
+            .Callback(() =>
+            {
+                count++;
+            });
 
         var task = new FetchExperimentsTask(mockConfig.Object, 500, 10);
         Thread.Sleep(1100); // wait for more than 1s to avoid flaky tests.

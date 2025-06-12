@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
     <RootNamespace>eppo_sdk</RootNamespace>
@@ -13,11 +12,10 @@
     <Company>Eppo Data</Company>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
-
   <ItemGroup>
     <None Remove="exception\" />
     <None Remove="logger\" />
-    <None Include="../README.md" Pack="true" PackagePath="\"/>
+    <None Include="../README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="logger\" />

@@ -15,7 +15,14 @@ public class Allocation
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
     public bool DoLog { get; } = true;
 
-    public Allocation(string key, List<Rule> rules, List<Split> splits, bool doLog, DateTime? startAt, DateTime? endAt)
+    public Allocation(
+        string key,
+        List<Rule> rules,
+        List<Split> splits,
+        bool doLog,
+        DateTime? startAt,
+        DateTime? endAt
+    )
     {
         Key = key;
         Rules = rules;

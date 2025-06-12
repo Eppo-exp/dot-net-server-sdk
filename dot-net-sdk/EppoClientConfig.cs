@@ -6,13 +6,13 @@ using eppo_sdk.helpers;
 using eppo_sdk.logger;
 
 namespace eppo_sdk;
+
 public class EppoClientConfig
 {
     public string ApiKey;
     public readonly IAssignmentLogger AssignmentLogger;
 
-    public EppoClientConfig(string apiKey,
-                            IAssignmentLogger? assignmentLogger)
+    public EppoClientConfig(string apiKey, IAssignmentLogger? assignmentLogger)
     {
         ApiKey = apiKey;
         AssignmentLogger = assignmentLogger ?? new DefaultLogger();
@@ -47,7 +47,6 @@ public class EppoClientConfig
             _pollingJitterInMillis = value;
         }
     }
-
 
     internal class DefaultLogger : IAssignmentLogger
     {

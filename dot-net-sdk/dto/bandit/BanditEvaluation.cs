@@ -4,17 +4,18 @@ namespace eppo_sdk.dto.bandit;
 
 public record BanditEvaluation
 {
-
     [SetsRequiredMembers]
-    public BanditEvaluation(string flagKey,
-                            string subjectKey,
-                            AttributeSet subjectAttributes,
-                            string selectedAction,
-                            AttributeSet? actionAttributes,
-                            double actionScore,
-                            double actionWeight,
-                            double gamma,
-                            double optimalityGap)
+    public BanditEvaluation(
+        string flagKey,
+        string subjectKey,
+        AttributeSet subjectAttributes,
+        string selectedAction,
+        AttributeSet? actionAttributes,
+        double actionScore,
+        double actionWeight,
+        double gamma,
+        double optimalityGap
+    )
     {
         FlagKey = flagKey;
         SubjectKey = subjectKey;

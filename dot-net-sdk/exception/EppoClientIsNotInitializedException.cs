@@ -2,6 +2,7 @@
 {
     public class EppoClientIsNotInitializedException : Exception
     {
-        public EppoClientIsNotInitializedException(string message) : base(message) { }
+        public EppoClientIsNotInitializedException(string message)
+            : base(message) { }
     }
 }
