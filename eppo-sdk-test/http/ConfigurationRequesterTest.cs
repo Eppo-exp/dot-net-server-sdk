@@ -13,7 +13,11 @@ public class ConfigurationRequesterTest
 {
     private static ConfigurationStore CreateConfigurationStore()
     {
-        return new ConfigurationStore();
+        var configCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
+        var modelCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
+        var metadataCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
+
+        return new ConfigurationStore(configCache, modelCache, metadataCache);
     }
 
     private static Flag BasicFlag(string flagKey, string[] variationValues)
@@ -23,17 +27,7 @@ public class ConfigurationRequesterTest
             .ToDictionary(v => v.Key);
         return new Flag(
             flagKey,
-        var variations = variationValues
-            .Select((v) => new Variation(v, v))
-            .ToDictionary(v => v.Key);
-        return new Flag(
-            flagKey,
             true,
-            new List<Allocation>(),
-            EppoValueType.STRING,
-            variations,
-            10_000
-        );
             new List<Allocation>(),
             EppoValueType.STRING,
             variations,
@@ -50,20 +44,12 @@ public class ConfigurationRequesterTest
             modelVersion,
             new ModelData() { Coefficients = new Dictionary<string, ActionCoefficients>() }
         );
-        return new Bandit(
-            banditKey,
-            "falcon",
-            DateTime.Now,
-            modelVersion,
-            new ModelData() { Coefficients = new Dictionary<string, ActionCoefficients>() }
-        );
     }
 
     private static Mock<EppoHttpClient> MockAPIWithFlagsAndBandits()
     {
         var flags = new Dictionary<string, Flag>
         {
-            ["flag1"] = BasicFlag("flag1", new string[] { "control", "bandit1" }),
             ["flag1"] = BasicFlag("flag1", new string[] { "control", "bandit1" }),
         };
         var banditReferences = new BanditReferences()
@@ -73,25 +59,17 @@ public class ConfigurationRequesterTest
                 new BanditFlagVariation[]
                 {
                     new("bandit1", "flag1", "allocation", "bandit1", "bandit1"),
-            ["bandit1"] = new BanditReference(
-                "v123",
-                new BanditFlagVariation[]
-                {
-                    new("bandit1", "flag1", "allocation", "bandit1", "bandit1"),
                 }
-            ),
             ),
         };
         var response = new FlagConfigurationResponse()
         {
             BanditReferences = banditReferences,
             Flags = flags,
-            Flags = flags,
         };
 
         var banditResponse = new BanditModelResponse()
         {
-            Bandits = new Dictionary<string, Bandit>() { ["bandit1"] = BasicBandit("bandit1") },
             Bandits = new Dictionary<string, Bandit>() { ["bandit1"] = BasicBandit("bandit1") },
         };
 
@@ -101,13 +79,7 @@ public class ConfigurationRequesterTest
             .Setup(m =>
                 m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>())
             )
-        mockAPI
-            .Setup(m =>
-                m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>())
-            )
             .Returns(new VersionedResourceResponse<FlagConfigurationResponse>(response, "ETAG"));
-        mockAPI
-            .Setup(m => m.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT, It.IsAny<string>()))
         mockAPI
             .Setup(m => m.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT, It.IsAny<string>()))
             .Returns(new VersionedResourceResponse<BanditModelResponse>(banditResponse, "ETAG"));
@@ -120,31 +92,16 @@ public class ConfigurationRequesterTest
         var flags = new Dictionary<string, Flag>
         {
             ["flag1"] = BasicFlag("flag1", new string[] { "control", "experiment" }),
-            ["flag1"] = BasicFlag("flag1", new string[] { "control", "experiment" }),
         };
-        var response = new FlagConfigurationResponse() { BanditReferences = null, Flags = flags };
         var response = new FlagConfigurationResponse() { BanditReferences = null, Flags = flags };
 
         var banditResponse = new BanditModelResponse()
         {
             Bandits = new Dictionary<string, Bandit>() { ["bandit1"] = BasicBandit("bandit1") },
-            Bandits = new Dictionary<string, Bandit>() { ["bandit1"] = BasicBandit("bandit1") },
         };
 
         var mockAPI = GetMockAPI();
 
-        mockAPI
-            .Setup(m =>
-                m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>())
-            )
-            .Returns(
-                new VersionedResourceResponse<FlagConfigurationResponse>(response, lastVersion)
-            );
-        mockAPI
-            .Setup(m => m.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT, It.IsAny<string>()))
-            .Returns(
-                new VersionedResourceResponse<BanditModelResponse>(banditResponse, lastVersion)
-            );
         mockAPI
             .Setup(m =>
                 m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>())
@@ -180,12 +137,6 @@ public class ConfigurationRequesterTest
                     .TryGetBanditKey("flag1", "bandit1", out string? banditKey),
                 Is.True
             );
-            Assert.That(
-                requester
-                    .GetBanditReferences()
-                    .TryGetBanditKey("flag1", "bandit1", out string? banditKey),
-                Is.True
-            );
             Assert.That(banditKey, Is.EqualTo("bandit1"));
 
             Assert.That(requester.TryGetFlag("flag1", out Flag? flag), Is.True);
@@ -199,75 +150,33 @@ public class ConfigurationRequesterTest
     [Test]
     public void ShouldNotLoadBanditsIfNotReferenced()
     {
-        var configStore = CreateConfigurationStore();
+        var store = CreateConfigurationStore();
+        var api = MockAPIWithFlagsOnly();
 
-        // Create flag response data
-        var flagResource = new FlagConfigurationResponse
-        {
-            Flags = new Dictionary<string, Flag>(),
-            BanditReferences = new BanditReferences
-            {
-                ["bandit1"] = new BanditReference(
-                    "v123",
-                    new[]
-                    {
-                        new BanditFlagVariation(
-                            "bandit1",
-                            "flag1",
-                            "allocation1",
-                            "variation1",
-                            "variation1"
-                        ),
-                    }
-                ),
-            },
-        };
-        var flagResponse = new VersionedResourceResponse<FlagConfigurationResponse>(
-            flagResource,
-            "1",
-            true
-        );
+        var requester = new ConfigurationRequester(api.Object, store);
 
-        // Create bandit response data
-        var banditModelData = new ModelData
-        {
-            Coefficients = new Dictionary<string, ActionCoefficients>(),
-        };
-        var banditResource = new BanditModelResponse
-        {
-            Bandits = new Dictionary<string, Bandit>
-            {
-                ["bandit1"] = new Bandit(
-                    "bandit1",
-                    "falcon",
-                    DateTime.Now,
-                    "v123",
-                    banditModelData
-                ),
-            },
-        };
-        var banditResponse = new VersionedResourceResponse<BanditModelResponse>(
-            banditResource,
-            "1",
-            true
-        );
-
-        // Create a test-specific mock implementation
-        var mockHttpClient = new TestEppoHttpClient(flagResponse, banditResponse);
-
-        // Create the configuration requester
-        var requester = new ConfigurationRequester(mockHttpClient, configStore);
-
-        // Load the configuration
         requester.LoadConfiguration();
 
-        // Verify that the bandit was loaded
         Assert.Multiple(() =>
         {
-            Assert.That(requester.TryGetBandit("bandit1", out var bandit), Is.True);
-            Assert.That(bandit, Is.Not.Null);
-            Assert.That(bandit!.BanditKey, Is.EqualTo("bandit1"));
+            Assert.That(requester.GetBanditReferences(), Is.Not.Null);
+            Assert.That(requester.GetBanditReferences(), Has.Count.EqualTo(0));
+
+            Assert.That(requester.TryGetFlag("flag1", out Flag? flag), Is.True);
+            Assert.That(flag, Is.Not.Null);
+
+            Assert.That(requester.TryGetBandit("bandit1", out Bandit? bandit), Is.False);
+            Assert.That(bandit, Is.Null);
         });
+
+        api.Verify(
+            m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>()),
+            Times.Once()
+        );
+        api.Verify(
+            m => m.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT, It.IsAny<string>()),
+            Times.Never()
+        );
     }
 
     [Test]
@@ -277,7 +186,6 @@ public class ConfigurationRequesterTest
         {
             ["flag1"] = BasicFlag("flag1", new string[] { "control", "bandit1" }),
             ["flag2"] = BasicFlag("flag2", new string[] { "control", "bandit2" }),
-            ["flag2"] = BasicFlag("flag2", new string[] { "control", "bandit2" }),
         };
         var banditReferences = new BanditReferences()
         {
@@ -286,19 +194,12 @@ public class ConfigurationRequesterTest
                 new BanditFlagVariation[]
                 {
                     new("bandit1", "flag1", "allocation", "bandit1", "bandit1"),
-            ["bandit1"] = new BanditReference(
-                "v123",
-                new BanditFlagVariation[]
-                {
-                    new("bandit1", "flag1", "allocation", "bandit1", "bandit1"),
                 }
-            ),
             ),
         };
         var response = new FlagConfigurationResponse()
         {
             BanditReferences = banditReferences,
-            Flags = flags,
             Flags = flags,
         };
 
@@ -307,8 +208,6 @@ public class ConfigurationRequesterTest
             Bandits = new Dictionary<string, Bandit>()
             {
                 ["bandit1"] = BasicBandit("bandit1"),
-                ["bandit2"] = BasicBandit("bandit2", "bandit2modelversion"),
-            },
                 ["bandit2"] = BasicBandit("bandit2", "bandit2modelversion"),
             },
         };
@@ -320,11 +219,6 @@ public class ConfigurationRequesterTest
                 new BanditFlagVariation[]
                 {
                     new("bandit1", "flag1", "allocation", "bandit1", "bandit1"),
-            ["bandit1"] = new BanditReference(
-                "updatedversion",
-                new BanditFlagVariation[]
-                {
-                    new("bandit1", "flag1", "allocation", "bandit1", "bandit1"),
                 }
             ),
 
@@ -333,19 +227,12 @@ public class ConfigurationRequesterTest
                 new BanditFlagVariation[]
                 {
                     new("bandit2", "flag2", "allocation", "bandit2", "bandit2"),
-            ["bandit2"] = new BanditReference(
-                "bandit2modelversion",
-                new BanditFlagVariation[]
-                {
-                    new("bandit2", "flag2", "allocation", "bandit2", "bandit2"),
                 }
-            ),
             ),
         };
         var updatedUFCResponse = new FlagConfigurationResponse()
         {
             BanditReferences = updatedBanditReferences,
-            Flags = flags,
             Flags = flags,
         };
 
@@ -355,30 +242,6 @@ public class ConfigurationRequesterTest
         // The first response triggers a call to fetchBandits.
         // The second response with the same referencd models suppresses the first fetchBandits call.
         // On the third call, return an updated response to trigger a call to fetchBandits.
-        api.SetupSequence(m =>
-                m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>())
-            )
-            .Returns(
-                new VersionedResourceResponse<FlagConfigurationResponse>(
-                    response,
-                    "ETAG",
-                    isModified: true
-                )
-            )
-            .Returns(
-                new VersionedResourceResponse<FlagConfigurationResponse>(
-                    response,
-                    "ETAG",
-                    isModified: true
-                )
-            )
-            .Returns(
-                new VersionedResourceResponse<FlagConfigurationResponse>(
-                    updatedUFCResponse,
-                    "ETAG",
-                    isModified: true
-                )
-            );
         api.SetupSequence(m =>
                 m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>())
             )
@@ -423,26 +286,10 @@ public class ConfigurationRequesterTest
             m => m.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT, It.IsAny<string>()),
             Times.Exactly(1)
         );
-        api.Verify(
-            m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>()),
-            Times.Exactly(1)
-        );
-        api.Verify(
-            m => m.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT, It.IsAny<string>()),
-            Times.Exactly(1)
-        );
 
         // Second load should only call the UFC endpoint
         requester.LoadConfiguration();
 
-        api.Verify(
-            m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>()),
-            Times.Exactly(2)
-        );
-        api.Verify(
-            m => m.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT, It.IsAny<string>()),
-            Times.Exactly(1)
-        );
         api.Verify(
             m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>()),
             Times.Exactly(2)
@@ -463,14 +310,6 @@ public class ConfigurationRequesterTest
             m => m.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT, It.IsAny<string>()),
             Times.Exactly(2)
         );
-        api.Verify(
-            m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>()),
-            Times.Exactly(3)
-        );
-        api.Verify(
-            m => m.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT, It.IsAny<string>()),
-            Times.Exactly(2)
-        );
     }
 
     [Test]
@@ -479,15 +318,7 @@ public class ConfigurationRequesterTest
         var mockAPI = GetMockAPI();
 
         var response = new FlagConfigurationResponse() { BanditReferences = null, Flags = new() };
-        var response = new FlagConfigurationResponse() { BanditReferences = null, Flags = new() };
 
-        mockAPI
-            .Setup(m =>
-                m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>())
-            )
-            .Returns(
-                new VersionedResourceResponse<FlagConfigurationResponse>(response, "version1")
-            );
         mockAPI
             .Setup(m =>
                 m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>())
@@ -503,14 +334,6 @@ public class ConfigurationRequesterTest
         requester.LoadConfiguration(); // sends null as lastversion
         requester.LoadConfiguration(); // sends version1 as lastversion
 
-        mockAPI.Verify(
-            m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, null),
-            Times.Exactly(1)
-        );
-        mockAPI.Verify(
-            m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, "version1"),
-            Times.Exactly(1)
-        );
         mockAPI.Verify(
             m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, null),
             Times.Exactly(1)
@@ -532,7 +355,6 @@ public class ConfigurationRequesterTest
         {
             BanditReferences = null,
             Flags = BasicFlags(flagKeys),
-            Flags = BasicFlags(flagKeys),
         };
 
         // Response with 0 flags
@@ -540,7 +362,6 @@ public class ConfigurationRequesterTest
         {
             BanditReferences = null,
             Flags = new Dictionary<string, Flag> { },
-            Flags = new Dictionary<string, Flag> { },
         };
 
         mockAPI
@@ -553,29 +374,9 @@ public class ConfigurationRequesterTest
             .Returns(
                 new VersionedResourceResponse<FlagConfigurationResponse>(response, "version1")
             );
-        mockAPI
-            .Setup(m =>
-                m.Get<FlagConfigurationResponse>(
-                    Constants.UFC_ENDPOINT,
-                    It.IsNotIn<string>(new string[] { "version1" })
-                )
-            )
-            .Returns(
-                new VersionedResourceResponse<FlagConfigurationResponse>(response, "version1")
-            );
 
         // Return an empty response with `isModified` = false. If the `ConfigurationRequester` does not heed `isModified`,
-        // Return an empty response with `isModified` = false. If the `ConfigurationRequester` does not heed `isModified`,
         // the flags in `flagKeys` will be not present.
-        mockAPI
-            .Setup(m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, "version1"))
-            .Returns(
-                new VersionedResourceResponse<FlagConfigurationResponse>(
-                    emptyResponse,
-                    "version1",
-                    isModified: false
-                )
-            );
         mockAPI
             .Setup(m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, "version1"))
             .Returns(
@@ -596,10 +397,6 @@ public class ConfigurationRequesterTest
             m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, null),
             Times.Exactly(1)
         );
-        mockAPI.Verify(
-            m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, null),
-            Times.Exactly(1)
-        );
 
         Assert.Multiple(() =>
         {
@@ -613,10 +410,6 @@ public class ConfigurationRequesterTest
 
         requester.LoadConfiguration(); // sends version1 as lastversion
 
-        mockAPI.Verify(
-            m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, "version1"),
-            Times.Exactly(1)
-        );
         mockAPI.Verify(
             m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, "version1"),
             Times.Exactly(1)
@@ -674,34 +467,6 @@ public class ConfigurationRequesterTest
             "newBandit2",
             "newBandit2"
         );
-        var unchangingBanditVariation = new BanditFlagVariation(
-            "unchangingBandit",
-            "flag1",
-            "allocation",
-            "unchangingBandit",
-            "unchangingBandit"
-        );
-        var departingBanditVariation = new BanditFlagVariation(
-            "departingBandit",
-            "flag2",
-            "allocation",
-            "departingBandit",
-            "departingBandit"
-        );
-        var newBanditVariation = new BanditFlagVariation(
-            "newBandit",
-            "flag4",
-            "allocation",
-            "newBandit",
-            "newBandit"
-        );
-        var newBandit2Variation = new BanditFlagVariation(
-            "newBandit2",
-            "flag6",
-            "allocation",
-            "newBandit2",
-            "newBandit2"
-        );
 
         var banditRefs1 = new BanditReferences()
         {
@@ -709,12 +474,8 @@ public class ConfigurationRequesterTest
                 "v123",
                 new BanditFlagVariation[] { unchangingBanditVariation }
             ),
-                new BanditFlagVariation[] { unchangingBanditVariation }
-            ),
             ["departingBandit"] = new BanditReference(
                 "v321",
-                new BanditFlagVariation[] { departingBanditVariation }
-            ),
                 new BanditFlagVariation[] { departingBanditVariation }
             ),
         };
@@ -724,12 +485,8 @@ public class ConfigurationRequesterTest
                 "v123",
                 new BanditFlagVariation[] { unchangingBanditVariation }
             ),
-                new BanditFlagVariation[] { unchangingBanditVariation }
-            ),
             ["newBandit"] = new BanditReference(
                 "v456",
-                new BanditFlagVariation[] { newBanditVariation }
-            ),
                 new BanditFlagVariation[] { newBanditVariation }
             ),
         };
@@ -739,12 +496,8 @@ public class ConfigurationRequesterTest
                 "v123",
                 new BanditFlagVariation[] { unchangingBanditVariation }
             ),
-                new BanditFlagVariation[] { unchangingBanditVariation }
-            ),
             ["newBandit2"] = new BanditReference(
                 "v789",
-                new BanditFlagVariation[] { newBandit2Variation }
-            ),
                 new BanditFlagVariation[] { newBandit2Variation }
             ),
         };
@@ -757,65 +510,33 @@ public class ConfigurationRequesterTest
         {
             BanditReferences = banditRefs1,
             Flags = BasicFlags(flags1),
-            Flags = BasicFlags(flags1),
         };
         var response2 = new FlagConfigurationResponse()
         {
             BanditReferences = banditRefs2,
-            Flags = BasicFlags(flags2),
             Flags = BasicFlags(flags2),
         };
         var response3 = new FlagConfigurationResponse()
         {
             BanditReferences = banditRefs3,
             Flags = BasicFlags(flags3),
-            Flags = BasicFlags(flags3),
         };
 
         var banditResponse1 = new BanditModelResponse()
         {
             Bandits = bandits1.ToDictionary(b => b, b => BasicBandit(b)),
-            Bandits = bandits1.ToDictionary(b => b, b => BasicBandit(b)),
         };
         var banditResponse2 = new BanditModelResponse()
         {
-            Bandits = bandits2.ToDictionary(b => b, b => BasicBandit(b)),
             Bandits = bandits2.ToDictionary(b => b, b => BasicBandit(b)),
         };
         var banditResponse3 = new BanditModelResponse()
         {
             Bandits = bandits3.ToDictionary(b => b, b => BasicBandit(b)),
-            Bandits = bandits3.ToDictionary(b => b, b => BasicBandit(b)),
         };
 
         // Set up the API to return the 3 responses in order.
         var mockAPI = GetMockAPI();
-        mockAPI
-            .SetupSequence(m =>
-                m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>())
-            )
-            .Returns(
-                new VersionedResourceResponse<FlagConfigurationResponse>(response1, "version1")
-            )
-            .Returns(
-                new VersionedResourceResponse<FlagConfigurationResponse>(response2, "version2")
-            )
-            .Returns(
-                new VersionedResourceResponse<FlagConfigurationResponse>(response3, "version3")
-            );
-        mockAPI
-            .SetupSequence(m =>
-                m.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT, It.IsAny<string>())
-            )
-            .Returns(
-                new VersionedResourceResponse<BanditModelResponse>(banditResponse1, "version1")
-            )
-            .Returns(
-                new VersionedResourceResponse<BanditModelResponse>(banditResponse2, "version2")
-            )
-            .Returns(
-                new VersionedResourceResponse<BanditModelResponse>(banditResponse3, "version3")
-            );
         mockAPI
             .SetupSequence(m =>
                 m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>())
@@ -870,12 +591,6 @@ public class ConfigurationRequesterTest
         BanditReferences banditReferences,
         string[] banditKeys
     )
-    private static void AssertHasConfig(
-        ConfigurationRequester requester,
-        string[] flagKeys,
-        BanditReferences banditReferences,
-        string[] banditKeys
-    )
     {
         Assert.Multiple(() =>
         {
@@ -893,36 +608,5 @@ public class ConfigurationRequesterTest
                 Assert.That(bandit!.BanditKey, Is.EqualTo(banditKey));
             }
         });
-    }
-
-    // Test-specific implementation of EppoHttpClient
-    private class TestEppoHttpClient : EppoHttpClient
-    {
-        private readonly VersionedResourceResponse<FlagConfigurationResponse> _flagResponse;
-        private readonly VersionedResourceResponse<BanditModelResponse> _banditResponse;
-
-        public TestEppoHttpClient(
-            VersionedResourceResponse<FlagConfigurationResponse> flagResponse,
-            VersionedResourceResponse<BanditModelResponse> banditResponse
-        )
-            : base("", "", "", "")
-        {
-            _flagResponse = flagResponse;
-            _banditResponse = banditResponse;
-        }
-
-        public override VersionedResourceResponse<T> Get<T>(string url, string? lastVersion = null)
-        {
-            if (typeof(T) == typeof(FlagConfigurationResponse))
-            {
-                return (VersionedResourceResponse<T>)(object)_flagResponse;
-            }
-            else if (typeof(T) == typeof(BanditModelResponse))
-            {
-                return (VersionedResourceResponse<T>)(object)_banditResponse;
-            }
-
-            throw new NotImplementedException($"Test mock does not handle type {typeof(T).Name}");
-        }
     }
 }

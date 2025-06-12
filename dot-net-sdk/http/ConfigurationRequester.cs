@@ -79,6 +79,7 @@ public class ConfigurationRequester : IConfigurationRequester
             }
         }
     }
+
     private VersionedResourceResponse<FlagConfigurationResponse> FetchFlags(
         string? lastConfigVersion
     )
