@@ -12,7 +12,11 @@ public class ConfigurationStoreTest
 {
     private static ConfigurationStore CreateConfigurationStore()
     {
-        return new ConfigurationStore();
+        var configCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
+        var modelCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
+        var metadataCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
+
+        return new ConfigurationStore(configCache, modelCache, metadataCache);
     }
 
     [Test]
@@ -52,33 +56,27 @@ public class ConfigurationStoreTest
         var initialBandits = new Bandit[] { bandit1, bandit2 };
         var newBandits = new Bandit[] { bandit1, bandit3 };
 
-        var banditReferences = new BanditReferences
+        var initialDataDictionary = new Dictionary<string, string>
         {
-            ["bandit1"] = new BanditReference(
-                "v123",
-                new[]
-                {
-                    new BanditFlagVariation(
-                        "bandit1",
-                        "flag1",
-                        "allocation1",
-                        "variation1",
-                        "variation1"
-                    ),
-                }
-            ),
+            ["foo"] = "bar",
+            ["bar"] = "baz",
+        };
+        var newDataDictionary = new Dictionary<string, string>
+        {
+            ["bandit1"] = "true",
+            ["bandit3"] = "false",
         };
 
         var initialMetadata = new Dictionary<string, object>()
         {
-            ["ufcVersion"] = "UFCVersion1",
-            ["banditReferences"] = banditReferences,
+            ["UFC_VERSION"] = "UFCVersion1",
+            ["DICT_OBJECT"] = initialDataDictionary,
         };
 
-        var newMetadata = new Dictionary<string, object>()
+        var newlMetadata = new Dictionary<string, object>()
         {
-            ["ufcVersion"] = "UFCVersion2",
-            ["banditReferences"] = banditReferences,
+            ["UFC_VERSION"] = "UFCVersion2",
+            ["DICT_OBJECT"] = newDataDictionary,
         };
 
         store.SetConfiguration(initialFlags, initialBandits, initialMetadata);
@@ -91,7 +89,23 @@ public class ConfigurationStoreTest
         AssertHasBandit(store, "bandit2");
         AssertHasBandit(store, "bandit3", false);
 
-        store.SetConfiguration(newFlags, newBandits, newMetadata);
+        Assert.Multiple(() =>
+        {
+            Assert.That(store.TryGetMetadata("UFC_VERSION", out string? data), Is.True);
+            Assert.That(data, Is.EqualTo("UFCVersion1"));
+
+            Assert.That(
+                store.TryGetMetadata("DICT_OBJECT", out Dictionary<string, string>? storedDict),
+                Is.True
+            );
+            Assert.That(storedDict, Is.Not.Null);
+            Assert.That(storedDict?["foo"], Is.Not.Null);
+            Assert.That(storedDict?["foo"], Is.EqualTo("bar"));
+            Assert.That(storedDict?["bar"], Is.Not.Null);
+            Assert.That(storedDict?["bar"], Is.EqualTo("baz"));
+        });
+
+        store.SetConfiguration(newFlags, newBandits, newlMetadata);
 
         AssertHasFlag(store, "flag1");
         AssertHasFlag(store, "flag2", false);
@@ -100,6 +114,22 @@ public class ConfigurationStoreTest
         AssertHasBandit(store, "bandit1");
         AssertHasBandit(store, "bandit2", false);
         AssertHasBandit(store, "bandit3");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(store.TryGetMetadata("UFC_VERSION", out string? data), Is.True);
+            Assert.That(data, Is.EqualTo("UFCVersion2"));
+
+            Assert.That(
+                store.TryGetMetadata("DICT_OBJECT", out Dictionary<string, string>? storedDict),
+                Is.True
+            );
+            Assert.That(storedDict, Is.Not.Null);
+            Assert.That(storedDict?["bandit1"], Is.Not.Null);
+            Assert.That(storedDict?["bandit1"], Is.EqualTo("true"));
+            Assert.That(storedDict?["bandit3"], Is.Not.Null);
+            Assert.That(storedDict?["bandit3"], Is.EqualTo("false"));
+        });
 
         store.SetConfiguration(
             Array.Empty<Flag>(),
@@ -114,6 +144,13 @@ public class ConfigurationStoreTest
         AssertHasBandit(store, "bandit1", false);
         AssertHasBandit(store, "bandit2", false);
         AssertHasBandit(store, "bandit3", false);
+        Assert.Multiple(() =>
+        {
+            Assert.That(store.TryGetMetadata("UFC_VERSION", out string? data), Is.False);
+            Assert.That(data, Is.Null);
+            Assert.That(store.TryGetMetadata("DICT_OBJECT", out string? storedDict), Is.False);
+            Assert.That(storedDict, Is.Null);
+        });
     }
 
     [Test]
@@ -146,10 +183,7 @@ public class ConfigurationStoreTest
         );
         var bandits = new Bandit[] { bandit1, bandit2 };
 
-        var dataDict = new Dictionary<string, object>
-        {
-            ["banditReferences"] = new BanditReferences(),
-        };
+        var dataDict = new Dictionary<string, object> { };
 
         store.SetConfiguration(flags, bandits, dataDict);
         AssertHasBandit(store, "bandit1");

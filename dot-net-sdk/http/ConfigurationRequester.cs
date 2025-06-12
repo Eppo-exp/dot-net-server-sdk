@@ -28,6 +28,10 @@ public class ConfigurationRequester : IConfigurationRequester
         EppoHttpClient eppoHttpClient,
         IConfigurationStore configurationStore
     )
+    public ConfigurationRequester(
+        EppoHttpClient eppoHttpClient,
+        IConfigurationStore configurationStore
+    )
     {
         this.eppoHttpClient = eppoHttpClient;
         this.configurationStore = configurationStore;
@@ -83,9 +87,16 @@ public class ConfigurationRequester : IConfigurationRequester
     private VersionedResourceResponse<FlagConfigurationResponse> FetchFlags(
         string? lastConfigVersion
     )
+    private VersionedResourceResponse<FlagConfigurationResponse> FetchFlags(
+        string? lastConfigVersion
+    )
     {
         try
         {
+            var response = eppoHttpClient.Get<FlagConfigurationResponse>(
+                Constants.UFC_ENDPOINT,
+                lastConfigVersion
+            );
             var response = eppoHttpClient.Get<FlagConfigurationResponse>(
                 Constants.UFC_ENDPOINT,
                 lastConfigVersion
