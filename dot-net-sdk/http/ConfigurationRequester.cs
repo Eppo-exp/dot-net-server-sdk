@@ -11,6 +11,7 @@ public interface IConfigurationRequester
     bool TryGetBandit(string key, out Bandit? bandit);
     bool TryGetFlag(string key, out Flag? flag);
     public BanditReferences GetBanditReferences();
+    Configuration GetConfiguration();
 }
 
 public class ConfigurationRequester : IConfigurationRequester
@@ -31,6 +32,8 @@ public class ConfigurationRequester : IConfigurationRequester
     public bool TryGetBandit(string key, out Bandit? bandit) => configurationStore.TryGetBandit(key, out bandit);
 
     public bool TryGetFlag(string key, out Flag? flag) => configurationStore.TryGetFlag(key, out flag);
+
+    public Configuration GetConfiguration() => configurationStore.GetConfiguration();
 
     public BanditReferences GetBanditReferences()
     {

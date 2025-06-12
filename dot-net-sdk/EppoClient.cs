@@ -557,6 +557,82 @@ public sealed class EppoClient : IDisposable
         _config.LoadConfiguration();
     }
 
+    /// <summary>
+    /// Checks if the configuration has been loaded and contains data.
+    /// </summary>
+    /// <returns>true if configuration is ready; otherwise, false.</returns>
+    public bool IsConfigurationReady()
+    {
+        try
+        {
+            var configuration = _config.GetConfiguration();
+
+            // Configuration is considered ready if it has at least one flag, bandit, or metadata entry
+            return configuration.Flags.Any()
+                || configuration.Bandits.Any()
+                || configuration.Metadata.Any();
+        }
+        catch (Exception ex)
+        {
+            s_logger.Warn($"[Eppo SDK] Error checking configuration readiness: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Waits for the configuration to be loaded and ready.
+    /// </summary>
+    /// <param name="timeout">Maximum time to wait for configuration to be ready.</param>
+    /// <returns>true if configuration became ready within the timeout; otherwise, false.</returns>
+    public bool WaitForConfiguration(TimeSpan timeout)
+    {
+        if (IsConfigurationReady())
+        {
+            return true;
+        }
+
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        const int pollingIntervalMs = 50; // Poll every 50ms
+
+        s_logger.Debug(
+            $"[Eppo SDK] Waiting for configuration to be ready (timeout: {timeout.TotalSeconds}s)"
+        );
+
+        while (stopwatch.Elapsed < timeout)
+        {
+            if (IsConfigurationReady())
+            {
+                s_logger.Debug(
+                    $"[Eppo SDK] Configuration ready after {stopwatch.ElapsedMilliseconds}ms"
+                );
+                return true;
+            }
+
+            Thread.Sleep(pollingIntervalMs);
+        }
+
+        s_logger.Warn($"[Eppo SDK] Configuration not ready after {timeout.TotalSeconds}s timeout");
+        return false;
+    }
+
+    /// <summary>
+    /// Waits for configuration to be ready with a default timeout of 5 seconds.
+    /// </summary>
+    /// <returns>true if configuration became ready; otherwise, false.</returns>
+    public bool WaitForConfiguration()
+    {
+        return WaitForConfiguration(TimeSpan.FromSeconds(5));
+    }
+
+    /// <summary>
+    /// Gets the current configuration snapshot containing all flags, bandits, and metadata.
+    /// </summary>
+    /// <returns>A Configuration object representing the current state of flags, bandits, and metadata.</returns>
+    public Configuration GetConfiguration()
+    {
+        return _config.GetConfiguration();
+    }
+
     public static EppoClient GetInstance()
     {
         if (s_client == null)
