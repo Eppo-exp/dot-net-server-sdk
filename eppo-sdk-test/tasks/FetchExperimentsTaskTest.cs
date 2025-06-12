@@ -12,7 +12,7 @@ public class FetchExperimentsTaskTest
         var count = 0;
         var mockConfig = new Mock<IConfigurationRequester>();
         mockConfig
-            .Setup(x => x.LoadConfiguration())
+            .Setup(x => x.FetchAndActivateConfiguration())
             .Callback(() =>
             {
                 count++;

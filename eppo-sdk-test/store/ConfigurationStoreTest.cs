@@ -2,6 +2,7 @@ using eppo_sdk.constants;
 using eppo_sdk.dto;
 using eppo_sdk.dto.bandit;
 using eppo_sdk.helpers;
+using eppo_sdk.http;
 using eppo_sdk.store;
 using NUnit.Framework.Internal;
 using static NUnit.Framework.Assert;
@@ -12,11 +13,7 @@ public class ConfigurationStoreTest
 {
     private static ConfigurationStore CreateConfigurationStore()
     {
-        var configCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
-        var modelCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
-        var metadataCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
-
-        return new ConfigurationStore(configCache, modelCache, metadataCache);
+        return new ConfigurationStore();
     }
 
     [Test]
@@ -28,9 +25,8 @@ public class ConfigurationStoreTest
         var flag2 = new Flag("flag2", true, new(), EppoValueType.NUMERIC, new(), 10000);
         var flag3 = new Flag("flag3", true, new(), EppoValueType.NUMERIC, new(), 10000);
 
-        var initialFlags = new Flag[] { flag1, flag2 };
-
-        var newFlags = new Flag[] { flag1, flag3 };
+        var initialFlags = new Dictionary<string, Flag> { ["flag1"] = flag1, ["flag2"] = flag2 };
+        var newFlags = new Dictionary<string, Flag> { ["flag1"] = flag1, ["flag3"] = flag3 };
 
         var bandit1 = new Bandit(
             "bandit1",
@@ -53,33 +49,42 @@ public class ConfigurationStoreTest
             "v789",
             new ModelData() { Coefficients = new Dictionary<string, ActionCoefficients>() }
         );
-        var initialBandits = new Bandit[] { bandit1, bandit2 };
-        var newBandits = new Bandit[] { bandit1, bandit3 };
-
-        var initialDataDictionary = new Dictionary<string, string>
+        var initialBandits = new Dictionary<string, Bandit>
         {
-            ["foo"] = "bar",
-            ["bar"] = "baz",
+            ["bandit1"] = bandit1,
+            ["bandit2"] = bandit2,
         };
-        var newDataDictionary = new Dictionary<string, string>
+        var newBandits = new Dictionary<string, Bandit>
         {
-            ["bandit1"] = "true",
-            ["bandit3"] = "false",
+            ["bandit1"] = bandit1,
+            ["bandit3"] = bandit3,
         };
 
-        var initialMetadata = new Dictionary<string, object>()
-        {
-            ["UFC_VERSION"] = "UFCVersion1",
-            ["DICT_OBJECT"] = initialDataDictionary,
-        };
+        var initialConfig = new Configuration(
+            new VersionedResourceResponse<FlagConfigurationResponse>(
+                new FlagConfigurationResponse { Flags = initialFlags },
+                "version1"
+            ),
+            new VersionedResourceResponse<BanditModelResponse>(
+                new BanditModelResponse { Bandits = initialBandits },
+                "version1"
+            )
+        );
 
-        var newlMetadata = new Dictionary<string, object>()
-        {
-            ["UFC_VERSION"] = "UFCVersion2",
-            ["DICT_OBJECT"] = newDataDictionary,
-        };
+        var newConfig = new Configuration(
+            new VersionedResourceResponse<FlagConfigurationResponse>(
+                new FlagConfigurationResponse { Flags = newFlags },
+                "version2"
+            ),
+            new VersionedResourceResponse<BanditModelResponse>(
+                new BanditModelResponse { Bandits = newBandits },
+                "version2"
+            )
+        );
 
-        store.SetConfiguration(initialFlags, initialBandits, initialMetadata);
+        var emptyConfig = Configuration.Empty;
+
+        store.SetConfiguration(initialConfig);
 
         AssertHasFlag(store, "flag1");
         AssertHasFlag(store, "flag2");
@@ -91,21 +96,11 @@ public class ConfigurationStoreTest
 
         Assert.Multiple(() =>
         {
-            Assert.That(store.TryGetMetadata("UFC_VERSION", out string? data), Is.True);
-            Assert.That(data, Is.EqualTo("UFCVersion1"));
-
-            Assert.That(
-                store.TryGetMetadata("DICT_OBJECT", out Dictionary<string, string>? storedDict),
-                Is.True
-            );
-            Assert.That(storedDict, Is.Not.Null);
-            Assert.That(storedDict?["foo"], Is.Not.Null);
-            Assert.That(storedDict?["foo"], Is.EqualTo("bar"));
-            Assert.That(storedDict?["bar"], Is.Not.Null);
-            Assert.That(storedDict?["bar"], Is.EqualTo("baz"));
+            var config = store.GetConfiguration();
+            Assert.That(config.GetFlagConfigVersion(), Is.EqualTo("version1"));
         });
 
-        store.SetConfiguration(newFlags, newBandits, newlMetadata);
+        store.SetConfiguration(newConfig);
 
         AssertHasFlag(store, "flag1");
         AssertHasFlag(store, "flag2", false);
@@ -117,25 +112,11 @@ public class ConfigurationStoreTest
 
         Assert.Multiple(() =>
         {
-            Assert.That(store.TryGetMetadata("UFC_VERSION", out string? data), Is.True);
-            Assert.That(data, Is.EqualTo("UFCVersion2"));
-
-            Assert.That(
-                store.TryGetMetadata("DICT_OBJECT", out Dictionary<string, string>? storedDict),
-                Is.True
-            );
-            Assert.That(storedDict, Is.Not.Null);
-            Assert.That(storedDict?["bandit1"], Is.Not.Null);
-            Assert.That(storedDict?["bandit1"], Is.EqualTo("true"));
-            Assert.That(storedDict?["bandit3"], Is.Not.Null);
-            Assert.That(storedDict?["bandit3"], Is.EqualTo("false"));
+            var config = store.GetConfiguration();
+            Assert.That(config.GetFlagConfigVersion(), Is.EqualTo("version2"));
         });
 
-        store.SetConfiguration(
-            Array.Empty<Flag>(),
-            Array.Empty<Bandit>(),
-            new Dictionary<string, object>()
-        );
+        store.SetConfiguration(emptyConfig);
 
         AssertHasFlag(store, "flag1", false);
         AssertHasFlag(store, "flag2", false);
@@ -144,12 +125,11 @@ public class ConfigurationStoreTest
         AssertHasBandit(store, "bandit1", false);
         AssertHasBandit(store, "bandit2", false);
         AssertHasBandit(store, "bandit3", false);
+
         Assert.Multiple(() =>
         {
-            Assert.That(store.TryGetMetadata("UFC_VERSION", out string? data), Is.False);
-            Assert.That(data, Is.Null);
-            Assert.That(store.TryGetMetadata("DICT_OBJECT", out string? storedDict), Is.False);
-            Assert.That(storedDict, Is.Null);
+            var config = store.GetConfiguration();
+            Assert.That(config.GetFlagConfigVersion(), Is.Null);
         });
     }
 
@@ -158,7 +138,7 @@ public class ConfigurationStoreTest
     {
         var store = CreateConfigurationStore();
 
-        var flags = Array.Empty<Flag>();
+        var flags = new Dictionary<string, Flag>();
 
         var bandit1 = new Bandit(
             "bandit1",
@@ -181,28 +161,73 @@ public class ConfigurationStoreTest
             "v789",
             new ModelData() { Coefficients = new Dictionary<string, ActionCoefficients>() }
         );
-        var bandits = new Bandit[] { bandit1, bandit2 };
+        var bandits = new Dictionary<string, Bandit>
+        {
+            ["bandit1"] = bandit1,
+            ["bandit2"] = bandit2,
+        };
 
-        var dataDict = new Dictionary<string, object> { };
+        var initialConfig = new Configuration(
+            new VersionedResourceResponse<FlagConfigurationResponse>(
+                new FlagConfigurationResponse { Flags = flags },
+                "version1"
+            ),
+            new VersionedResourceResponse<BanditModelResponse>(
+                new BanditModelResponse { Bandits = bandits },
+                "version1"
+            )
+        );
 
-        store.SetConfiguration(flags, bandits, dataDict);
+        var newConfig = new Configuration(
+            new VersionedResourceResponse<FlagConfigurationResponse>(
+                new FlagConfigurationResponse { Flags = flags },
+                "version2"
+            ),
+            new VersionedResourceResponse<BanditModelResponse>(
+                new BanditModelResponse
+                {
+                    Bandits = new Dictionary<string, Bandit> { ["bandit3"] = bandit3 },
+                },
+                "version2"
+            )
+        );
+
+        var emptyConfig = new Configuration(
+            new VersionedResourceResponse<FlagConfigurationResponse>(
+                new FlagConfigurationResponse { Flags = flags },
+                "version3"
+            ),
+            new VersionedResourceResponse<BanditModelResponse>(
+                new BanditModelResponse { Bandits = new Dictionary<string, Bandit>() },
+                "version3"
+            )
+        );
+
+        store.SetConfiguration(initialConfig);
         AssertHasBandit(store, "bandit1");
         AssertHasBandit(store, "bandit2");
 
-        // Existing bandits should not be overwritten
-        store.SetConfiguration(flags, dataDict);
+        // Existing bandits should not be overwritten when only updating flags
+        var currentConfig = store.GetConfiguration();
+        var updatedConfig = currentConfig.WithNewFlags(
+            new VersionedResourceResponse<FlagConfigurationResponse>(
+                new FlagConfigurationResponse { Flags = flags },
+                "version2"
+            )
+        );
+        store.SetConfiguration(updatedConfig);
 
         AssertHasBandit(store, "bandit1");
         AssertHasBandit(store, "bandit2");
         AssertHasBandit(store, "bandit3", false);
 
-        store.SetConfiguration(flags, new Bandit[] { bandit3 }, dataDict);
+        store.SetConfiguration(newConfig);
 
         AssertHasBandit(store, "bandit1", false);
         AssertHasBandit(store, "bandit2", false);
         AssertHasBandit(store, "bandit3");
 
-        store.SetConfiguration(flags, Array.Empty<Bandit>(), dataDict);
+        store.SetConfiguration(emptyConfig);
 
         AssertHasBandit(store, "bandit1", false);
         AssertHasBandit(store, "bandit2", false);
@@ -219,7 +244,8 @@ public class ConfigurationStoreTest
         {
             Multiple(() =>
             {
-                That(store.TryGetFlag(flagKey, out Flag? flag), Is.True);
+                var config = store.GetConfiguration();
+                That(config.TryGetFlag(flagKey, out Flag? flag), Is.True);
                 That(flag, Is.Not.Null);
                 That(flag!.Key, Is.EqualTo(flagKey));
             });
@@ -228,7 +254,8 @@ public class ConfigurationStoreTest
         {
             Multiple(() =>
             {
-                That(store.TryGetFlag(flagKey, out Flag? flag), Is.False);
+                var config = store.GetConfiguration();
+                That(config.TryGetFlag(flagKey, out Flag? flag), Is.False);
                 That(flag, Is.Null);
             });
         }
@@ -244,7 +271,8 @@ public class ConfigurationStoreTest
         {
             Multiple(() =>
             {
-                That(store.TryGetBandit(banditKey, out Bandit? bandit), Is.True);
+                var config = store.GetConfiguration();
+                That(config.TryGetBandit(banditKey, out Bandit? bandit), Is.True);
                 That(bandit, Is.Not.Null);
                 That(bandit!.BanditKey, Is.EqualTo(banditKey));
             });
@@ -253,7 +281,8 @@ public class ConfigurationStoreTest
         {
             Multiple(() =>
             {
-                That(store.TryGetBandit(banditKey, out Bandit? bandit), Is.False);
+                var config = store.GetConfiguration();
+                That(config.TryGetBandit(banditKey, out Bandit? bandit), Is.False);
                 That(bandit, Is.Null);
             });
         }

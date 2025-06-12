@@ -86,23 +86,6 @@ public sealed class Configuration
     }
 
     /// <summary>
-    /// Creates a new configuration from collections of flags, bandits, and metadata.
-    /// </summary>
-    public Configuration(
-        IEnumerable<Flag> flags,
-        IEnumerable<Bandit> bandits,
-        BanditReferences? banditReferences,
-        string? flagConfigVersion
-    )
-    {
-        _flags = flags.ToImmutableDictionary(f => f.Key);
-        _bandits = bandits.ToImmutableDictionary(b => b.BanditKey);
-        _flagConfigVersion = flagConfigVersion;
-        _banditReferences = banditReferences;
-        _banditModelVersions = bandits.Select(b => b.ModelVersion).ToImmutableHashSet();
-    }
-
-    /// <summary>
     /// Attempts to get a flag by key.
     /// </summary>
     public bool TryGetFlag(string key, out Flag? flag)

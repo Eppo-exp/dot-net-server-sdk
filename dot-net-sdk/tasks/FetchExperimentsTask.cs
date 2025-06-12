@@ -39,7 +39,7 @@ public class FetchExperimentsTask : IDisposable
         Timer.Change(nextTick, Timeout.Infinite);
         try
         {
-            ConfigLoader.LoadConfiguration();
+            ConfigLoader.FetchAndActivateConfiguration();
         }
         catch (Exception e)
         {
