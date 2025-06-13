@@ -10,7 +10,9 @@ namespace eppo_sdk.store;
 public class ConfigurationStore : IConfigurationStore
 {
     private volatile Configuration _currentConfiguration;
-    private readonly object _updateLock = new object();
+
+    /// Used for concurrent-read and exclusive-write locking.
+    private readonly object _cacheLock = new();
 
     /// <summary>
     /// Initializes a new instance of ConfigurationStore with an empty configuration.
