@@ -16,39 +16,56 @@ public class ConfigurationStoreTest
         return new ConfigurationStore();
     }
 
+    private static Flag CreateFlag(string key, EppoValueType valueType = EppoValueType.NUMERIC)
+    {
+        return new Flag(key, true, new(), valueType, new(), 10000);
+    }
+
+    private static Bandit CreateBandit(string key, string modelVersion = "v123")
+    {
+        return new Bandit(
+            key,
+            "falcon",
+            DateTime.Now,
+            modelVersion,
+            new ModelData() { Coefficients = new Dictionary<string, ActionCoefficients>() }
+        );
+    }
+
+    private static Configuration CreateConfiguration(
+        Dictionary<string, Flag> flags,
+        Dictionary<string, Bandit> bandits,
+        string version
+    )
+    {
+        return new Configuration(
+            new VersionedResourceResponse<FlagConfigurationResponse>(
+                new FlagConfigurationResponse { Flags = flags },
+                version
+            ),
+            new VersionedResourceResponse<BanditModelResponse>(
+                new BanditModelResponse { Bandits = bandits },
+                version
+            )
+        );
+    }
+
     [Test]
     public void ShouldClearOldValuesOnSet()
     {
         var store = CreateConfigurationStore();
 
-        var flag1 = new Flag("flag1", true, new(), EppoValueType.NUMERIC, new(), 10000);
-        var flag2 = new Flag("flag2", true, new(), EppoValueType.NUMERIC, new(), 10000);
-        var flag3 = new Flag("flag3", true, new(), EppoValueType.NUMERIC, new(), 10000);
+        var flag1 = CreateFlag("flag1");
+        var flag2 = CreateFlag("flag2");
+        var flag3 = CreateFlag("flag3");
 
         var initialFlags = new Dictionary<string, Flag> { ["flag1"] = flag1, ["flag2"] = flag2 };
         var newFlags = new Dictionary<string, Flag> { ["flag1"] = flag1, ["flag3"] = flag3 };
 
-        var bandit1 = new Bandit(
-            "bandit1",
-            "falcon",
-            DateTime.Now,
-            "v123",
-            new ModelData() { Coefficients = new Dictionary<string, ActionCoefficients>() }
-        );
-        var bandit2 = new Bandit(
-            "bandit2",
-            "falcon",
-            DateTime.Now,
-            "v456",
-            new ModelData() { Coefficients = new Dictionary<string, ActionCoefficients>() }
-        );
-        var bandit3 = new Bandit(
-            "bandit3",
-            "falcon",
-            DateTime.Now,
-            "v789",
-            new ModelData() { Coefficients = new Dictionary<string, ActionCoefficients>() }
-        );
+        var bandit1 = CreateBandit("bandit1");
+        var bandit2 = CreateBandit("bandit2", "v456");
+        var bandit3 = CreateBandit("bandit3", "v789");
+
         var initialBandits = new Dictionary<string, Bandit>
         {
             ["bandit1"] = bandit1,
@@ -60,28 +77,8 @@ public class ConfigurationStoreTest
             ["bandit3"] = bandit3,
         };
 
-        var initialConfig = new Configuration(
-            new VersionedResourceResponse<FlagConfigurationResponse>(
-                new FlagConfigurationResponse { Flags = initialFlags },
-                "version1"
-            ),
-            new VersionedResourceResponse<BanditModelResponse>(
-                new BanditModelResponse { Bandits = initialBandits },
-                "version1"
-            )
-        );
-
-        var newConfig = new Configuration(
-            new VersionedResourceResponse<FlagConfigurationResponse>(
-                new FlagConfigurationResponse { Flags = newFlags },
-                "version2"
-            ),
-            new VersionedResourceResponse<BanditModelResponse>(
-                new BanditModelResponse { Bandits = newBandits },
-                "version2"
-            )
-        );
-
+        var initialConfig = CreateConfiguration(initialFlags, initialBandits, "version1");
+        var newConfig = CreateConfiguration(newFlags, newBandits, "version2");
         var emptyConfig = Configuration.Empty;
 
         store.SetConfiguration(initialConfig);
@@ -140,68 +137,23 @@ public class ConfigurationStoreTest
 
         var flags = new Dictionary<string, Flag>();
 
-        var bandit1 = new Bandit(
-            "bandit1",
-            "falcon",
-            DateTime.Now,
-            "v123",
-            new ModelData() { Coefficients = new Dictionary<string, ActionCoefficients>() }
-        );
-        var bandit2 = new Bandit(
-            "bandit2",
-            "falcon",
-            DateTime.Now,
-            "v456",
-            new ModelData() { Coefficients = new Dictionary<string, ActionCoefficients>() }
-        );
-        var bandit3 = new Bandit(
-            "bandit3",
-            "falcon",
-            DateTime.Now,
-            "v789",
-            new ModelData() { Coefficients = new Dictionary<string, ActionCoefficients>() }
-        );
+        var bandit1 = CreateBandit("bandit1");
+        var bandit2 = CreateBandit("bandit2", "v456");
+        var bandit3 = CreateBandit("bandit3", "v789");
+
         var bandits = new Dictionary<string, Bandit>
         {
             ["bandit1"] = bandit1,
             ["bandit2"] = bandit2,
         };
 
-        var initialConfig = new Configuration(
-            new VersionedResourceResponse<FlagConfigurationResponse>(
-                new FlagConfigurationResponse { Flags = flags },
-                "version1"
-            ),
-            new VersionedResourceResponse<BanditModelResponse>(
-                new BanditModelResponse { Bandits = bandits },
-                "version1"
-            )
+        var initialConfig = CreateConfiguration(flags, bandits, "version1");
+        var newConfig = CreateConfiguration(
+            flags,
+            new Dictionary<string, Bandit> { ["bandit3"] = bandit3 },
+            "version2"
         );
-
-        var newConfig = new Configuration(
-            new VersionedResourceResponse<FlagConfigurationResponse>(
-                new FlagConfigurationResponse { Flags = flags },
-                "version2"
-            ),
-            new VersionedResourceResponse<BanditModelResponse>(
-                new BanditModelResponse
-                {
-                    Bandits = new Dictionary<string, Bandit> { ["bandit3"] = bandit3 },
-                },
-                "version2"
-            )
-        );
-
-        var emptyConfig = new Configuration(
-            new VersionedResourceResponse<FlagConfigurationResponse>(
-                new FlagConfigurationResponse { Flags = flags },
-                "version3"
-            ),
-            new VersionedResourceResponse<BanditModelResponse>(
-                new BanditModelResponse { Bandits = new Dictionary<string, Bandit>() },
-                "version3"
-            )
-        );
+        var emptyConfig = CreateConfiguration(flags, new Dictionary<string, Bandit>(), "version3");
 
         store.SetConfiguration(initialConfig);
         AssertHasBandit(store, "bandit1");

@@ -9,13 +9,13 @@ namespace eppo_sdk_test.store;
 
 public class ConfigurationTest
 {
-    private static Flag BasicFlag(string flagKey, string[] variationValues)
+    private static Flag CreateFlag(string key, string[] variationValues)
     {
         var variations = variationValues
             .Select((v) => new Variation(v, v))
             .ToDictionary(v => v.Key);
         return new Flag(
-            flagKey,
+            key,
             true,
             new List<Allocation>(),
             EppoValueType.STRING,
@@ -24,14 +24,37 @@ public class ConfigurationTest
         );
     }
 
-    private static Bandit BasicBandit(string banditKey, string modelVersion = "v123")
+    private static Bandit CreateBandit(string key, string modelVersion = "v123")
     {
         return new Bandit(
-            banditKey,
+            key,
             "falcon",
             DateTime.Now,
             modelVersion,
             new ModelData() { Coefficients = new Dictionary<string, ActionCoefficients>() }
+        );
+    }
+
+    private static Configuration CreateConfiguration(
+        Dictionary<string, Flag> flags,
+        Dictionary<string, Bandit> bandits,
+        string version,
+        BanditReferences? banditReferences = null
+    )
+    {
+        return new Configuration(
+            new VersionedResourceResponse<FlagConfigurationResponse>(
+                new FlagConfigurationResponse
+                {
+                    Flags = flags,
+                    BanditReferences = banditReferences,
+                },
+                version
+            ),
+            new VersionedResourceResponse<BanditModelResponse>(
+                new BanditModelResponse { Bandits = bandits },
+                version
+            )
         );
     }
 
@@ -58,7 +81,7 @@ public class ConfigurationTest
     {
         var flags = new Dictionary<string, Flag>
         {
-            ["flag1"] = BasicFlag("flag1", new string[] { "control", "bandit1" }),
+            ["flag1"] = CreateFlag("flag1", new string[] { "control", "bandit1" }),
         };
         var banditReferences = new BanditReferences()
         {
@@ -70,21 +93,9 @@ public class ConfigurationTest
                 }
             ),
         };
-        var flagResponse = new FlagConfigurationResponse()
-        {
-            BanditReferences = banditReferences,
-            Flags = flags,
-        };
+        var bandits = new Dictionary<string, Bandit> { ["bandit1"] = CreateBandit("bandit1") };
 
-        var banditResponse = new BanditModelResponse()
-        {
-            Bandits = new Dictionary<string, Bandit>() { ["bandit1"] = BasicBandit("bandit1") },
-        };
-
-        var config = new Configuration(
-            new VersionedResourceResponse<FlagConfigurationResponse>(flagResponse, "version1"),
-            new VersionedResourceResponse<BanditModelResponse>(banditResponse, "version2")
-        );
+        var config = CreateConfiguration(flags, bandits, "version1", banditReferences);
 
         Assert.Multiple(() =>
         {
@@ -107,26 +118,17 @@ public class ConfigurationTest
     {
         var initialFlags = new Dictionary<string, Flag>
         {
-            ["flag1"] = BasicFlag("flag1", new string[] { "control", "bandit1" }),
+            ["flag1"] = CreateFlag("flag1", new string[] { "control", "bandit1" }),
         };
         var initialBandits = new Dictionary<string, Bandit>
         {
-            ["bandit1"] = BasicBandit("bandit1"),
+            ["bandit1"] = CreateBandit("bandit1"),
         };
-        var initialConfig = new Configuration(
-            new VersionedResourceResponse<FlagConfigurationResponse>(
-                new FlagConfigurationResponse { Flags = initialFlags },
-                "version1"
-            ),
-            new VersionedResourceResponse<BanditModelResponse>(
-                new BanditModelResponse { Bandits = initialBandits },
-                "version1"
-            )
-        );
+        var initialConfig = CreateConfiguration(initialFlags, initialBandits, "version1");
 
         var newFlags = new Dictionary<string, Flag>
         {
-            ["flag2"] = BasicFlag("flag2", new string[] { "control", "bandit2" }),
+            ["flag2"] = CreateFlag("flag2", new string[] { "control", "bandit2" }),
         };
         var newFlagResponse = new FlagConfigurationResponse()
         {
@@ -166,7 +168,7 @@ public class ConfigurationTest
     {
         var flags = new Dictionary<string, Flag>
         {
-            ["flag1"] = BasicFlag("flag1", new string[] { "control", "bandit1" }),
+            ["flag1"] = CreateFlag("flag1", new string[] { "control", "bandit1" }),
         };
         var banditReferences = new BanditReferences()
         {
@@ -178,22 +180,9 @@ public class ConfigurationTest
                 }
             ),
         };
-        var bandits = new Dictionary<string, Bandit> { ["bandit1"] = BasicBandit("bandit1") };
+        var bandits = new Dictionary<string, Bandit> { ["bandit1"] = CreateBandit("bandit1") };
 
-        var config = new Configuration(
-            new VersionedResourceResponse<FlagConfigurationResponse>(
-                new FlagConfigurationResponse
-                {
-                    Flags = flags,
-                    BanditReferences = banditReferences,
-                },
-                "version1"
-            ),
-            new VersionedResourceResponse<BanditModelResponse>(
-                new BanditModelResponse { Bandits = bandits },
-                "version1"
-            )
-        );
+        var config = CreateConfiguration(flags, bandits, "version1", banditReferences);
 
         Assert.Multiple(() =>
         {

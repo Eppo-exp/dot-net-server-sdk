@@ -39,7 +39,7 @@ public class ConfigurationStore : IConfigurationStore
     /// <param name="configuration">The new configuration to set.</param>
     public void SetConfiguration(Configuration configuration)
     {
-        lock (_updateLock)
+        lock (_cacheLock)
         {
             _currentConfiguration = configuration;
         }
