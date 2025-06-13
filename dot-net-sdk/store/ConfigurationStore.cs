@@ -11,7 +11,9 @@ public class ConfigurationStore : IConfigurationStore
 {
     private volatile Configuration _currentConfiguration;
 
+    /// <summary>
     /// Used for concurrent-read and exclusive-write locking.
+    /// </summary>
     private readonly object _cacheLock = new();
 
     /// <summary>
