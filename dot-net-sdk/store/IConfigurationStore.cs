@@ -14,7 +14,11 @@ public interface IConfigurationStore
     /// <param name="banditFlagReferences"></param>
     /// <param name="bandits">Bandit models to set. If null, existing bandits are not overwritten.</param>
     /// <param name="metadata"></param>
-    void SetConfiguration(IEnumerable<Flag> flags, IEnumerable<Bandit> bandits, IDictionary<string, object> metadata);
+    void SetConfiguration(
+        IEnumerable<Flag> flags,
+        IEnumerable<Bandit> bandits,
+        IDictionary<string, object> metadata
+    );
 
     /// <summary>
     /// Sets just the UFC configuration values (flags and metadata), **without updating `bandits`**, in one idempotent method.

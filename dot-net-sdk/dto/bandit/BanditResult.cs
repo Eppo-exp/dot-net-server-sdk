@@ -14,10 +14,8 @@ public class BanditResult
         this.Action = Action;
     }
 
-    public BanditResult(string variation) : this(variation, null)
-    {
-    }
-
+    public BanditResult(string variation)
+        : this(variation, null) { }
 
     public override string ToString() => Action ?? Variation;
 }

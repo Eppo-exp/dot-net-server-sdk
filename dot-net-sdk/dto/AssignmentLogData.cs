@@ -16,15 +16,15 @@ public record AssignmentLogData : ISerializable
     public IReadOnlyDictionary<string, string>? ExtraLogging;
     public IReadOnlyDictionary<string, string> MetaData;
 
-    public AssignmentLogData(string featureFlag,
-                             string allocation,
-                             string variation,
-                             string subject,
-                             IReadOnlyDictionary<string, object> subjectAttributes,
-                             IReadOnlyDictionary<string, string> metaData,
-                             IReadOnlyDictionary<string, string> extraLoggging
-
-                             )
+    public AssignmentLogData(
+        string featureFlag,
+        string allocation,
+        string variation,
+        string subject,
+        IReadOnlyDictionary<string, object> subjectAttributes,
+        IReadOnlyDictionary<string, string> metaData,
+        IReadOnlyDictionary<string, string> extraLoggging
+    )
     {
         this.Experiment = featureFlag + "-" + allocation;
         this.FeatureFlag = featureFlag;
@@ -45,8 +45,16 @@ public record AssignmentLogData : ISerializable
         info.AddValue(nameof(Variation), Variation);
         info.AddValue(nameof(Timestamp), Timestamp);
         info.AddValue(nameof(Subject), Subject);
-        info.AddValue(nameof(SubjectAttributes), SubjectAttributes, typeof(IReadOnlyDictionary<string, object>));
+        info.AddValue(
+            nameof(SubjectAttributes),
+            SubjectAttributes,
+            typeof(IReadOnlyDictionary<string, object>)
+        );
         info.AddValue(nameof(MetaData), MetaData, typeof(IReadOnlyDictionary<string, string>));
-        info.AddValue(nameof(ExtraLogging), ExtraLogging, typeof(IReadOnlyDictionary<string, string>));
+        info.AddValue(
+            nameof(ExtraLogging),
+            ExtraLogging,
+            typeof(IReadOnlyDictionary<string, string>)
+        );
     }
 }

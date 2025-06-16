@@ -5,7 +5,7 @@ namespace eppo_sdk.helpers;
 
 public class AppDetails
 {
-    public DeploymentEnvironment Deployment { get; init;}
+    public DeploymentEnvironment Deployment { get; init; }
 
     private readonly string _version;
 
@@ -26,10 +26,6 @@ public class AppDetails
 
     public IReadOnlyDictionary<string, string> AsDict()
     {
-        return new Dictionary<string, string>()
-        {
-            ["sdkName"] = Name,
-            ["sdkVersion"] = Version
-        };
+        return new Dictionary<string, string>() { ["sdkName"] = Name, ["sdkVersion"] = Version };
     }
 }

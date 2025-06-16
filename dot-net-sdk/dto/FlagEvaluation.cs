@@ -7,13 +7,23 @@ public record FlagEvaluation
     public string AllocationKey;
     public IReadOnlyDictionary<string, string> ExtraLogging;
 
-    public FlagEvaluation(Variation variation, bool doLog, string allocationKey, IReadOnlyDictionary<string, object>? extraLogging)
+    public FlagEvaluation(
+        Variation variation,
+        bool doLog,
+        string allocationKey,
+        IReadOnlyDictionary<string, object>? extraLogging
+    )
     {
         Variation = variation;
         DoLog = doLog;
         AllocationKey = allocationKey;
-        ExtraLogging = extraLogging == null ?
-            new Dictionary<string, string>() :
-            (IReadOnlyDictionary<string, string>)extraLogging.ToDictionary(pair => pair.Key, pair => Convert.ToString(pair.Value));
+        ExtraLogging =
+            extraLogging == null
+                ? new Dictionary<string, string>()
+                : (IReadOnlyDictionary<string, string>)
+                    extraLogging.ToDictionary(
+                        pair => pair.Key,
+                        pair => Convert.ToString(pair.Value)
+                    );
     }
 }

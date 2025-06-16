@@ -6,6 +6,7 @@ public record DeploymentEnvironment(string SdkName, bool Polling)
     {
         return new DeploymentEnvironment("dotnet-server", true);
     }
+
     public static DeploymentEnvironment Client()
     {
         return new DeploymentEnvironment("dotnet-client", false);
