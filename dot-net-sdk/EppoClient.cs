@@ -522,7 +522,13 @@ public sealed class EppoClient : IDisposable
             {
                 _eppoClientConfig.AssignmentLogger.LogBanditAction(banditActionLog);
             }
-            catch (Exception) { }
+            catch (Exception)
+            {
+                // There should be a bandit matching `banditKey`, but there is not, and that's a problem.
+                s_logger.Error(
+                    $"[Eppo SDK] Bandit model {bandit.BanditKey} not found for {flagKey} {variation}"
+                );
+            }
 
             return new BanditResult(variation, result.ActionKey);
         }
