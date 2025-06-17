@@ -53,7 +53,9 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
 
-    
+    - name: Build
+      run: make build
+
     - name: Pull test data
       run: make test-data
 
