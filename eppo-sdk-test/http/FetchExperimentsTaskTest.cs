@@ -20,7 +20,7 @@ public class FetchExperimentsTaskTest
 
         // Throw an exception when the config is loaded.
         mockConfig
-            .Setup(mc => mc.LoadConfiguration())
+            .Setup(mc => mc.FetchAndActivateConfiguration())
             .Throws(new SystemException("Error loading"));
 
         FetchExperimentsTask fet = new FetchExperimentsTask(mockConfig.Object, 250, 0);

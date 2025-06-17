@@ -174,14 +174,15 @@ public sealed class EppoClient : IDisposable
     {
         InputValidator.ValidateNotBlank(subjectKey, "Invalid argument: subjectKey cannot be blank");
         InputValidator.ValidateNotBlank(flagKey, "Invalid argument: flagKey cannot be blank");
+        Configuration configuration = _config.GetConfiguration();
 
-        if (!_config.TryGetFlag(flagKey, out Flag? configuration) || configuration == null)
+        if (!configuration.TryGetFlag(flagKey, out Flag? flag) || flag == null)
         {
             s_logger.Warn($"[Eppo SDK] No configuration found for key: {flagKey}");
             return null;
         }
 
-        if (!configuration.Enabled)
+        if (!flag.Enabled)
         {
             s_logger.Info(
                 $"[Eppo SDK] No assigned variation because the experiment or feature flag {flagKey} is disabled"
@@ -189,7 +190,7 @@ public sealed class EppoClient : IDisposable
             return null;
         }
 
-        var result = RuleValidator.EvaluateFlag(configuration, subjectKey, subjectAttributes);
+        var result = RuleValidator.EvaluateFlag(flag, subjectKey, subjectAttributes);
         if (result == null)
         {
             s_logger.Info(
@@ -259,15 +260,8 @@ public sealed class EppoClient : IDisposable
                 Constants.REQUEST_TIMEOUT_MILLIS
             );
 
-            var configCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
-            var modelCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
-            var banditFlagCache = new CacheHelper(Constants.MAX_CACHE_ENTRIES).Cache;
-
-            var configurationStore = new ConfigurationStore(
-                configCache,
-                modelCache,
-                banditFlagCache
-            );
+            // Use the new ConfigurationStore that doesn't require MemoryCache instances
+            var configurationStore = new ConfigurationStore();
 
             var configRequester = new ConfigurationRequester(eppoHttpClient, configurationStore);
             s_client?._fetchExperimentsTask?.Dispose();
@@ -283,7 +277,7 @@ public sealed class EppoClient : IDisposable
             }
 
             // Load the configuration for the first time.
-            configRequester.LoadConfiguration();
+            configRequester.FetchAndActivateConfiguration();
 
             s_client = new EppoClient(
                 configRequester,
@@ -480,6 +474,7 @@ public sealed class EppoClient : IDisposable
     )
     {
         InputValidator.ValidateNotBlank(flagKey, "Invalid argument: flagKey cannot be blank");
+        Configuration configuration = _config.GetConfiguration();
 
         BanditResult? result = null;
 
@@ -489,20 +484,18 @@ public sealed class EppoClient : IDisposable
         // Only proceed to computing a bandit if there are actions provided and the variation maps to a bandit key
         if (
             actions.Count > 0
-            && _config
-                .GetBanditReferences()
-                .TryGetBanditKey(flagKey, variation, out string? banditKey)
-            && banditKey != null
+            && configuration.TryGetBanditByVariation(flagKey, variation, out Bandit? bandit)
+            && bandit != null
         )
         {
-            result = EvaluateAndLogBandit(banditKey!, flagKey, subject, actions, variation);
+            result = EvaluateAndLogBandit(bandit, flagKey, subject, actions, variation);
         }
 
         return result ?? new(variation);
     }
 
     private BanditResult? EvaluateAndLogBandit(
-        string banditKey,
+        Bandit bandit,
         string flagKey,
         ContextAttributes subject,
         IDictionary<string, ContextAttributes> actions,
@@ -511,37 +504,33 @@ public sealed class EppoClient : IDisposable
     {
         try
         {
-            if (_config.TryGetBandit(banditKey, out Bandit? bandit) && bandit != null)
+            var result = _banditEvaluator.EvaluateBandit(
+                flagKey,
+                subject,
+                actions,
+                bandit.ModelData
+            );
+
+            var banditActionLog = new BanditLogEvent(
+                variation,
+                result,
+                bandit,
+                _appDetails.AsDict()
+            );
+
+            try
             {
-                var result = _banditEvaluator.EvaluateBandit(
-                    flagKey,
-                    subject,
-                    actions,
-                    bandit.ModelData
-                );
-
-                var banditActionLog = new BanditLogEvent(
-                    variation,
-                    result,
-                    bandit,
-                    _appDetails.AsDict()
-                );
-
-                try
-                {
-                    _eppoClientConfig.AssignmentLogger.LogBanditAction(banditActionLog);
-                }
-                catch (Exception) { }
-
-                return new BanditResult(variation, result.ActionKey);
+                _eppoClientConfig.AssignmentLogger.LogBanditAction(banditActionLog);
             }
-            else
+            catch (Exception)
             {
                 // There should be a bandit matching `banditKey`, but there is not, and that's a problem.
                 s_logger.Error(
-                    $"[Eppo SDK] Bandit model {banditKey} not found for {flagKey} {variation}"
+                    $"[Eppo SDK] Bandit model {bandit.BanditKey} not found for {flagKey} {variation}"
                 );
             }
+
+            return new BanditResult(variation, result.ActionKey);
         }
         catch (BanditEvaluationException bee)
         {
@@ -554,7 +543,7 @@ public sealed class EppoClient : IDisposable
 
     public void RefreshConfiguration()
     {
-        _config.LoadConfiguration();
+        _config.FetchAndActivateConfiguration();
     }
 
     public static EppoClient GetInstance()
@@ -570,5 +559,14 @@ public sealed class EppoClient : IDisposable
     public void Dispose()
     {
         _fetchExperimentsTask?.Dispose();
+    }
+
+    /// <summary>
+    /// Gets the current configuration snapshot containing all flags, bandits, and metadata.
+    /// </summary>
+    /// <returns>A Configuration object representing the current state of flags, bandits, and metadata.</returns>
+    public Configuration GetConfiguration()
+    {
+        return _config.GetConfiguration();
     }
 }
