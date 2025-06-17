@@ -26,6 +26,7 @@ public class FetchExperimentsTaskTest
         FetchExperimentsTask fet = new FetchExperimentsTask(mockConfig.Object, 250, 0);
 
         // Sleep one second to await 2+ fetch attempts.
+        // Sleep one second to await 2+ fetch attempts.
         // If the FetchExperimentsTask encounters an uncaught exception, it will fail the test.
         Thread.Sleep(1000);
 

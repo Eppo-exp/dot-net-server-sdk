@@ -21,6 +21,7 @@ public class ConfigurationRequesterTest
         var variations = variationValues
             .Select((v) => new Variation(v, v))
             .ToDictionary(v => v.Key);
+
         return new Flag(
             flagKey,
             true,
@@ -168,6 +169,14 @@ public class ConfigurationRequesterTest
             m => m.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT, It.IsAny<string>()),
             Times.Never()
         );
+        api.Verify(
+            m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>()),
+            Times.Once()
+        );
+        api.Verify(
+            m => m.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT, It.IsAny<string>()),
+            Times.Never()
+        );
     }
 
     [Test]
@@ -223,8 +232,8 @@ public class ConfigurationRequesterTest
         };
         var updatedUFCResponse = new FlagConfigurationResponse()
         {
-            BanditReferences = updatedBanditReferences,
             Flags = flags,
+            BanditReferences = updatedBanditReferences,
         };
 
         var api = GetMockAPI();
@@ -233,6 +242,30 @@ public class ConfigurationRequesterTest
         // The first response triggers a call to fetchBandits.
         // The second response with the same referencd models suppresses the first fetchBandits call.
         // On the third call, return an updated response to trigger a call to fetchBandits.
+        api.SetupSequence(m =>
+                m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>())
+            )
+            .Returns(
+                new VersionedResourceResponse<FlagConfigurationResponse>(
+                    response,
+                    "ETAG",
+                    isModified: true
+                )
+            )
+            .Returns(
+                new VersionedResourceResponse<FlagConfigurationResponse>(
+                    response,
+                    "ETAG",
+                    isModified: true
+                )
+            )
+            .Returns(
+                new VersionedResourceResponse<FlagConfigurationResponse>(
+                    updatedUFCResponse,
+                    "ETAG",
+                    isModified: true
+                )
+            );
         api.SetupSequence(m =>
                 m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>())
             )
@@ -277,6 +310,14 @@ public class ConfigurationRequesterTest
             m => m.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT, It.IsAny<string>()),
             Times.Exactly(1)
         );
+        api.Verify(
+            m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>()),
+            Times.Exactly(1)
+        );
+        api.Verify(
+            m => m.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT, It.IsAny<string>()),
+            Times.Exactly(1)
+        );
 
         // Second load should only call the UFC endpoint
         requester.FetchAndActivateConfiguration();
@@ -289,10 +330,26 @@ public class ConfigurationRequesterTest
             m => m.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT, It.IsAny<string>()),
             Times.Exactly(1)
         );
+        api.Verify(
+            m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>()),
+            Times.Exactly(2)
+        );
+        api.Verify(
+            m => m.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT, It.IsAny<string>()),
+            Times.Exactly(1)
+        );
 
         // Third call reloads bandits.
         requester.FetchAndActivateConfiguration();
 
+        api.Verify(
+            m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>()),
+            Times.Exactly(3)
+        );
+        api.Verify(
+            m => m.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT, It.IsAny<string>()),
+            Times.Exactly(2)
+        );
         api.Verify(
             m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>()),
             Times.Exactly(3)
@@ -317,6 +374,13 @@ public class ConfigurationRequesterTest
             .Returns(
                 new VersionedResourceResponse<FlagConfigurationResponse>(response, "version1")
             );
+        mockAPI
+            .Setup(m =>
+                m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>())
+            )
+            .Returns(
+                new VersionedResourceResponse<FlagConfigurationResponse>(response, "version1")
+            );
 
         var store = CreateConfigurationStore();
 
@@ -325,6 +389,14 @@ public class ConfigurationRequesterTest
         requester.FetchAndActivateConfiguration(); // sends null as lastversion
         requester.FetchAndActivateConfiguration(); // sends version1 as lastversion
 
+        mockAPI.Verify(
+            m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, null),
+            Times.Exactly(1)
+        );
+        mockAPI.Verify(
+            m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, "version1"),
+            Times.Exactly(1)
+        );
         mockAPI.Verify(
             m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, null),
             Times.Exactly(1)
@@ -365,9 +437,29 @@ public class ConfigurationRequesterTest
             .Returns(
                 new VersionedResourceResponse<FlagConfigurationResponse>(response, "version1")
             );
+        mockAPI
+            .Setup(m =>
+                m.Get<FlagConfigurationResponse>(
+                    Constants.UFC_ENDPOINT,
+                    It.IsNotIn<string>(new string[] { "version1" })
+                )
+            )
+            .Returns(
+                new VersionedResourceResponse<FlagConfigurationResponse>(response, "version1")
+            );
 
         // Return an empty response with `isModified` = false. If the `ConfigurationRequester` does not heed `isModified`,
+        // Return an empty response with `isModified` = false. If the `ConfigurationRequester` does not heed `isModified`,
         // the flags in `flagKeys` will be not present.
+        mockAPI
+            .Setup(m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, "version1"))
+            .Returns(
+                new VersionedResourceResponse<FlagConfigurationResponse>(
+                    emptyResponse,
+                    "version1",
+                    isModified: false
+                )
+            );
         mockAPI
             .Setup(m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, "version1"))
             .Returns(
@@ -402,6 +494,10 @@ public class ConfigurationRequesterTest
 
         requester.FetchAndActivateConfiguration(); // sends version1 as lastversion
 
+        mockAPI.Verify(
+            m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, "version1"),
+            Times.Exactly(1)
+        );
         mockAPI.Verify(
             m => m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, "version1"),
             Times.Exactly(1)
@@ -530,6 +626,32 @@ public class ConfigurationRequesterTest
 
         // Set up the API to return the 3 responses in order.
         var mockAPI = GetMockAPI();
+        mockAPI
+            .SetupSequence(m =>
+                m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>())
+            )
+            .Returns(
+                new VersionedResourceResponse<FlagConfigurationResponse>(response1, "version1")
+            )
+            .Returns(
+                new VersionedResourceResponse<FlagConfigurationResponse>(response2, "version2")
+            )
+            .Returns(
+                new VersionedResourceResponse<FlagConfigurationResponse>(response3, "version3")
+            );
+        mockAPI
+            .SetupSequence(m =>
+                m.Get<BanditModelResponse>(Constants.BANDIT_ENDPOINT, It.IsAny<string>())
+            )
+            .Returns(
+                new VersionedResourceResponse<BanditModelResponse>(banditResponse1, "version1")
+            )
+            .Returns(
+                new VersionedResourceResponse<BanditModelResponse>(banditResponse2, "version2")
+            )
+            .Returns(
+                new VersionedResourceResponse<BanditModelResponse>(banditResponse3, "version3")
+            );
         mockAPI
             .SetupSequence(m =>
                 m.Get<FlagConfigurationResponse>(Constants.UFC_ENDPOINT, It.IsAny<string>())
