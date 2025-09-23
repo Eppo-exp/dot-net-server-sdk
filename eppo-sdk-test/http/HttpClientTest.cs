@@ -143,8 +143,69 @@ public class HttpClientTest
         });
     }
 
-    private static EppoHttpClient CreatClient(String baseUrl)
+    private static EppoHttpClient CreatClient(String baseUrl, int timeoutMillis = Constants.REQUEST_TIMEOUT_MILLIS)
     {
-        return new EppoHttpClient("none", "dotnetTest", "9.9.9", baseUrl);
+        return new EppoHttpClient("none", "dotnetTest", "9.9.9", baseUrl, timeoutMillis);
+    }
+
+    [Test]
+    public void ShouldTimeoutOnSlowResponse()
+    {
+        MockServer
+            .Given(Request.Create().UsingGet().WithPath(new RegexMatcher("slow-endpoint")))
+            .RespondWith(
+                Response
+                    .Create()
+                    .WithStatusCode(HttpStatusCode.OK)
+                    .WithBody("{\"test\": \"data\"}")
+                    .WithHeader("Content-Type", "application/json")
+                    .WithDelay(TimeSpan.FromMilliseconds(2000))
+            );
+
+        var clientWithShortTimeout = CreatClient(BaseUrl, 500);
+
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        var response = clientWithShortTimeout.Get<object>("/slow-endpoint");
+        stopwatch.Stop();
+
+        // The timeout should cause a null resource and take roughly the timeout duration
+        var timeoutOccurred = stopwatch.ElapsedMilliseconds < 600; // Much less than 2000ms delay
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(timeoutOccurred, Is.True, "Request should have timed out and completed quickly");
+            Assert.That(response.Resource, Is.Null, "Response resource should be null due to timeout");
+        });
+    }
+
+    [Test]
+    public void ShouldSucceedWithSufficientTimeout()
+    {
+        MockServer
+            .Given(Request.Create().UsingGet().WithPath(new RegexMatcher("medium-slow-endpoint")))
+            .RespondWith(
+                Response
+                    .Create()
+                    .WithStatusCode(HttpStatusCode.OK)
+                    .WithBody("{\"test\": \"data\"}")
+                    .WithHeader("Content-Type", "application/json")
+                    .WithDelay(TimeSpan.FromMilliseconds(500))
+            );
+
+        var clientWithLongTimeout = CreatClient(BaseUrl, 2000);
+
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        var response = clientWithLongTimeout.Get<object>("/medium-slow-endpoint");
+        stopwatch.Stop();
+
+        // Should succeed with sufficient timeout
+        var timeoutDidNotOccur = stopwatch.ElapsedMilliseconds >= 500;   
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response.Resource, Is.Not.Null, "Response resource should not be null with sufficient timeout");
+            Assert.That(timeoutDidNotOccur, Is.True, "Request should have completed normally without timeout");
+        });
     }
 }
