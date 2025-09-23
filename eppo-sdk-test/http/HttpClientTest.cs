@@ -181,7 +181,11 @@ public class HttpClientTest
                 Is.True,
                 "Request should have timed out and completed quickly"
             );
-            Assert.That(response.Resource, Is.Null, "Response resource should be null due to timeout");
+            Assert.That(
+                response.Resource,
+                Is.Null,
+                "Response resource should be null due to timeout"
+            );
         });
     }
 
