@@ -176,7 +176,11 @@ public class HttpClientTest
 
         Assert.Multiple(() =>
         {
-            Assert.That(timeoutOccurred, Is.True, "Request should have timed out and completed quickly");
+            Assert.That(
+                timeoutOccurred,
+                Is.True,
+                "Request should have timed out and completed quickly"
+            );
             Assert.That(response.Resource, Is.Null, "Response resource should be null due to timeout");
         });
     }
@@ -206,8 +210,16 @@ public class HttpClientTest
 
         Assert.Multiple(() =>
         {
-            Assert.That(timeoutDidNotOccur, Is.True, "Request should have completed normally without timeout");
-            Assert.That(response.Resource, Is.Not.Null, "Response resource should not be null with sufficient timeout");
+            Assert.That(
+                timeoutDidNotOccur,
+                Is.True,
+                "Request should have completed normally without timeout"
+            );
+            Assert.That(
+                response.Resource,
+                Is.Not.Null,
+                "Response resource should not be null with sufficient timeout"
+            );
         });
     }
 }
