@@ -143,7 +143,10 @@ public class HttpClientTest
         });
     }
 
-    private static EppoHttpClient CreatClient(String baseUrl, int timeoutMillis = Constants.REQUEST_TIMEOUT_MILLIS)
+    private static EppoHttpClient CreatClient(
+        String baseUrl,
+        int timeoutMillis = Constants.REQUEST_TIMEOUT_MILLIS
+    )
     {
         return new EppoHttpClient("none", "dotnetTest", "9.9.9", baseUrl, timeoutMillis);
     }
@@ -203,9 +206,8 @@ public class HttpClientTest
 
         Assert.Multiple(() =>
         {
-            Assert.That(response, Is.Not.Null);
-            Assert.That(response.Resource, Is.Not.Null, "Response resource should not be null with sufficient timeout");
             Assert.That(timeoutDidNotOccur, Is.True, "Request should have completed normally without timeout");
+            Assert.That(response.Resource, Is.Not.Null, "Response resource should not be null with sufficient timeout");
         });
     }
 }
