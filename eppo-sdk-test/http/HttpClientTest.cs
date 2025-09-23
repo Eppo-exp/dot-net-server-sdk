@@ -210,7 +210,7 @@ public class HttpClientTest
         stopwatch.Stop();
 
         // Should succeed with sufficient timeout
-        var timeoutDidNotOccur = stopwatch.ElapsedMilliseconds >= 500;   
+        var timeoutDidNotOccur = stopwatch.ElapsedMilliseconds >= 500;
 
         Assert.Multiple(() =>
         {
