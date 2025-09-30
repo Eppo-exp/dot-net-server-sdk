@@ -48,6 +48,20 @@ public class EppoClientConfig
         }
     }
 
+    private int? _requestTimeoutMillis;
+    public int RequestTimeoutMillis
+    {
+        get => _requestTimeoutMillis ?? Constants.REQUEST_TIMEOUT_MILLIS;
+        set
+        {
+            if (value <= 0)
+            {
+                throw new Exception("Request timeout must be a positive number");
+            }
+            _requestTimeoutMillis = value;
+        }
+    }
+
     internal class DefaultLogger : IAssignmentLogger
     {
         public void LogAssignment(AssignmentLogData assignmentLogData)

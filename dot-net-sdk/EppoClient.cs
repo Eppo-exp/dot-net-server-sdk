@@ -257,7 +257,7 @@ public sealed class EppoClient : IDisposable
                 appDetails.Name,
                 appDetails.Version,
                 eppoClientConfig.BaseUrl,
-                Constants.REQUEST_TIMEOUT_MILLIS
+                eppoClientConfig.RequestTimeoutMillis
             );
 
             // Use the new ConfigurationStore that doesn't require MemoryCache instances
