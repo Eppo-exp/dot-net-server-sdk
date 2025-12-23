@@ -149,7 +149,7 @@ public class EppoHttpClient
         try
         {
             eTag =
-                restResponse.Headers?.ToList()?.Find(x => x.Name == "ETag").Value?.ToString()
+                restResponse.Headers?.ToList().Find(x => x?.Name == "ETag")?.Value.ToString()
                 ?? null;
         }
         catch (Exception)
