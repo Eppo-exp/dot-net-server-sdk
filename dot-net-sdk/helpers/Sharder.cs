@@ -12,7 +12,7 @@ public class Sharder
         using var md5 = MD5.Create();
         var inputBytes = Encoding.ASCII.GetBytes(input);
         var hashBytes = md5.ComputeHash(inputBytes);
-        return Convert.ToHexString(hashBytes).ToLower();
+        return ConvertExt.ToHexString(hashBytes).ToLower();
     }
 
     public static int GetShard(string input, int maxShardValue)

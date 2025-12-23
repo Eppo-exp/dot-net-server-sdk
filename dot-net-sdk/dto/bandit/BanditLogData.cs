@@ -1,4 +1,5 @@
 using System.Runtime.Serialization;
+using eppo_sdk.helpers;
 
 namespace eppo_sdk.dto.bandit;
 
