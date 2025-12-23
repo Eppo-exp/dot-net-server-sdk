@@ -394,7 +394,7 @@ public class RuleValidatorTest
 
         Assert.Multiple(() =>
         {
-            Assert.NotNull(result);
+            Assert.That(result, Is.Not.Null);
             Assert.That(result.Variation.Key, Is.EqualTo("music"));
             Assert.That(result.Variation.Value, Is.EqualTo("rockandroll"));
         });
@@ -411,7 +411,7 @@ public class RuleValidatorTest
             new Dictionary<string, Variation>(),
             TotalShards
         );
-        Assert.Null(RuleValidator.EvaluateFlag(flag, SubjectKey, new Subject()));
+        Assert.That(RuleValidator.EvaluateFlag(flag, SubjectKey, new Subject()),Is.Null);
     }
 
     [Test]
@@ -445,7 +445,7 @@ public class RuleValidatorTest
             TotalShards
         );
 
-        Assert.Null(RuleValidator.EvaluateFlag(flag, SubjectKey, subject));
+        Assert.That(RuleValidator.EvaluateFlag(flag, SubjectKey, subject),Is.Null);
     }
 
     [Test]
@@ -459,7 +459,7 @@ public class RuleValidatorTest
             new Dictionary<string, Variation>(),
             TotalShards
         );
-        Assert.Null(RuleValidator.EvaluateFlag(flag, SubjectKey, subject));
+        Assert.That(RuleValidator.EvaluateFlag(flag, SubjectKey, subject),Is.Null);
     }
 
     [Test]
@@ -485,7 +485,7 @@ public class RuleValidatorTest
 
         var result = RuleValidator.EvaluateFlag(flag, SubjectKey, subject);
 
-        Assert.NotNull(result);
+        Assert.That(result,Is.Not.Null);
         Assert.That(result.Variation.Value, Is.EqualTo("bar"));
     }
 
