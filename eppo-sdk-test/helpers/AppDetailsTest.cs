@@ -8,7 +8,10 @@ namespace eppo_sdk_test.helpers;
 
 public partial class AppDetailsTest
 {
-    private static readonly Regex SemVerRegex = new Regex( @"^\d+\.\d+\.\d+$", RegexOptions.Compiled);
+    private static readonly Regex SemVerRegex = new Regex(
+        @"^\d+\.\d+\.\d+$",
+        RegexOptions.Compiled
+    );
 
     [Test]
     public void ShouldReturnASemVer()

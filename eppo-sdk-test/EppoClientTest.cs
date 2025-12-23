@@ -346,15 +346,22 @@ public class EppoClientTest
         var sdkVersion = new AppDetails(DeploymentEnvironment.Client()).Version;
         var expectedUrl =
             $"{baseUrl}/flag-config/v1/config?apiKey=mock-api-key&sdkName={sdkName}&sdkVersion={sdkVersion}";
-        
-        var matchingRequests = _mockServer!.LogEntries
-            .Where(e => 
-                e.RequestMessage.Method.Equals("GET", StringComparison.OrdinalIgnoreCase) &&
-                e.RequestMessage.AbsoluteUrl.Equals(expectedUrl, StringComparison.OrdinalIgnoreCase))
+
+        var matchingRequests = _mockServer!
+            .LogEntries.Where(e =>
+                e.RequestMessage.Method.Equals("GET", StringComparison.OrdinalIgnoreCase)
+                && e.RequestMessage.AbsoluteUrl.Equals(
+                    expectedUrl,
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
             .ToList();
-        
-        That(matchingRequests, Has.Count.EqualTo(callCount),
-            $"Expected {callCount} GET request(s) to {expectedUrl}, but found {matchingRequests.Count}");
+
+        That(
+            matchingRequests,
+            Has.Count.EqualTo(callCount),
+            $"Expected {callCount} GET request(s) to {expectedUrl}, but found {matchingRequests.Count}"
+        );
     }
 
     static List<AssignmentTestCase> GetTestAssignmentData()
