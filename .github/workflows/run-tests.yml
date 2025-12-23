@@ -29,35 +29,40 @@ jobs:
   build-and-run-tests:
 
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dotnet-version: ['7.0.x', '8.0.x', '10.0.x']
 
     steps:
     - uses: actions/checkout@v3
       with:
         repository: Eppo-exp/dot-net-server-sdk
         ref: ${{ env.SDK_BRANCH_NAME }}
-    - name: Setup .NET
+    
+    - name: Setup .NET 10 (for building)
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 8.0.x
+        dotnet-version: 10.0.x
 
-    - name: Lint and format check
+    - name: Setup .NET ${{ matrix.dotnet-version }} (for testing)
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ matrix.dotnet-version }}
+
+    - name: Lint and format check (only on .NET 8)
+      if: matrix.dotnet-version == '8.0.x'
       run: |
         dotnet tool install -g csharpier
         ~/.dotnet/tools/csharpier check .
 
-    - name: Setup .NET 7
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: 7.0.x
-
     - name: Restore dependencies
       run: dotnet restore
 
-    - name: Build
+    - name: Build (with .NET 10)
       run: make build
 
     - name: Pull test data
       run: make test-data
 
-    - name: Test
+    - name: Test (on .NET ${{ matrix.dotnet-version }})
       run: make test branchName=${{ env.TEST_DATA_BRANCH_NAME }}
