@@ -18,7 +18,7 @@ public class BanditClientTest
 {
     private const string BANDIT_CONFIG_FILE = "files/ufc/bandit-flags-v1.json";
     private const string BANDIT_MODEL_FILE = "files/ufc/bandit-models-v1.json";
-    private WireMockServer? mockServer;
+    private WireMockServer? _mockServer;
     private readonly ContextAttributes subject = new("subject_key")
     {
         { "account_age", 3 },
@@ -61,7 +61,7 @@ public class BanditClientTest
         }
         var config = new EppoClientConfig("mock-api-key", logger)
         {
-            BaseUrl = mockServer?.Urls[0]!,
+            BaseUrl = _mockServer?.Urls[0]!,
         };
         return EppoClient.Init(config);
     }
@@ -74,9 +74,9 @@ public class BanditClientTest
 
     private void SetupMockServer()
     {
-        mockServer = WireMockServer.Start();
-        Console.WriteLine($"MockServer started at: {mockServer.Urls[0]}");
-        this.mockServer.Given(
+        _mockServer = WireMockServer.Start();
+        Console.WriteLine($"MockServer started at: {_mockServer.Urls[0]}");
+        this._mockServer.Given(
                 Request.Create().UsingGet().WithPath(new RegexMatcher("flag-config/v1/config"))
             )
             .RespondWith(
@@ -86,7 +86,7 @@ public class BanditClientTest
                     .WithBody(GetMockBanditConfig())
                     .WithHeader("Content-Type", "application/json")
             );
-        this.mockServer.Given(
+        this._mockServer.Given(
                 Request.Create().UsingGet().WithPath(new RegexMatcher("flag-config/v1/bandits"))
             )
             .RespondWith(
@@ -101,7 +101,8 @@ public class BanditClientTest
     [OneTimeTearDown]
     public void TearDown()
     {
-        mockServer?.Stop();
+        _mockServer?.Stop();
+        _mockServer?.Dispose();
     }
 
     private static string GetMockBanditConfig() => GetMockConfig(BANDIT_CONFIG_FILE);
@@ -228,8 +229,8 @@ public class BanditClientTest
             That(banditLog.FlagKey, Is.EqualTo("banner_bandit_flag_uk_only"));
             That(banditLog.BanditKey, Is.EqualTo("banner_bandit"));
             That(banditLog.SubjectKey, Is.EqualTo(subjectKey));
-            GreaterOrEqual(banditLog.OptimalityGap, 0);
-            GreaterOrEqual(banditLog.ActionProbability, 0);
+            That(banditLog.OptimalityGap,Is.GreaterThanOrEqualTo(0));
+            That(banditLog.ActionProbability, Is.GreaterThanOrEqualTo(0));
 
             That(banditLog.SubjectCategoricalAttributes, Is.Not.Null);
             That(banditLog.SubjectNumericAttributes, Is.Not.Null);
@@ -330,8 +331,8 @@ public class BanditClientTest
             That(banditLog.FlagKey, Is.EqualTo("banner_bandit_flag_uk_only"));
             That(banditLog.BanditKey, Is.EqualTo("banner_bandit"));
             That(banditLog.SubjectKey, Is.EqualTo(subjectKey));
-            GreaterOrEqual(banditLog.OptimalityGap, 0);
-            GreaterOrEqual(banditLog.ActionProbability, 0);
+            That(banditLog.OptimalityGap, Is.GreaterThanOrEqualTo(0));
+            That(banditLog.ActionProbability, Is.GreaterThanOrEqualTo(0));
 
             That(result.Action, Is.Not.Null);
             var chosenAction = actions.Where(a => a == result.Action);

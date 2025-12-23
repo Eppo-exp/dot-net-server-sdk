@@ -34,6 +34,7 @@ public class HttpClientTest
     public void ShutdownServer()
     {
         MockServer.Stop();
+        _mockServer?.Dispose();
     }
 
     private void SetupMockServer()
