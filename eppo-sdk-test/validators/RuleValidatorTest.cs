@@ -411,7 +411,7 @@ public class RuleValidatorTest
             new Dictionary<string, Variation>(),
             TotalShards
         );
-        Assert.That(RuleValidator.EvaluateFlag(flag, SubjectKey, new Subject()),Is.Null);
+        Assert.That(RuleValidator.EvaluateFlag(flag, SubjectKey, new Subject()), Is.Null);
     }
 
     [Test]
@@ -445,7 +445,7 @@ public class RuleValidatorTest
             TotalShards
         );
 
-        Assert.That(RuleValidator.EvaluateFlag(flag, SubjectKey, subject),Is.Null);
+        Assert.That(RuleValidator.EvaluateFlag(flag, SubjectKey, subject), Is.Null);
     }
 
     [Test]
@@ -459,7 +459,7 @@ public class RuleValidatorTest
             new Dictionary<string, Variation>(),
             TotalShards
         );
-        Assert.That(RuleValidator.EvaluateFlag(flag, SubjectKey, subject),Is.Null);
+        Assert.That(RuleValidator.EvaluateFlag(flag, SubjectKey, subject), Is.Null);
     }
 
     [Test]
@@ -485,7 +485,7 @@ public class RuleValidatorTest
 
         var result = RuleValidator.EvaluateFlag(flag, SubjectKey, subject);
 
-        Assert.That(result,Is.Not.Null);
+        Assert.That(result, Is.Not.Null);
         Assert.That(result.Variation.Value, Is.EqualTo("bar"));
     }
 
