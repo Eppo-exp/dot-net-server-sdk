@@ -8,8 +8,7 @@ namespace eppo_sdk_test.helpers;
 
 public partial class AppDetailsTest
 {
-    [GeneratedRegex("^\\d+\\.\\d+\\.\\d+$")]
-    private static partial Regex SemVerRegex();
+    private static readonly Regex SemVerRegex = new Regex( @"^\d+\.\d+\.\d+$", RegexOptions.Compiled);
 
     [Test]
     public void ShouldReturnASemVer()
@@ -19,7 +18,7 @@ public partial class AppDetailsTest
         Multiple(() =>
         {
             That(version, Is.Not.Null);
-            That(SemVerRegex().IsMatch(version), Is.True); // Basic check for 3-segment format
+            That(SemVerRegex.IsMatch(version), Is.True); // Basic check for 3-segment format
         });
     }
 
