@@ -68,4 +68,11 @@ jobs:
       run: make test-data
 
     - name: Test (on .NET ${{ matrix.dotnet-version }})
-      run: make test branchName=${{ env.TEST_DATA_BRANCH_NAME }}
+      run: |
+        if [ "${{ matrix.dotnet-version }}" = "7.0.x" ]; then
+          dotnet test --framework net7.0 --verbosity normal
+        elif [ "${{ matrix.dotnet-version }}" = "8.0.x" ]; then
+          dotnet test --framework net8.0 --verbosity normal
+        else
+          dotnet test --framework net10.0 --verbosity normal
+        fi
