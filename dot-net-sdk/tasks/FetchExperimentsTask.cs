@@ -10,19 +10,27 @@ public class FetchExperimentsTask : IDisposable
     private readonly long TimeIntervalInMillis;
     private readonly long JitterTimeIntervalInMillis;
     private readonly IConfigurationRequester ConfigLoader;
-    private readonly Timer Timer;
+    private readonly ITimer Timer;
+    private readonly TimeProvider TimeProvider;
 
     public FetchExperimentsTask(
         IConfigurationRequester config,
         long timeIntervalInMillis,
-        long jitterTimeIntervalInMillis
+        long jitterTimeIntervalInMillis,
+        TimeProvider? timeProvider = null
     )
     {
         ConfigLoader = config;
         TimeIntervalInMillis = timeIntervalInMillis;
         JitterTimeIntervalInMillis = jitterTimeIntervalInMillis;
+        TimeProvider = timeProvider ?? TimeProvider.System;
 
-        Timer = new Timer(state => Run(), null, timeIntervalInMillis, Timeout.Infinite);
+        Timer = TimeProvider.CreateTimer(
+            state => Run(),
+            null,
+            TimeSpan.FromMilliseconds(timeIntervalInMillis),
+            Timeout.InfiniteTimeSpan
+        );
     }
 
     internal void Run()
@@ -36,7 +44,7 @@ public class FetchExperimentsTask : IDisposable
 
         var nextTick = TimeIntervalInMillis - jitter;
 
-        Timer.Change(nextTick, Timeout.Infinite);
+        Timer.Change(TimeSpan.FromMilliseconds(nextTick), Timeout.InfiniteTimeSpan);
         try
         {
             ConfigLoader.FetchAndActivateConfiguration();
