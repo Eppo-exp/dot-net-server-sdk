@@ -7,21 +7,9 @@
     <IsTestProject>true</IsTestProject>
     <OutputType>Library</OutputType>
     <LangVersion>14</LangVersion>
-    <TargetFrameworks>net7.0;net8.0;net10.0</TargetFrameworks>
-
-    <!-- default (net7.0-specific) versions -->
-    <MicrosoftNETTestSdkVersion>17.8.0</MicrosoftNETTestSdkVersion>
-    <NUnitAdapterVersion>4.5.0</NUnitAdapterVersion>
-
-    <!-- net8.0+ (including net10.0 and future versions) -->
-    <MicrosoftNETTestSdkVersion
-      Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))"
-      >18.0.1</MicrosoftNETTestSdkVersion
-    >
-    <NUnitAdapterVersion
-      Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))"
-      >6.0.1</NUnitAdapterVersion
-    >
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <MicrosoftNETTestSdkVersion>18.0.1</MicrosoftNETTestSdkVersion>
+    <NUnitAdapterVersion>6.0.1</NUnitAdapterVersion>
   </PropertyGroup>
   <!-- Common packages for all frameworks -->
   <ItemGroup>

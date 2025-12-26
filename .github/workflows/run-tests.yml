@@ -40,8 +40,8 @@ jobs:
       uses: actions/setup-dotnet@v5
       with:
         dotnet-version: |
-          7.0.x
           8.0.x
+          9.0.x
           10.0.x
 
     - name: Lint and format check
@@ -63,6 +63,6 @@ jobs:
 
     - name: Test all target frameworks
       run: |
-        dotnet test --framework net7.0 --verbosity normal
         dotnet test --framework net8.0 --verbosity normal
+        dotnet test --framework net9.0 --verbosity normal
         dotnet test --framework net10.0 --verbosity normal
