@@ -25,7 +25,12 @@ public class FetchExperimentsTask : IDisposable
         JitterTimeIntervalInMillis = jitterTimeIntervalInMillis;
         TimeProvider = timeProvider ?? TimeProvider.System;
 
-        Timer = TimeProvider.CreateTimer(state => Run(), null, TimeSpan.FromMilliseconds(timeIntervalInMillis), Timeout.InfiniteTimeSpan);
+        Timer = TimeProvider.CreateTimer(
+            state => Run(),
+            null,
+            TimeSpan.FromMilliseconds(timeIntervalInMillis),
+            Timeout.InfiniteTimeSpan
+        );
     }
 
     internal void Run()

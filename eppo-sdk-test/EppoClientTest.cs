@@ -112,7 +112,7 @@ public class EppoClientTest
             BaseUrl = _mockServer?.Urls[0]!,
             PollingIntervalInMillis = 50,
             PollingJitterInMillis = 0,
-            TimeProvider = fakeTimeProvider
+            TimeProvider = fakeTimeProvider,
         };
 
         _client = EppoClient.Init(config);
