@@ -272,7 +272,8 @@ public sealed class EppoClient : IDisposable
                 fetchExperimentsTask = new FetchExperimentsTask(
                     configRequester,
                     eppoClientConfig.PollingIntervalInMillis,
-                    eppoClientConfig.PollingJitterInMillis
+                    eppoClientConfig.PollingJitterInMillis,
+                    eppoClientConfig.TimeProvider
                 );
             }
 

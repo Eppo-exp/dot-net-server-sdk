@@ -6,6 +6,7 @@ using eppo_sdk.dto;
 using eppo_sdk.helpers;
 using eppo_sdk.logger;
 using FluentAssertions;
+using Microsoft.Extensions.Time.Testing;
 using Moq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -105,16 +106,19 @@ public class EppoClientTest
     [Test]
     public void ShouldPollForConfigInServerMode()
     {
+        var fakeTimeProvider = new FakeTimeProvider();
         var config = new EppoClientConfig("mock-api-key", _mockAssignmentLogger.Object)
         {
             BaseUrl = _mockServer?.Urls[0]!,
             PollingIntervalInMillis = 50,
             PollingJitterInMillis = 0,
+            TimeProvider = fakeTimeProvider
         };
 
         _client = EppoClient.Init(config);
 
-        Thread.Sleep(75);
+        // Advance time to trigger the first poll after initialization
+        fakeTimeProvider.Advance(TimeSpan.FromMilliseconds(50));
 
         VerifyApiCalls(2);
     }
