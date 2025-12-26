@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using eppo_sdk;
 using eppo_sdk.client;
@@ -24,13 +25,23 @@ public class EppoClientTest
 
     private Mock<IAssignmentLogger> _mockAssignmentLogger;
 
-    private EppoClient? client;
+    private EppoClient? _client;
 
     [SetUp]
     public void Setup()
     {
         SetupMockServer();
         _mockAssignmentLogger = new Mock<IAssignmentLogger>();
+    }
+
+    [TearDown]
+    public void Teardown()
+    {
+        _client?.Dispose();
+        _client = null;
+        _mockServer?.Stop();
+        _mockServer?.Dispose();
+        _mockServer = null;
     }
 
     private EppoClient CreateClient()
@@ -70,7 +81,7 @@ public class EppoClientTest
     [OneTimeTearDown]
     public void TearDown()
     {
-        client?.Dispose();
+        _client?.Dispose();
         _mockServer?.Stop();
     }
 
@@ -101,7 +112,7 @@ public class EppoClientTest
             PollingJitterInMillis = 0,
         };
 
-        client = EppoClient.Init(config);
+        _client = EppoClient.Init(config);
 
         Thread.Sleep(30);
 
@@ -117,7 +128,7 @@ public class EppoClientTest
             PollingIntervalInMillis = 25,
             PollingJitterInMillis = 0,
         };
-        client = EppoClient.InitClientMode(config);
+        _client = EppoClient.InitClientMode(config);
 
         Thread.Sleep(60);
 
@@ -127,16 +138,16 @@ public class EppoClientTest
     [Test]
     public void ShouldRefreshConfigurationOnDemand()
     {
-        client = CreteClientModeClient();
-        client.RefreshConfiguration();
-        client.RefreshConfiguration();
+        _client = CreteClientModeClient();
+        _client.RefreshConfiguration();
+        _client.RefreshConfiguration();
         VerifyApiCalls(3, "dotnet-client");
     }
 
     [Test]
     public void ShouldRunInClientMode()
     {
-        client = CreteClientModeClient();
+        _client = CreteClientModeClient();
 
         var alice = new Dictionary<string, object>()
         {
@@ -146,7 +157,7 @@ public class EppoClientTest
 
         var expectedMetadata = new Dictionary<string, string>() { ["sdkName"] = "dotnet-client" };
 
-        var result = client.GetIntegerAssignment("integer-flag", "alice", alice, 1);
+        var result = _client.GetIntegerAssignment("integer-flag", "alice", alice, 1);
 
         Multiple(() =>
         {
@@ -185,8 +196,8 @@ public class EppoClientTest
             ["country"] = "US",
         };
 
-        client = CreateClient();
-        var result = client.GetIntegerAssignment("integer-flag", "alice", alice, 1);
+        _client = CreateClient();
+        var result = _client.GetIntegerAssignment("integer-flag", "alice", alice, 1);
 
         Multiple(() =>
         {
@@ -208,7 +219,7 @@ public class EppoClientTest
     [Test, TestCaseSource(nameof(GetTestAssignmentData))]
     public void ShouldValidateAssignments(AssignmentTestCase assignmentTestCase)
     {
-        client = CreateClient();
+        _client = CreateClient();
 
         switch (assignmentTestCase.VariationType)
         {
@@ -217,7 +228,7 @@ public class EppoClientTest
                     (bool?)x.Assignment
                 );
                 var assignments = assignmentTestCase.Subjects.ConvertAll(subject =>
-                    client.GetBooleanAssignment(
+                    _client.GetBooleanAssignment(
                         assignmentTestCase.Flag,
                         subject.SubjectKey,
                         subject.SubjectAttributes,
@@ -236,7 +247,7 @@ public class EppoClientTest
                     (long?)x.Assignment
                 );
                 var longAssignments = assignmentTestCase.Subjects.ConvertAll(subject =>
-                    client.GetIntegerAssignment(
+                    _client.GetIntegerAssignment(
                         assignmentTestCase.Flag,
                         subject.SubjectKey,
                         subject.SubjectAttributes,
@@ -255,7 +266,7 @@ public class EppoClientTest
                     (JObject)x.Assignment
                 );
                 var jsonAssignments = assignmentTestCase.Subjects.ConvertAll(subject =>
-                    client.GetJsonAssignment(
+                    _client.GetJsonAssignment(
                         assignmentTestCase.Flag,
                         subject.SubjectKey,
                         subject.SubjectAttributes,
@@ -274,7 +285,7 @@ public class EppoClientTest
                     ((JObject)x.Assignment).ToString()
                 );
                 var jsonStringAssignments = assignmentTestCase.Subjects.ConvertAll(subject =>
-                    client.GetJsonStringAssignment(
+                    _client.GetJsonStringAssignment(
                         assignmentTestCase.Flag,
                         subject.SubjectKey,
                         subject.SubjectAttributes,
@@ -293,7 +304,7 @@ public class EppoClientTest
                     Convert.ToDouble(x.Assignment)
                 );
                 var numAssignments = assignmentTestCase.Subjects.ConvertAll(subject =>
-                    client.GetNumericAssignment(
+                    _client.GetNumericAssignment(
                         assignmentTestCase.Flag,
                         subject.SubjectKey,
                         subject.SubjectAttributes,
@@ -312,7 +323,7 @@ public class EppoClientTest
                     (string)x.Assignment
                 );
                 var stringAssignments = assignmentTestCase.Subjects.ConvertAll(subject =>
-                    client.GetStringAssignment(
+                    _client.GetStringAssignment(
                         assignmentTestCase.Flag,
                         subject.SubjectKey,
                         subject.SubjectAttributes,
@@ -333,14 +344,24 @@ public class EppoClientTest
     {
         var baseUrl = _mockServer?.Urls[0]!;
         var sdkVersion = new AppDetails(DeploymentEnvironment.Client()).Version;
-        _mockServer!
-            .Should()
-            .HaveReceived(callCount)
-            .Calls()
-            .UsingGet()
-            .And.AtUrl(
-                $"{baseUrl}/flag-config/v1/config?apiKey=mock-api-key&sdkName={sdkName}&sdkVersion={sdkVersion}"
-            );
+        var expectedUrl =
+            $"{baseUrl}/flag-config/v1/config?apiKey=mock-api-key&sdkName={sdkName}&sdkVersion={sdkVersion}";
+
+        var matchingRequests = _mockServer!
+            .LogEntries.Where(e =>
+                e.RequestMessage.Method.Equals("GET", StringComparison.OrdinalIgnoreCase)
+                && e.RequestMessage.AbsoluteUrl.Equals(
+                    expectedUrl,
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
+            .ToList();
+
+        That(
+            matchingRequests,
+            Has.Count.EqualTo(callCount),
+            $"Expected {callCount} GET request(s) to {expectedUrl}, but found {matchingRequests.Count}"
+        );
     }
 
     static List<AssignmentTestCase> GetTestAssignmentData()
