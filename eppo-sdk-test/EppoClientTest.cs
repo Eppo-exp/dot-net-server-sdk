@@ -108,13 +108,13 @@ public class EppoClientTest
         var config = new EppoClientConfig("mock-api-key", _mockAssignmentLogger.Object)
         {
             BaseUrl = _mockServer?.Urls[0]!,
-            PollingIntervalInMillis = 25,
+            PollingIntervalInMillis = 50,
             PollingJitterInMillis = 0,
         };
 
         _client = EppoClient.Init(config);
 
-        Thread.Sleep(30);
+        Thread.Sleep(75);
 
         VerifyApiCalls(2);
     }
