@@ -16,8 +16,16 @@ public class FetchExperimentsTask : IDisposable
     public FetchExperimentsTask(
         IConfigurationRequester config,
         long timeIntervalInMillis,
+        long jitterTimeIntervalInMillis
+    ) : this(config, timeIntervalInMillis, jitterTimeIntervalInMillis, null)
+    {
+    }
+
+    internal FetchExperimentsTask(
+        IConfigurationRequester config,
+        long timeIntervalInMillis,
         long jitterTimeIntervalInMillis,
-        TimeProvider? timeProvider = null
+        TimeProvider? timeProvider
     )
     {
         ConfigLoader = config;
