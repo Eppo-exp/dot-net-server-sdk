@@ -17,9 +17,8 @@ public class FetchExperimentsTask : IDisposable
         IConfigurationRequester config,
         long timeIntervalInMillis,
         long jitterTimeIntervalInMillis
-    ) : this(config, timeIntervalInMillis, jitterTimeIntervalInMillis, null)
-    {
-    }
+    )
+        : this(config, timeIntervalInMillis, jitterTimeIntervalInMillis, null) { }
 
     internal FetchExperimentsTask(
         IConfigurationRequester config,

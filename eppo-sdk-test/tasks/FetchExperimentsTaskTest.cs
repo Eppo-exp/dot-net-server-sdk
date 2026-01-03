@@ -25,7 +25,7 @@ public class FetchExperimentsTaskTest
 
         // Advance time to trigger the first timer callback (200ms)
         fakeTimeProvider.Advance(TimeSpan.FromMilliseconds(200));
-        
+
         // Advance time to trigger the second timer callback (accounting for 2.5x original interval)
         fakeTimeProvider.Advance(TimeSpan.FromMilliseconds(300));
 

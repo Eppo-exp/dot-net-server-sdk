@@ -27,7 +27,12 @@ public class FetchExperimentsTaskTest
             .Throws(new SystemException("Error loading"));
 
         var fakeTimeProvider = new FakeTimeProvider();
-        FetchExperimentsTask fet = new FetchExperimentsTask(mockConfig.Object, 250, 0, fakeTimeProvider);
+        FetchExperimentsTask fet = new FetchExperimentsTask(
+            mockConfig.Object,
+            250,
+            0,
+            fakeTimeProvider
+        );
 
         // Advance time to trigger 2+ fetch attempts.
         // If the FetchExperimentsTask encounters an uncaught exception, it will fail the test.
