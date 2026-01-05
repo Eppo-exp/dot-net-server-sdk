@@ -6,6 +6,7 @@ using eppo_sdk.http;
 using eppo_sdk.store;
 using eppo_sdk.tasks;
 using FluentAssertions;
+using Microsoft.Extensions.Time.Testing;
 using Moq;
 using NUnit.Framework.Internal;
 
@@ -16,19 +17,32 @@ public class FetchExperimentsTaskTest
     [Test]
     public void ShouldFailGracefully()
     {
+        var callCount = 0;
         Mock<IConfigurationRequester> mockConfig = new Mock<IConfigurationRequester>();
 
         // Throw an exception when the config is loaded.
         mockConfig
             .Setup(mc => mc.FetchAndActivateConfiguration())
+            .Callback(() => callCount++)
             .Throws(new SystemException("Error loading"));
 
-        FetchExperimentsTask fet = new FetchExperimentsTask(mockConfig.Object, 250, 0);
+        var fakeTimeProvider = new FakeTimeProvider();
+        FetchExperimentsTask fet = new FetchExperimentsTask(
+            mockConfig.Object,
+            250,
+            0,
+            fakeTimeProvider
+        );
 
-        // Sleep one second to await 2+ fetch attempts.
+        // Advance time to trigger 2+ fetch attempts.
         // If the FetchExperimentsTask encounters an uncaught exception, it will fail the test.
-        Thread.Sleep(1000);
+        fakeTimeProvider.Advance(TimeSpan.FromMilliseconds(250)); // First timer
+        fakeTimeProvider.Advance(TimeSpan.FromMilliseconds(250)); // Second timer
+        fakeTimeProvider.Advance(TimeSpan.FromMilliseconds(250)); // Third timer
 
         fet.Dispose();
+
+        // Verify that multiple fetch attempts were made despite exceptions
+        Assert.That(callCount, Is.GreaterThanOrEqualTo(2));
     }
 }

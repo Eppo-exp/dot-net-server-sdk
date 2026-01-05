@@ -1,5 +1,6 @@
 using eppo_sdk.http;
 using eppo_sdk.tasks;
+using Microsoft.Extensions.Time.Testing;
 using Moq;
 
 namespace eppo_sdk_test.tasks;
@@ -19,10 +20,14 @@ public class FetchExperimentsTaskTest
             });
 
         // Use a shorter interval for faster testing
-        var task = new FetchExperimentsTask(mockConfig.Object, 200, 10);
+        var fakeTimeProvider = new FakeTimeProvider();
+        var task = new FetchExperimentsTask(mockConfig.Object, 200, 10, fakeTimeProvider);
 
-        // Wait for 2.5 intervals to ensure we get at least 2 calls (initial + 1 interval)
-        Thread.Sleep(500);
+        // Advance time to trigger the first timer callback: exactly 200ms (no jitter on initial delay)
+        fakeTimeProvider.Advance(TimeSpan.FromMilliseconds(200));
+
+        // Advance time to trigger the second timer callback: 191-199ms (with jitter), so 199ms covers worst case
+        fakeTimeProvider.Advance(TimeSpan.FromMilliseconds(199));
 
         // Verify at least 2 calls (initial call + at least one timer call)
         Assert.That(count, Is.GreaterThanOrEqualTo(2));

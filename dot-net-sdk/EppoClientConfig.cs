@@ -62,6 +62,8 @@ public class EppoClientConfig
         }
     }
 
+    internal TimeProvider? TimeProvider { get; set; }
+
     internal class DefaultLogger : IAssignmentLogger
     {
         public void LogAssignment(AssignmentLogData assignmentLogData)
